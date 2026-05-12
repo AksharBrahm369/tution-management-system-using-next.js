@@ -204,6 +204,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate batch IDs if provided
+    let validBatchIds: string[] = [];
+    if (data.batchIds && data.batchIds.length > 0) {
+      const existingBatches = await prisma.batch.findMany({
+        where: { id: { in: data.batchIds } },
+        select: { id: true }
+      });
+      validBatchIds = existingBatches.map(b => b.id);
+    }
+
     // Always allocate a fresh server-side code for new students.
     // The client displays a preview code, but it can become stale if another
     // student is created before submit completes.
@@ -252,9 +262,9 @@ export async function POST(request: NextRequest) {
         referredBy: data.referredBy || null,
         parentId: parent.id,
         notifications: undefined,
-        batchEnrollments: data.batchIds?.length
+        batchEnrollments: validBatchIds.length > 0
           ? {
-              create: data.batchIds.map((batchId) => ({ batchId })),
+              create: validBatchIds.map((batchId) => ({ batchId })),
             }
           : undefined,
         emergencyContacts: {

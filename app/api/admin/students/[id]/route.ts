@@ -208,10 +208,20 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     }
 
     if (data.batchIds) {
+      // Validate batch IDs if provided
+      let validBatchIds: string[] = [];
+      if (data.batchIds.length > 0) {
+        const existingBatches = await prisma.batch.findMany({
+          where: { id: { in: data.batchIds } },
+          select: { id: true }
+        });
+        validBatchIds = existingBatches.map(b => b.id);
+      }
+
       await prisma.batchEnrollment.updateMany({ where: { studentId: id }, data: { isActive: false, leaveDate: new Date() } });
-      if (data.batchIds.length) {
+      if (validBatchIds.length > 0) {
         await prisma.batchEnrollment.createMany({
-          data: data.batchIds.map((batchId) => ({ studentId: id, batchId, isActive: true })),
+          data: validBatchIds.map((batchId) => ({ studentId: id, batchId, isActive: true })),
         });
       }
     }

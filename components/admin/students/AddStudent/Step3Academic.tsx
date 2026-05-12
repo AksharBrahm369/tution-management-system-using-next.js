@@ -20,8 +20,7 @@ const Step3Academic: React.FC = () => {
 
       <div className="mt-6 rounded-2xl border border-dashed border-slate-300 p-4 dark:border-slate-700">
         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Batch Assignment</p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Selected batches can be managed after student creation.</p>
-        <input {...register("batchIds.0")} placeholder="Batch ID (optional)" className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Selected batches can be managed after student creation from the student profile.</p>
       </div>
     </div>
   );
