@@ -1,0 +1,470 @@
+// TuitionPro - Prisma Database Schema
+// Module 1: Authentication & User Management
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum NotificationType {
+  STUDENT_ENROLLED
+  FEE_RECEIVED
+  LOW_ATTENDANCE
+  NEW_ENQUIRY
+  EXAM_RESULT
+  ANNOUNCEMENT
+  GENERAL
+}
+
+enum AlertType {
+  LOW_ATTENDANCE
+  FEE_OVERDUE
+  STUDENT_ABSENT
+  NEW_ENQUIRY
+  SYSTEM
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id         String    @id @default(cuid())
+  name       String
+  email      String    @unique
+  password   String
+  phone      String?
+  role       Role      @default(STUDENT)
+  avatar     String?
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false)
+  lastLogin  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  sessions      Session[]
+  activityLogs  ActivityLog[]
+  notifications Notification[]
+  students      Student[]
+  parents       Parent[]
+  studentActivities StudentActivity[] @relation("StudentActivityPerformedBy")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("sessions")
+}
+
+model OTPVerification {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("otp_verifications")
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+// Password reset tokens stored separately for security
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([token])
+  @@map("password_reset_tokens")
+}
+
+// ─── Module 2: Admin Dashboard ───────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  studentId String?
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([studentId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model DashboardAlert {
+  id        String    @id @default(cuid())
+  type      AlertType
+  message   String
+  severity  Severity
+  isResolved Boolean  @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([severity])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@map("dashboard_alerts")
+}
+
+// ─── Module 3: Student Management ────────────────────────────────────────────
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum BloodGroup {
+  A_POSITIVE
+  A_NEGATIVE
+  B_POSITIVE
+  B_NEGATIVE
+  AB_POSITIVE
+  AB_NEGATIVE
+  O_POSITIVE
+  O_NEGATIVE
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  GRADUATED
+  TRANSFERRED
+  ON_LEAVE
+}
+
+enum StudentCategory {
+  WEAK
+  AVERAGE
+  GOOD
+  TOPPER
+}
+
+enum DocumentType {
+  BIRTH_CERTIFICATE
+  SCHOOL_LEAVING
+  MARKSHEET
+  ID_PROOF
+  ADDRESS_PROOF
+  MEDICAL
+  PHOTO
+  OTHER
+}
+
+model Student {
+  id                String           @id @default(cuid())
+
+  studentCode       String           @unique
+  firstName         String
+  lastName          String
+  email             String?          @unique
+  phone             String?
+  dateOfBirth       DateTime?
+  gender            Gender
+  bloodGroup        BloodGroup?
+  profilePhoto      String?
+
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  state             String?
+  pincode           String?
+
+  previousSchool    String?
+  previousClass     String?
+  previousMarks     String?
+  joiningDate       DateTime         @default(now())
+  academicYear      String
+
+  status            StudentStatus    @default(ACTIVE)
+  category          StudentCategory   @default(AVERAGE)
+  referredBy        String?
+
+  userId            String?          @unique
+  user              User?            @relation(fields: [userId], references: [id])
+
+  parentId          String?
+  parent            Parent?          @relation(fields: [parentId], references: [id])
+
+  batchEnrollments  BatchEnrollment[]
+  attendance        Attendance[]
+  feeRecords        FeeRecord[]
+  examResults       ExamResult[]
+  documents         StudentDocument[]
+  emergencyContacts EmergencyContact[]
+  medicalInfo       MedicalInfo?
+  siblings          SiblingLink[]    @relation("StudentSiblings")
+  siblingOf         SiblingLink[]    @relation("SiblingOfStudent")
+  notifications     Notification[]
+  activities        StudentActivity[]
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([studentCode])
+  @@index([firstName, lastName])
+  @@index([status])
+  @@index([category])
+  @@index([academicYear])
+  @@map("students")
+}
+
+model Parent {
+  id             String    @id @default(cuid())
+  fatherName     String?
+  fatherPhone    String?
+  fatherEmail    String?
+  fatherOccup    String?
+  motherName     String?
+  motherPhone    String?
+  motherEmail    String?
+  motherOccup    String?
+  guardianName   String?
+  guardianPhone  String?
+  guardianRel    String?
+  primaryContact  String   @default("FATHER")
+
+  userId          String?   @unique
+  user            User?     @relation(fields: [userId], references: [id])
+
+  students        Student[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("parents")
+}
+
+model Batch {
+  id            String            @id @default(cuid())
+  batchCode     String            @unique
+  name          String
+  subject       String?
+  teacherName   String?
+  schedule      String?
+  academicYear  String
+  isActive      Boolean           @default(true)
+
+  enrollments   BatchEnrollment[]
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([batchCode])
+  @@index([academicYear])
+  @@map("batches")
+}
+
+model EmergencyContact {
+  id           String   @id @default(cuid())
+  studentId    String
+  name         String
+  relationship String
+  phone        String
+  isVerified   Boolean  @default(false)
+
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@index([studentId])
+  @@map("emergency_contacts")
+}
+
+model MedicalInfo {
+  id              String   @id @default(cuid())
+  studentId       String   @unique
+  allergies       String?
+  medications     String?
+  conditions      String?
+  doctorName      String?
+  doctorPhone     String?
+  insuranceInfo   String?
+  extraNotes      String?
+
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("medical_info")
+}
+
+model StudentDocument {
+  id           String       @id @default(cuid())
+  studentId    String
+  name         String
+  type         DocumentType
+  fileUrl      String
+  fileSize     String?
+  uploadedAt   DateTime     @default(now())
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@map("student_documents")
+}
+
+model SiblingLink {
+  id         String  @id @default(cuid())
+  studentId  String
+  siblingId  String
+
+  student    Student @relation("StudentSiblings", fields: [studentId], references: [id], onDelete: Cascade)
+  sibling    Student @relation("SiblingOfStudent", fields: [siblingId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, siblingId])
+  @@index([studentId])
+  @@index([siblingId])
+  @@map("sibling_links")
+}
+
+model BatchEnrollment {
+  id          String    @id @default(cuid())
+  studentId   String
+  batchId     String
+  joinDate    DateTime  @default(now())
+  leaveDate   DateTime?
+  isActive    Boolean   @default(true)
+
+  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([studentId])
+  @@index([batchId])
+  @@map("batch_enrollments")
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  studentId   String
+  batchId     String?
+  classDate   DateTime
+  status      String
+  remark      String?
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([studentId])
+  @@index([classDate])
+  @@map("attendance")
+}
+
+model FeeRecord {
+  id          String   @id @default(cuid())
+  studentId   String
+  amount      Float
+  status      String
+  dueDate     DateTime?
+  paidAt      DateTime?
+  method      String?
+  note        String?
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+  @@map("fee_records")
+}
+
+model ExamResult {
+  id          String   @id @default(cuid())
+  studentId   String
+  examName    String
+  subject     String
+  score       Float
+  totalMarks  Float
+  examDate    DateTime
+  note        String?
+
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([studentId])
+  @@map("exam_results")
+}
+
+model StudentActivity {
+  id            String   @id @default(cuid())
+  studentId     String
+  type          String
+  title         String
+  description   String
+  metadata      Json?
+  performedById String?
+
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  performedBy   User?    @relation("StudentActivityPerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@index([studentId])
+  @@index([createdAt])
+  @@map("student_activities")
+}
