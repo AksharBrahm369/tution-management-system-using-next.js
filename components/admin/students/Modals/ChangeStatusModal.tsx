@@ -44,8 +44,8 @@ const ChangeStatusModal: React.FC<ChangeStatusModalProps> = ({ studentId, curren
         <div className="mt-6 space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             {statuses.map((item) => (
-              <label key={item} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-sm ${status === item ? "border-blue-600 bg-blue-50 dark:bg-blue-900/20" : "border-slate-200 dark:border-slate-700"}`}>
-                <input type="radio" value={item} checked={status === item} onChange={() => setStatus(item)} /> {item}
+              <label key={item} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 text-sm font-semibold transition-colors ${status === item ? "border-blue-600 bg-blue-50 text-blue-700 dark:border-blue-500 dark:bg-blue-900/40 dark:text-blue-300" : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800/50"}`}>
+                <input type="radio" value={item} checked={status === item} onChange={() => setStatus(item)} className="h-4 w-4 text-blue-600" /> {item}
               </label>
             ))}
           </div>
