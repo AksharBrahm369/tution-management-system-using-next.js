@@ -8,7 +8,7 @@
 import bcryptjs from "bcryptjs";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -67,6 +67,23 @@ export async function verifyToken(token: string): Promise<TokenPayload> {
     return payload as TokenPayload;
   } catch {
     throw new Error("Invalid or expired token");
+  }
+}
+
+/**
+ * Reads and verifies the auth cookie from a request.
+ * Returns null when the request is unauthenticated or invalid.
+ */
+export async function validateJWT(
+  request: NextRequest
+): Promise<TokenPayload | null> {
+  try {
+    const token = request.cookies.get(COOKIE_NAME)?.value;
+    if (!token) return null;
+
+    return await verifyToken(token);
+  } catch {
+    return null;
   }
 }
 

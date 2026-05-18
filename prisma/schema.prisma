@@ -1,5 +1,5 @@
 // TuitionPro - Prisma Database Schema
-// Module 1: Authentication & User Management
+// Modules 1-5: Auth, Dashboard, Students, Teachers, Batches & Schedules
 
 generator client {
   provider = "prisma-client-js"
@@ -43,6 +43,143 @@ enum Severity {
   CRITICAL
 }
 
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  VISITING
+  CONTRACT
+}
+
+enum SalaryType {
+  FIXED
+  PER_CLASS
+  PER_STUDENT
+  MIXED
+}
+
+enum TeacherStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+  RESIGNED
+}
+
+enum TeacherAttdStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LATE
+  ON_LEAVE
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  MATERNITY
+  PATERNITY
+  EMERGENCY
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  ON_HOLD
+}
+
+enum TeacherDocType {
+  AADHAR
+  PAN
+  DEGREE
+  EXPERIENCE_LETTER
+  APPOINTMENT_LETTER
+  BANK_DETAILS
+  PHOTO
+  OTHER
+}
+
+enum ClassStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+// ─── Module 5 Enums ──────────────────────────────────────────────────────────
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum BatchStatus {
+  ACTIVE
+  INACTIVE
+  COMPLETED
+  UPCOMING
+  CANCELLED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum HolidayType {
+  NATIONAL
+  STATE
+  INSTITUTE
+  EXAM
+  SPECIAL
+}
+
+enum CalendarEventType {
+  EXAM
+  HOLIDAY
+  EVENT
+  PTM
+  RESULT_DAY
+  ENROLLMENT
+  OTHER
+}
+
+enum ConflictType {
+  TEACHER_DOUBLE_BOOKED
+  ROOM_DOUBLE_BOOKED
+  STUDENT_OVERLAP
+  BATCH_TIME_OVERLAP
+}
+
+// ─── Module 6 Enums: Attendance ──────────────────────────────────────────────
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+  HOLIDAY
+  CANCELLED
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -60,11 +197,12 @@ model User {
   updatedAt  DateTime  @updatedAt
 
   // Relations
-  sessions      Session[]
-  activityLogs  ActivityLog[]
-  notifications Notification[]
-  students      Student[]
-  parents       Parent[]
+  sessions          Session[]
+  activityLogs      ActivityLog[]
+  notifications     Notification[]
+  students          Student[]
+  parents           Parent[]
+  teacher           Teacher?
   studentActivities StudentActivity[] @relation("StudentActivityPerformedBy")
 
   @@index([email])
@@ -144,7 +282,7 @@ model Notification {
   updatedAt DateTime         @updatedAt
 
   // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -155,13 +293,13 @@ model Notification {
 }
 
 model DashboardAlert {
-  id        String    @id @default(cuid())
-  type      AlertType
-  message   String
-  severity  Severity
-  isResolved Boolean  @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  type       AlertType
+  message    String
+  severity   Severity
+  isResolved Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([severity])
   @@index([isResolved])
@@ -216,54 +354,56 @@ enum DocumentType {
 }
 
 model Student {
-  id                String           @id @default(cuid())
+  id String @id @default(cuid())
 
-  studentCode       String           @unique
-  firstName         String
-  lastName          String
-  email             String?          @unique
-  phone             String?
-  dateOfBirth       DateTime?
-  gender            Gender
-  bloodGroup        BloodGroup?
-  profilePhoto      String?
+  studentCode  String  @unique
+  firstName    String
+  lastName     String
+  email        String? @unique
+  phone        String?
+  dateOfBirth  DateTime?
+  gender       Gender
+  bloodGroup   BloodGroup?
+  profilePhoto String?
 
-  addressLine1      String?
-  addressLine2      String?
-  city              String?
-  state             String?
-  pincode           String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  pincode      String?
 
-  previousSchool    String?
-  previousClass     String?
-  previousMarks     String?
-  joiningDate       DateTime         @default(now())
-  academicYear      String
+  previousSchool String?
+  previousClass  String?
+  previousMarks  String?
+  joiningDate    DateTime        @default(now())
+  academicYear   String
 
-  status            StudentStatus    @default(ACTIVE)
-  category          StudentCategory   @default(AVERAGE)
-  referredBy        String?
+  status     StudentStatus   @default(ACTIVE)
+  category   StudentCategory @default(AVERAGE)
+  referredBy String?
 
-  userId            String?          @unique
-  user              User?            @relation(fields: [userId], references: [id])
+  userId   String? @unique
+  user     User?   @relation(fields: [userId], references: [id])
 
-  parentId          String?
-  parent            Parent?          @relation(fields: [parentId], references: [id])
+  parentId String?
+  parent   Parent? @relation(fields: [parentId], references: [id])
 
   batchEnrollments  BatchEnrollment[]
   attendance        Attendance[]
+  attendanceAlerts  AttendanceAlert[]
+  attendanceNotifications AttendanceNotification[]
   feeRecords        FeeRecord[]
   examResults       ExamResult[]
   documents         StudentDocument[]
   emergencyContacts EmergencyContact[]
   medicalInfo       MedicalInfo?
-  siblings          SiblingLink[]    @relation("StudentSiblings")
-  siblingOf         SiblingLink[]    @relation("SiblingOfStudent")
+  siblings          SiblingLink[]      @relation("StudentSiblings")
+  siblingOf         SiblingLink[]      @relation("SiblingOfStudent")
   notifications     Notification[]
   activities        StudentActivity[]
 
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([studentCode])
   @@index([firstName, lastName])
@@ -274,106 +414,86 @@ model Student {
 }
 
 model Parent {
-  id             String    @id @default(cuid())
-  fatherName     String?
-  fatherPhone    String?
-  fatherEmail    String?
-  fatherOccup    String?
-  motherName     String?
-  motherPhone    String?
-  motherEmail    String?
-  motherOccup    String?
-  guardianName   String?
-  guardianPhone  String?
-  guardianRel    String?
-  primaryContact  String   @default("FATHER")
+  id            String  @id @default(cuid())
+  fatherName    String?
+  fatherPhone   String?
+  fatherEmail   String?
+  fatherOccup   String?
+  motherName    String?
+  motherPhone   String?
+  motherEmail   String?
+  motherOccup   String?
+  guardianName  String?
+  guardianPhone String?
+  guardianRel   String?
+  primaryContact String  @default("FATHER")
 
-  userId          String?   @unique
-  user            User?     @relation(fields: [userId], references: [id])
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
-  students        Student[]
+  students Student[]
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("parents")
 }
 
-model Batch {
-  id            String            @id @default(cuid())
-  batchCode     String            @unique
-  name          String
-  subject       String?
-  teacherName   String?
-  schedule      String?
-  academicYear  String
-  isActive      Boolean           @default(true)
-
-  enrollments   BatchEnrollment[]
-
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-
-  @@index([batchCode])
-  @@index([academicYear])
-  @@map("batches")
-}
-
 model EmergencyContact {
-  id           String   @id @default(cuid())
+  id           String  @id @default(cuid())
   studentId    String
   name         String
   relationship String
   phone        String
-  isVerified   Boolean  @default(false)
+  isVerified   Boolean @default(false)
 
-  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@index([studentId])
   @@map("emergency_contacts")
 }
 
 model MedicalInfo {
-  id              String   @id @default(cuid())
-  studentId       String   @unique
-  allergies       String?
-  medications     String?
-  conditions      String?
-  doctorName      String?
-  doctorPhone     String?
-  insuranceInfo   String?
-  extraNotes      String?
+  id            String  @id @default(cuid())
+  studentId     String  @unique
+  allergies     String?
+  medications   String?
+  conditions    String?
+  doctorName    String?
+  doctorPhone   String?
+  insuranceInfo String?
+  extraNotes    String?
 
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("medical_info")
 }
 
 model StudentDocument {
-  id           String       @id @default(cuid())
-  studentId    String
-  name         String
-  type         DocumentType
-  fileUrl      String
-  fileSize     String?
-  uploadedAt   DateTime     @default(now())
+  id         String       @id @default(cuid())
+  studentId  String
+  name       String
+  type       DocumentType
+  fileUrl    String
+  fileSize   String?
+  uploadedAt DateTime     @default(now())
 
-  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@map("student_documents")
 }
 
 model SiblingLink {
-  id         String  @id @default(cuid())
-  studentId  String
-  siblingId  String
+  id        String @id @default(cuid())
+  studentId String
+  siblingId String
 
-  student    Student @relation("StudentSiblings", fields: [studentId], references: [id], onDelete: Cascade)
-  sibling    Student @relation("SiblingOfStudent", fields: [siblingId], references: [id], onDelete: Cascade)
+  student Student @relation("StudentSiblings", fields: [studentId], references: [id], onDelete: Cascade)
+  sibling Student @relation("SiblingOfStudent", fields: [siblingId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, siblingId])
   @@index([studentId])
@@ -381,53 +501,126 @@ model SiblingLink {
   @@map("sibling_links")
 }
 
-model BatchEnrollment {
-  id          String    @id @default(cuid())
-  studentId   String
-  batchId     String
-  joinDate    DateTime  @default(now())
-  leaveDate   DateTime?
-  isActive    Boolean   @default(true)
-
-  student     Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  batch       Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime  @default(now())
-
-  @@index([studentId])
-  @@index([batchId])
-  @@map("batch_enrollments")
-}
-
 model Attendance {
-  id          String   @id @default(cuid())
-  studentId   String
-  batchId     String?
-  classDate   DateTime
-  status      String
-  remark      String?
+  id              String           @id @default(cuid())
+  studentId       String
+  batchId         String
+  sessionId       String?
+  date            DateTime
+  markedAt        DateTime         @default(now())
+  markedBy        String
+  status          AttendanceStatus @default(ABSENT)
+  lateMinutes     Int?
+  arrivalTime     String?
+  isLeaveApproved Boolean          @default(false)
+  leaveReason     String?
+  markedViaQR     Boolean          @default(false)
+  qrToken         String?
+  isCorrected     Boolean          @default(false)
+  correctedBy     String?
+  correctedAt     DateTime?
+  originalStatus  AttendanceStatus?
+  correctionReason String?
+  parentNotified  Boolean          @default(false)
+  notifiedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch           Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  session         ClassSession?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  @@index([studentId])
-  @@index([classDate])
+  @@unique([studentId, batchId, date])
+  @@index([batchId, date])
+  @@index([studentId, date])
   @@map("attendance")
 }
 
-model FeeRecord {
-  id          String   @id @default(cuid())
-  studentId   String
-  amount      Float
-  status      String
-  dueDate     DateTime?
-  paidAt      DateTime?
-  method      String?
-  note        String?
+model AttendanceSession {
+  id              String           @id @default(cuid())
+  batchId         String
+  sessionId       String?
+  date            DateTime
+  markedBy        String
+  markedAt        DateTime         @default(now())
+  isComplete      Boolean          @default(false)
+  completedAt     DateTime?
+  totalStudents   Int              @default(0)
+  presentCount    Int              @default(0)
+  absentCount     Int              @default(0)
+  lateCount       Int              @default(0)
+  leaveCount      Int              @default(0)
+  qrCode          String?          @unique
+  qrExpiresAt     DateTime?
+  qrIsActive      Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  batch           Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, date])
+  @@index([batchId, date])
+  @@map("attendance_sessions")
+}
+
+model AttendanceAlert {
+  id              String        @id @default(cuid())
+  studentId       String
+  batchId         String
+  alertType       AlertType
+  currentPercent  Float
+  threshold       Float
+  message         String
+  isRead          Boolean       @default(false)
+  isResolved      Boolean       @default(false)
+  resolvedAt      DateTime?
+  createdAt       DateTime      @default(now())
+
+  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch           Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([batchId])
+  @@index([isResolved])
+  @@map("attendance_alerts")
+}
+
+model AttendanceNotification {
+  id              String           @id @default(cuid())
+  studentId       String
+  batchId         String
+  date            DateTime
+  status          AttendanceStatus
+  sentTo          String
+  sentVia         String
+  message         String
+  isSent          Boolean          @default(false)
+  sentAt          DateTime?
+  failReason      String?
+  createdAt       DateTime         @default(now())
+
+  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch           Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([batchId])
+  @@index([isSent])
+  @@map("attendance_notifications")
+}
+
+model FeeRecord {
+  id        String   @id @default(cuid())
+  studentId String
+  amount    Float
+  status    String
+  dueDate   DateTime?
+  paidAt    DateTime?
+  method    String?
+  note      String?
+
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([studentId])
   @@index([status])
@@ -435,24 +628,24 @@ model FeeRecord {
 }
 
 model ExamResult {
-  id          String   @id @default(cuid())
-  studentId   String
-  examName    String
-  subject     String
-  score       Float
-  totalMarks  Float
-  examDate    DateTime
-  note        String?
+  id         String   @id @default(cuid())
+  studentId  String
+  examName   String
+  subject    String
+  score      Float
+  totalMarks Float
+  examDate   DateTime
+  note       String?
 
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@index([studentId])
   @@map("exam_results")
 }
 
 model StudentActivity {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   studentId     String
   type          String
   title         String
@@ -460,11 +653,454 @@ model StudentActivity {
   metadata      Json?
   performedById String?
 
-  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  performedBy   User?    @relation("StudentActivityPerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
-  createdAt     DateTime @default(now())
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  performedBy User?    @relation("StudentActivityPerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
 
   @@index([studentId])
   @@index([createdAt])
   @@map("student_activities")
+}
+
+// ─── Module 4: Teacher Management ────────────────────────────────────────────
+
+model Teacher {
+  id String @id @default(cuid())
+
+  // Basic Info
+  teacherCode    String  @unique
+  firstName      String
+  lastName       String
+  email          String  @unique
+  phone          String
+  alternatePhone String?
+  dateOfBirth    DateTime?
+  gender         Gender
+  bloodGroup     BloodGroup?
+  profilePhoto   String?
+
+  // Address
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  pincode      String?
+
+  // Professional Info
+  qualification   String?
+  specialization  String?
+  experience      Int?
+  joiningDate     DateTime       @default(now())
+  employmentType  EmploymentType @default(FULL_TIME)
+
+  // Salary Info
+  salaryType     SalaryType @default(FIXED)
+  fixedSalary    Float?
+  perClassRate   Float?
+  perStudentRate Float?
+
+  // Bank Details
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+  upiId         String?
+
+  // Status
+  status TeacherStatus @default(ACTIVE)
+
+  // Login Access
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // Relations
+  subjects      TeacherSubject[]
+  batches       Batch[]
+  attendance    TeacherAttendance[]
+  leaves        TeacherLeave[]
+  salaryRecords SalaryRecord[]
+  documents     TeacherDocument[]
+  performance   TeacherPerformance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("teachers")
+}
+
+model Subject {
+  id          String  @id @default(cuid())
+  name        String
+  code        String  @unique
+  description String?
+  isActive    Boolean @default(true)
+
+  teachers TeacherSubject[]
+  batches  Batch[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subjects")
+}
+
+model TeacherSubject {
+  id        String  @id @default(cuid())
+  teacherId String
+  subjectId String
+  isPrimary Boolean @default(false)
+
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, subjectId])
+  @@map("teacher_subjects")
+}
+
+model TeacherAttendance {
+  id        String           @id @default(cuid())
+  teacherId String
+  date      DateTime
+  status    TeacherAttdStatus @default(PRESENT)
+  checkIn   DateTime?
+  checkOut  DateTime?
+  notes     String?
+  markedBy  String
+
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, date])
+  @@map("teacher_attendance")
+}
+
+model TeacherLeave {
+  id           String      @id @default(cuid())
+  teacherId    String
+  leaveType    LeaveType
+  fromDate     DateTime
+  toDate       DateTime
+  totalDays    Int
+  reason       String
+  status       LeaveStatus @default(PENDING)
+  reviewedBy   String?
+  reviewNote   String?
+  reviewedAt   DateTime?
+  substituteId String?
+
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("teacher_leaves")
+}
+
+model SalaryRecord {
+  id        String @id @default(cuid())
+  teacherId String
+  month     Int
+  year      Int
+
+  // Calculation
+  baseSalary    Float
+  classesHeld   Int   @default(0)
+  studentCount  Int   @default(0)
+  calculatedPay Float
+
+  // Adjustments
+  bonus      Float @default(0)
+  deductions Float @default(0)
+  finalAmount Float
+
+  // Payment
+  status        PaymentStatus @default(PENDING)
+  paidDate      DateTime?
+  paymentMode   String?
+  transactionId String?
+  notes         String?
+
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teacherId, month, year])
+  @@map("salary_records")
+}
+
+model TeacherDocument {
+  id         String         @id @default(cuid())
+  teacherId  String
+  name       String
+  type       TeacherDocType
+  fileUrl    String
+  fileSize   String?
+  expiryDate DateTime?
+  uploadedAt DateTime       @default(now())
+
+  teacher Teacher @relation(fields: [teacherId], references: [id])
+
+  @@map("teacher_documents")
+}
+
+model TeacherPerformance {
+  id        String @id @default(cuid())
+  teacherId String
+  month     Int
+  year      Int
+
+  // Metrics
+  totalClasses     Int     @default(0)
+  classesTaken     Int     @default(0)
+  avgRating        Float?
+  studentsFeedback String?
+  adminNotes       String?
+
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, month, year])
+  @@map("teacher_performance")
+}
+
+// ─── Module 5: Batch & Schedule Management ───────────────────────────────────
+
+model Room {
+  id         String   @id @default(cuid())
+  name       String
+  code       String   @unique
+  capacity   Int
+  floor      String?
+  building   String?
+  facilities String[]
+  isActive   Boolean  @default(true)
+
+  batches  Batch[]
+  sessions ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rooms")
+}
+
+model Batch {
+  id String @id @default(cuid())
+
+  // Identity
+  name        String
+  code        String  @unique
+  description String?
+  color       String?
+
+  // Subject and Teacher
+  subjectId String
+  teacherId String
+
+  // Schedule
+  days            DayOfWeek[]
+  startTime       String
+  endTime         String
+  durationMinutes Int         @default(0)
+
+  // Room
+  roomId String?
+
+  // Capacity
+  maxStrength     Int @default(30)
+  currentStrength Int @default(0)
+
+  // Academic
+  academicYear String
+  startDate    DateTime
+  endDate      DateTime?
+  fees         Float    @default(0)
+
+  // Status
+  status      BatchStatus @default(ACTIVE)
+  isOnline    Boolean     @default(false)
+  meetingLink String?
+
+  // Relations
+  subject        Subject           @relation(fields: [subjectId], references: [id])
+  teacher        Teacher           @relation(fields: [teacherId], references: [id])
+  room           Room?             @relation(fields: [roomId], references: [id])
+  enrollments    BatchEnrollment[]
+  sessions       ClassSession[]
+  attendance     Attendance[]
+  attendanceSessions AttendanceSession[]
+  attendanceAlerts AttendanceAlert[]
+  attendanceNotifications AttendanceNotification[]
+  timetableSlots TimetableSlot[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@index([academicYear])
+  @@index([teacherId])
+  @@index([subjectId])
+  @@map("batches")
+}
+
+model BatchEnrollment {
+  id         String    @id @default(cuid())
+  studentId  String
+  batchId    String
+  enrollDate DateTime  @default(now())
+  leaveDate  DateTime?
+  isActive   Boolean   @default(true)
+  enrolledBy String
+  notes      String?
+
+  student Student  @relation(fields: [studentId], references: [id])
+  batch   Batch    @relation(fields: [batchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, batchId])
+  @@index([studentId])
+  @@index([batchId])
+  @@map("batch_enrollments")
+}
+
+model TimetableSlot {
+  id        String    @id @default(cuid())
+  batchId   String
+  day       DayOfWeek
+  startTime String
+  endTime   String
+  roomId    String?
+  isActive  Boolean   @default(true)
+
+  batch Batch @relation(fields: [batchId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+  @@map("timetable_slots")
+}
+
+model ClassSession {
+  id String @id @default(cuid())
+
+  batchId   String
+  teacherId String
+  roomId    String?
+
+  // Schedule
+  date            DateTime
+  startTime       String
+  endTime         String
+  durationMinutes Int
+
+  // Content
+  topic       String?
+  description String?
+  homework    String?
+
+  // Status
+  status       SessionStatus @default(SCHEDULED)
+  cancelReason String?
+  cancelledBy  String?
+  cancelledAt  DateTime?
+
+  // Reschedule
+  isRescheduled    Boolean   @default(false)
+  originalDate     DateTime?
+  rescheduledTo    DateTime?
+  rescheduleReason String?
+
+  // Substitute
+  hasSubstitute Boolean @default(false)
+  substituteId  String?
+
+  // Relations
+  batch      Batch        @relation(fields: [batchId], references: [id])
+  room       Room?        @relation(fields: [roomId], references: [id])
+  attendance Attendance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([batchId])
+  @@index([date])
+  @@index([status])
+  @@map("class_sessions")
+}
+
+model Holiday {
+  id          String      @id @default(cuid())
+  name        String
+  date        DateTime
+  type        HolidayType
+  description String?
+  isRecurring Boolean     @default(false)
+  affectsAll  Boolean     @default(true)
+  batchIds    String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@map("holidays")
+}
+
+model AcademicCalendar {
+  id          String            @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  type        CalendarEventType
+  color       String?
+  isAllDay    Boolean           @default(true)
+  batchIds    String[]
+  createdBy   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startDate])
+  @@map("academic_calendar")
+}
+
+model ConflictLog {
+  id          String       @id @default(cuid())
+  type        ConflictType
+  description String
+  batchId     String?
+  teacherId   String?
+  roomId      String?
+  date        DateTime?
+  timeSlot    String?
+  isResolved  Boolean      @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([isResolved])
+  @@map("conflict_logs")
+}
+
+// ─── Legacy ClassSchedule (kept for backward compatibility) ──────────────────
+
+model ClassSchedule {
+  id           String      @id @default(cuid())
+  batchId      String
+  date         DateTime
+  startTime    String
+  endTime      String
+  topic        String?
+  status       ClassStatus @default(SCHEDULED)
+  cancelReason String?
+  substituteId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("class_schedules")
 }

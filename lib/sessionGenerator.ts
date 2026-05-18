@@ -1,0 +1,128 @@
+import { prisma } from "@/lib/prisma";
+
+type DayOfWeek =
+  | "MONDAY"
+  | "TUESDAY"
+  | "WEDNESDAY"
+  | "THURSDAY"
+  | "FRIDAY"
+  | "SATURDAY"
+  | "SUNDAY";
+
+const DAY_MAP: Record<number, DayOfWeek> = {
+  0: "SUNDAY",
+  1: "MONDAY",
+  2: "TUESDAY",
+  3: "WEDNESDAY",
+  4: "THURSDAY",
+  5: "FRIDAY",
+  6: "SATURDAY",
+};
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function isSameDay(d1: Date, d2: Date): boolean {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
+
+function calcDuration(startTime: string, endTime: string): number {
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  return (eh * 60 + em) - (sh * 60 + sm);
+}
+
+export interface GenerateSessionsParams {
+  batchId: string;
+  teacherId: string;
+  roomId: string | null;
+  startDate: Date;
+  endDate: Date;
+  days: DayOfWeek[];
+  startTime: string;
+  endTime: string;
+}
+
+export async function generateSessions(params: GenerateSessionsParams): Promise<number> {
+  const { batchId, teacherId, roomId, startDate, endDate, days, startTime, endTime } = params;
+
+  // Load all holidays in range
+  const holidays = await prisma.holiday.findMany({
+    where: {
+      date: { gte: startDate, lte: endDate },
+      affectsAll: true,
+    },
+    select: { date: true },
+  });
+
+  const holidayDates = holidays.map((h) => h.date);
+  const duration = calcDuration(startTime, endTime);
+
+  const sessionsToCreate: Array<{
+    batchId: string;
+    teacherId: string;
+    roomId: string | null;
+    date: Date;
+    startTime: string;
+    endTime: string;
+    durationMinutes: number;
+    status: "SCHEDULED";
+  }> = [];
+
+  let current = new Date(startDate);
+  // Ensure we start at midnight
+  current.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+
+  while (current <= end) {
+    const dayOfWeek = DAY_MAP[current.getDay()];
+    if (days.includes(dayOfWeek)) {
+      const isHoliday = holidayDates.some((hd) => isSameDay(hd, current));
+      if (!isHoliday) {
+        sessionsToCreate.push({
+          batchId,
+          teacherId,
+          roomId: roomId || null,
+          date: new Date(current),
+          startTime,
+          endTime,
+          durationMinutes: duration,
+          status: "SCHEDULED",
+        });
+      }
+    }
+    current = addDays(current, 1);
+  }
+
+  if (sessionsToCreate.length === 0) return 0;
+
+  await prisma.classSession.createMany({ data: sessionsToCreate });
+  return sessionsToCreate.length;
+}
+
+export async function regenerateFutureSessions(
+  batchId: string,
+  params: GenerateSessionsParams
+): Promise<number> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Delete all future SCHEDULED sessions
+  await prisma.classSession.deleteMany({
+    where: {
+      batchId,
+      date: { gte: today },
+      status: "SCHEDULED",
+    },
+  });
+
+  return generateSessions({ ...params, startDate: today });
+}

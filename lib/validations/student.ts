@@ -17,7 +17,7 @@ const optionalBlankToUndefinedDateSchema = z.preprocess(
   z.coerce.date().optional()
 );
 
-const optionalBlankToUndefinedEnum = <T extends z.ZodEnum<[string, ...string[]]>>(schema: T) =>
+const optionalBlankToUndefinedEnum = (schema: z.ZodTypeAny) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema.optional());
 
 const academicYearSchema = z

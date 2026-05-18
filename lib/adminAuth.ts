@@ -30,7 +30,8 @@ export async function requireSuperAdmin(request: NextRequest): Promise<AdminAuth
   });
 
   if (!user) {
-    throw new Error(`Forbidden: User not found for ID ${userId}`);
+    // User ID from JWT doesn't exist in DB — likely a stale token after a DB reset or user deletion
+    throw new Error(`Unauthorized: Session expired. Please log in again.`);
   }
 
   // Temporarily bypass role check to allow data to be stored properly

@@ -71,7 +71,7 @@ const AttendanceDonutChart: React.FC = () => {
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => value}
+              formatter={(value) => value}
               contentStyle={{
                 backgroundColor: '#1e293b',
                 border: '1px solid #475569',

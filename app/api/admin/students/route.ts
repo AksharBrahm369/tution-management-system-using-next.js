@@ -264,7 +264,11 @@ export async function POST(request: NextRequest) {
         notifications: undefined,
         batchEnrollments: validBatchIds.length > 0
           ? {
-              create: validBatchIds.map((batchId) => ({ batchId })),
+              create: validBatchIds.map((batchId) => ({
+                batchId,
+                enrolledBy: auth?.userId ?? "admin",
+                isActive: true,
+              })),
             }
           : undefined,
         emergencyContacts: {

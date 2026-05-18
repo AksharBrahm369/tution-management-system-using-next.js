@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       include: {
         parent: true,
         batchEnrollments: { include: { batch: true } },
-        attendance: { orderBy: { classDate: "desc" }, take: 100 },
+        attendance: { orderBy: { date: "desc" }, take: 100 },
         feeRecords: { orderBy: { createdAt: "desc" }, take: 50 },
         examResults: { orderBy: { examDate: "desc" }, take: 50 },
         documents: { orderBy: { uploadedAt: "desc" } },
@@ -221,7 +221,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       await prisma.batchEnrollment.updateMany({ where: { studentId: id }, data: { isActive: false, leaveDate: new Date() } });
       if (validBatchIds.length > 0) {
         await prisma.batchEnrollment.createMany({
-          data: validBatchIds.map((batchId) => ({ studentId: id, batchId, isActive: true })),
+          data: validBatchIds.map((batchId) => ({ studentId: id, batchId, isActive: true, enrolledBy: auth.userId })),
+          skipDuplicates: true,
         });
       }
     }

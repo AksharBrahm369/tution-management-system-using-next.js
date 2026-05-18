@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Loader2, Save } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
+import { z } from "zod";
 import { studentCreateSchema, StudentCreateInput } from "@/lib/validations/student";
 import StepProgress from "./StepProgress";
 import Step1BasicInfo from "./Step1BasicInfo";
@@ -169,9 +170,9 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
     enabled: isEditMode,
   });
 
-  const form = useForm<StudentCreateInput>({
-    resolver: zodResolver(studentCreateSchema) as never,
-    defaultValues: buildDefaultValues(null) as never,
+  const form = useForm<z.input<typeof studentCreateSchema>, any, z.output<typeof studentCreateSchema>>({
+    resolver: zodResolver(studentCreateSchema),
+    defaultValues: buildDefaultValues(null),
   });
 
   useEffect(() => {
@@ -180,13 +181,10 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
     }
   }, [existingStudent, form]);
 
-  const generatedCode = useMemo(() => {
-    if (isEditMode) {
-      return existingStudent?.studentCode ?? form.watch("studentCode") ?? "";
-    }
-
-    return codeData?.code ?? form.watch("studentCode") ?? "";
-  }, [codeData?.code, existingStudent?.studentCode, form, isEditMode]);
+  const watchedStudentCode = String(form.watch("studentCode") ?? "");
+  const generatedCode: string = isEditMode
+    ? existingStudent?.studentCode ?? watchedStudentCode ?? ""
+    : codeData?.code ?? watchedStudentCode ?? "";
 
   const stepFields: Record<number, (keyof StudentCreateInput)[]> = {
     1: ["firstName", "lastName", "email", "phone", "dateOfBirth", "gender", "bloodGroup", "academicYear", "profilePhoto"],

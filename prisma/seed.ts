@@ -24,23 +24,25 @@ type SeedStudent = {
   category: StudentCategory;
 };
 
-const batches = [
-  {
-    batchCode: "BAT-001",
-    name: "Grade 10 - Math",
-    subject: "Mathematics",
-    teacherName: "Mr. Sharma",
-    schedule: "Mon, Wed, Fri - 4:00 PM",
-    academicYear: "2025-26",
-  },
-  {
-    batchCode: "BAT-002",
-    name: "Grade 9 - Science",
-    subject: "Science",
-    teacherName: "Dr. Kumar",
-    schedule: "Tue, Thu, Sat - 5:00 PM",
-    academicYear: "2025-26",
-  },
+const subjects = [
+  { name: "Mathematics", code: "MATH" },
+  { name: "Physics", code: "PHY" },
+  { name: "Chemistry", code: "CHEM" },
+  { name: "Biology", code: "BIO" },
+  { name: "English", code: "ENG" },
+  { name: "Hindi", code: "HIN" },
+  { name: "History", code: "HIST" },
+  { name: "Geography", code: "GEO" },
+  { name: "Computer Science", code: "CS" },
+  { name: "Accountancy", code: "ACC" },
+];
+
+const teachers = [
+  { name: "Rahul Sharma", code: "TCH-2025-001", email: "rahul@tuitionpro.com", phone: "9876543210", subjectCode: "MATH", employment: "FULL_TIME", salaryType: "FIXED", salary: 25000 },
+  { name: "Priya Mehta", code: "TCH-2025-002", email: "priya@tuitionpro.com", phone: "9876543220", subjectCode: "PHY", employment: "FULL_TIME", salaryType: "FIXED", salary: 22000 },
+  { name: "Amit Verma", code: "TCH-2025-003", email: "amit@tuitionpro.com", phone: "9876543230", subjectCode: "CHEM", employment: "PART_TIME", salaryType: "PER_CLASS", salary: 500 },
+  { name: "Sneha Joshi", code: "TCH-2025-004", email: "sneha@tuitionpro.com", phone: "9876543240", subjectCode: "ENG", employment: "VISITING", salaryType: "PER_CLASS", salary: 400 },
+  { name: "Vikram Patel", code: "TCH-2025-005", email: "vikram@tuitionpro.com", phone: "9876543250", subjectCode: "CS", employment: "FULL_TIME", salaryType: "FIXED", salary: 28000 },
 ];
 
 const students: SeedStudent[] = [
@@ -49,11 +51,6 @@ const students: SeedStudent[] = [
   { code: "STU-2025-003", firstName: "Darshan", lastName: "Zala", gender: "MALE", phone: "9876543230", city: "Ahmedabad", fatherName: "Mahesh Zala", fatherPhone: "9876543231", status: "ACTIVE", category: "GOOD" },
   { code: "STU-2025-004", firstName: "Kiara", lastName: "Shah", gender: "FEMALE", phone: "9876543240", city: "Surat", fatherName: "Anil Shah", fatherPhone: "9876543241", status: "ON_LEAVE", category: "AVERAGE" },
   { code: "STU-2025-005", firstName: "Vihaan", lastName: "Mehta", gender: "MALE", phone: "9876543250", city: "Rajkot", fatherName: "Nilesh Mehta", fatherPhone: "9876543251", status: "SUSPENDED", category: "WEAK" },
-  { code: "STU-2025-006", firstName: "Anaya", lastName: "Joshi", gender: "FEMALE", phone: "9876543260", city: "Vadodara", fatherName: "Rakesh Joshi", fatherPhone: "9876543261", status: "ACTIVE", category: "TOPPER" },
-  { code: "STU-2025-007", firstName: "Reyansh", lastName: "Desai", gender: "MALE", phone: "9876543270", city: "Jamnagar", fatherName: "Bhavesh Desai", fatherPhone: "9876543271", status: "GRADUATED", category: "GOOD" },
-  { code: "STU-2025-008", firstName: "Ishita", lastName: "Thakkar", gender: "FEMALE", phone: "9876543280", city: "Bhavnagar", fatherName: "Tushar Thakkar", fatherPhone: "9876543281", status: "INACTIVE", category: "AVERAGE" },
-  { code: "STU-2025-009", firstName: "Kabir", lastName: "Vora", gender: "MALE", phone: "9876543290", city: "Junagadh", fatherName: "Pankaj Vora", fatherPhone: "9876543291", status: "TRANSFERRED", category: "GOOD" },
-  { code: "STU-2025-010", firstName: "Meera", lastName: "Rana", gender: "FEMALE", phone: "9876543300", city: "Gandhinagar", fatherName: "Hitesh Rana", fatherPhone: "9876543301", status: "ACTIVE", category: "TOPPER" },
 ];
 
 async function ensureAdminUser() {
@@ -76,10 +73,31 @@ async function ensureAdminUser() {
 async function main() {
   await ensureAdminUser();
 
+  // Module 5 cleanup
+  await prisma.classSession.deleteMany();
+  await prisma.timetableSlot.deleteMany();
+  await prisma.conflictLog.deleteMany();
+  await prisma.academicCalendar.deleteMany();
+  await prisma.holiday.deleteMany();
+
+  await prisma.classSchedule.deleteMany();
+  await prisma.teacherPerformance.deleteMany();
+  await prisma.teacherDocument.deleteMany();
+  await prisma.salaryRecord.deleteMany();
+  await prisma.teacherLeave.deleteMany();
+  await prisma.teacherAttendance.deleteMany();
+  await prisma.teacherSubject.deleteMany();
+  
+  // Module 6 cleanup
+  await prisma.attendanceNotification.deleteMany();
+  await prisma.attendanceAlert.deleteMany();
+  await prisma.attendanceSession.deleteMany();
+  await prisma.attendance.deleteMany();
+  
+  // Module 3 cleanup
   await prisma.studentActivity.deleteMany();
   await prisma.examResult.deleteMany();
   await prisma.feeRecord.deleteMany();
-  await prisma.attendance.deleteMany();
   await prisma.batchEnrollment.deleteMany();
   await prisma.siblingLink.deleteMany();
   await prisma.studentDocument.deleteMany();
@@ -88,8 +106,121 @@ async function main() {
   await prisma.student.deleteMany();
   await prisma.parent.deleteMany();
   await prisma.batch.deleteMany();
+  await prisma.room.deleteMany();
+  
+  await prisma.teacher.deleteMany();
+  await prisma.subject.deleteMany();
 
-  const createdBatches = await Promise.all(batches.map((batch) => prisma.batch.create({ data: batch })));
+  // Seed Subjects
+  const createdSubjects = [];
+  for (const sub of subjects) {
+    createdSubjects.push(await prisma.subject.create({ data: sub }));
+  }
+
+  // Seed Teachers
+  const createdTeachers = [];
+  for (const t of teachers) {
+    const subject = createdSubjects.find(s => s.code === t.subjectCode);
+    const firstName = t.name.split(" ")[0];
+    const lastName = t.name.split(" ").slice(1).join(" ");
+    
+    const teacher = await prisma.teacher.create({
+      data: {
+        teacherCode: t.code,
+        firstName,
+        lastName,
+        email: t.email,
+        phone: t.phone,
+        gender: "MALE", // Defaulting for simplicity in seed
+        employmentType: t.employment as any,
+        salaryType: t.salaryType as any,
+        fixedSalary: t.salaryType === "FIXED" ? t.salary : null,
+        perClassRate: t.salaryType === "PER_CLASS" ? t.salary : null,
+        status: "ACTIVE",
+        subjects: {
+          create: {
+            subjectId: subject!.id,
+            isPrimary: true
+          }
+        }
+      }
+    });
+    createdTeachers.push(teacher);
+  }
+
+  // Seed Batches
+  const batches = [
+    {
+      code: "BCH-2025-001",
+      name: "Grade 10 - Mathematics Morning",
+      subjectId: createdSubjects.find(s => s.code === "MATH")?.id,
+      teacherId: createdTeachers.find(t => t.teacherCode === "TCH-2025-001")?.id,
+      days: ["MONDAY", "WEDNESDAY", "FRIDAY"],
+      startTime: "16:00",
+      endTime: "17:30",
+      durationMinutes: 90,
+      academicYear: "2025-26",
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 11, 31),
+      maxStrength: 30,
+      fees: 1500,
+      status: "ACTIVE",
+      color: "#3B82F6",
+    },
+    {
+      code: "BCH-2025-002",
+      name: "Grade 9 - Physics Evening",
+      subjectId: createdSubjects.find(s => s.code === "PHY")?.id,
+      teacherId: createdTeachers.find(t => t.teacherCode === "TCH-2025-002")?.id,
+      days: ["TUESDAY", "THURSDAY", "SATURDAY"],
+      startTime: "17:00",
+      endTime: "18:30",
+      durationMinutes: 90,
+      academicYear: "2025-26",
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 11, 31),
+      maxStrength: 25,
+      fees: 1200,
+      status: "ACTIVE",
+      color: "#8B5CF6",
+    },
+    {
+      code: "BCH-2025-003",
+      name: "Grade 11 - Chemistry",
+      subjectId: createdSubjects.find(s => s.code === "CHEM")?.id,
+      teacherId: createdTeachers.find(t => t.teacherCode === "TCH-2025-003")?.id,
+      days: ["MONDAY", "WEDNESDAY"],
+      startTime: "18:00",
+      endTime: "19:30",
+      durationMinutes: 90,
+      academicYear: "2025-26",
+      startDate: new Date(2025, 2, 1),
+      endDate: new Date(2025, 11, 31),
+      maxStrength: 20,
+      fees: 1800,
+      status: "UPCOMING",
+      color: "#10B981",
+    },
+    {
+      code: "BCH-2025-004",
+      name: "Grade 12 - English Communication",
+      subjectId: createdSubjects.find(s => s.code === "ENG")?.id,
+      teacherId: createdTeachers.find(t => t.teacherCode === "TCH-2025-004")?.id,
+      days: ["TUESDAY", "FRIDAY"],
+      startTime: "15:00",
+      endTime: "16:00",
+      durationMinutes: 60,
+      academicYear: "2025-26",
+      startDate: new Date(2025, 0, 1),
+      endDate: new Date(2025, 11, 31),
+      maxStrength: 30,
+      fees: 1000,
+      status: "ACTIVE",
+      color: "#F59E0B",
+    },
+  ];
+
+  const createdBatches = await Promise.all(batches.map((batch) => prisma.batch.create({ data: batch as any })));
   const createdStudents: Array<{ id: string; studentCode: string; firstName: string; lastName: string }> = [];
 
   for (const [index, student] of students.entries()) {
@@ -126,17 +257,12 @@ async function main() {
         emergencyContacts: {
           create: [{ name: student.fatherName, relationship: "Father", phone: student.fatherPhone, isVerified: true }],
         },
-        activities: {
-          create: {
-            type: "ENROLLED",
-            title: "Student enrolled",
-            description: `${student.firstName} ${student.lastName} was added to TuitionPro.`,
-          },
-        },
         batchEnrollments: {
           create: {
             batchId: createdBatches[index % createdBatches.length].id,
-            joinDate: new Date(),
+            enrollDate: new Date(),
+            enrolledBy: "seed",
+            isActive: true,
           },
         },
       },
@@ -145,37 +271,193 @@ async function main() {
     createdStudents.push(createdStudent);
   }
 
-  await prisma.siblingLink.create({
-    data: {
-      studentId: createdStudents[0].id,
-      siblingId: createdStudents[1].id,
-    },
+  // Seed Rooms
+  const rooms = [
+    { name: "Room 101", code: "R101", capacity: 35, floor: "1st", building: "Main Building", facilities: ["Whiteboard", "Air Conditioning"] },
+    { name: "Room 102", code: "R102", capacity: 30, floor: "1st", building: "Main Building", facilities: ["Whiteboard", "Projector"] },
+    { name: "Computer Lab", code: "CLAB", capacity: 25, floor: "2nd", building: "Main Building", facilities: ["Computer", "WiFi", "Air Conditioning"] },
+    { name: "Science Lab", code: "SLAB", capacity: 20, floor: "Ground", building: "Science Block", facilities: ["Whiteboard"] },
+  ];
+  const createdRooms = [];
+  for (const room of rooms) {
+    createdRooms.push(await prisma.room.create({ data: room }));
+  }
+
+  // Seed Holidays
+  const holidays = [
+    { name: "Republic Day", date: new Date(new Date().getFullYear(), 0, 26), type: "NATIONAL" as const, affectsAll: true },
+    { name: "Holi", date: new Date(new Date().getFullYear(), 2, 14), type: "NATIONAL" as const, affectsAll: true },
+    { name: "Independence Day", date: new Date(new Date().getFullYear(), 7, 15), type: "NATIONAL" as const, affectsAll: true },
+    { name: "Dussehra", date: new Date(new Date().getFullYear(), 9, 2), type: "NATIONAL" as const, affectsAll: true },
+    { name: "Diwali", date: new Date(new Date().getFullYear(), 10, 1), type: "NATIONAL" as const, affectsAll: true },
+    { name: "Christmas", date: new Date(new Date().getFullYear(), 11, 25), type: "NATIONAL" as const, affectsAll: true },
+  ];
+  await prisma.holiday.createMany({ data: holidays });
+
+  // Seed Calendar Events  
+  const adminUser = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+  await prisma.academicCalendar.createMany({
+    data: [
+      { title: "Annual Exam Season", startDate: new Date(new Date().getFullYear(), 2, 1), endDate: new Date(new Date().getFullYear(), 2, 31), type: "EXAM", color: "#EF4444", createdBy: adminUser!.id },
+      { title: "Parent-Teacher Meeting", startDate: new Date(new Date().getFullYear(), 3, 15), type: "PTM", color: "#8B5CF6", isAllDay: true, createdBy: adminUser!.id },
+      { title: "Enrollment Period 2025-26", startDate: new Date(new Date().getFullYear(), 3, 1), endDate: new Date(new Date().getFullYear(), 4, 31), type: "ENROLLMENT", color: "#10B981", createdBy: adminUser!.id },
+    ],
   });
 
-  await prisma.medicalInfo.create({
-    data: {
-      studentId: createdStudents[0].id,
-      allergies: "Peanuts",
-      medications: "None",
-      conditions: "None",
-      doctorName: "Dr. Mehta",
-      doctorPhone: "9876500000",
-      insuranceInfo: "Standard Health Insurance",
-      extraNotes: "Uses spectacles during study hours.",
-    },
-  });
+  console.log(`Seeded ${createdSubjects.length} subjects, ${createdTeachers.length} teachers, ${createdStudents.length} students, ${createdBatches.length} batches, ${createdRooms.length} rooms, ${holidays.length} holidays.`);
 
-  await prisma.studentDocument.create({
-    data: {
-      studentId: createdStudents[0].id,
-      name: "Birth Certificate",
-      type: "BIRTH_CERTIFICATE",
-      fileUrl: "https://example.com/birth-certificate.pdf",
-      fileSize: "1.2 MB",
-    },
-  });
+  // ─── Seed Attendance Data (Module 6) ──────────────────────────────────────
 
-  console.log(`Seeded ${createdStudents.length} students and ${createdBatches.length} batches.`);
+  // Generate attendance for past 30 days
+  const today = new Date();
+  const pastDays = 30;
+  const attendanceStatuses = ["PRESENT", "ABSENT", "LATE", "HALF_DAY", "ON_LEAVE"];
+  const adminUser2 = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+
+  // Track for alerts
+  const studentAttendanceCounts: { [key: string]: { total: number; present: number } } = {};
+
+  for (let dayOffset = pastDays; dayOffset > 0; dayOffset--) {
+    const attendanceDate = new Date(today);
+    attendanceDate.setDate(attendanceDate.getDate() - dayOffset);
+    
+    // Skip holidays
+    const isHoliday = holidays.some(h => {
+      const hDate = new Date(h.date);
+      return hDate.getDate() === attendanceDate.getDate() &&
+             hDate.getMonth() === attendanceDate.getMonth() &&
+             hDate.getFullYear() === attendanceDate.getFullYear();
+    });
+
+    if (isHoliday) continue;
+
+    // Skip Sundays
+    if (attendanceDate.getDay() === 0) continue;
+
+    for (const batch of createdBatches) {
+      // Check if batch has class on this day
+      const dayName = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"][attendanceDate.getDay()];
+      if (!(batch.days as string[]).includes(dayName)) continue;
+
+      const enrollments = await prisma.batchEnrollment.findMany({
+        where: { batchId: batch.id, isActive: true },
+        include: { student: true },
+      });
+
+      // Create attendance records for each student
+      let presentCount = 0;
+      let absentCount = 0;
+      let lateCount = 0;
+      let leaveCount = 0;
+
+      for (const enrollment of enrollments) {
+        const statusIndex = Math.floor(Math.random() * 100);
+        let status: string;
+
+        if (statusIndex < 80) status = "PRESENT";
+        else if (statusIndex < 90) status = "LATE";
+        else if (statusIndex < 95) status = "ON_LEAVE";
+        else status = "ABSENT";
+
+        const lateMinutes = status === "LATE" ? Math.floor(Math.random() * 30) + 5 : undefined;
+        const arrivalTime = status === "LATE" ? `${String(Math.floor(Math.random() * 12) + 13).padStart(2, "0")}:${String(Math.floor(Math.random() * 60)).padStart(2, "0")}` : undefined;
+
+        await prisma.attendance.create({
+          data: {
+            studentId: enrollment.studentId,
+            batchId: batch.id,
+            date: attendanceDate,
+            status: status as any,
+            markedAt: new Date(),
+            markedBy: "seed",
+            lateMinutes,
+            arrivalTime,
+            parentNotified: status === "ABSENT" || status === "HALF_DAY",
+            notifiedAt: status === "ABSENT" || status === "HALF_DAY" ? new Date() : undefined,
+          },
+        });
+
+        // Count for session summary
+        if (status === "PRESENT") presentCount++;
+        else if (status === "ABSENT") absentCount++;
+        else if (status === "LATE") lateCount++;
+        else if (status === "ON_LEAVE") leaveCount++;
+
+        // Track for attendance percentage
+        const key = `${enrollment.studentId}-${batch.id}`;
+        if (!studentAttendanceCounts[key]) {
+          studentAttendanceCounts[key] = { total: 0, present: 0 };
+        }
+        studentAttendanceCounts[key].total++;
+        if (status === "PRESENT" || status === "LATE") {
+          studentAttendanceCounts[key].present++;
+        }
+      }
+
+      // Create attendance session record
+      await prisma.attendanceSession.create({
+        data: {
+          batchId: batch.id,
+          date: attendanceDate,
+          markedBy: "seed",
+          markedAt: new Date(),
+          isComplete: true,
+          completedAt: new Date(),
+          totalStudents: enrollments.length,
+          presentCount,
+          absentCount,
+          lateCount,
+          leaveCount,
+        },
+      });
+    }
+  }
+
+  // Create attendance alerts for low attendance students
+  const alertThreshold = 75;
+  for (const key in studentAttendanceCounts) {
+    const [studentId, batchId] = key.split("-");
+    const { total, present } = studentAttendanceCounts[key];
+    const percentage = total > 0 ? (present / total) * 100 : 0;
+
+    if (percentage < alertThreshold) {
+      await prisma.attendanceAlert.create({
+        data: {
+          studentId,
+          batchId,
+          alertType: percentage < 60 ? "LOW_ATTENDANCE" : "LOW_ATTENDANCE",
+          currentPercent: percentage,
+          threshold: alertThreshold,
+          message: `${Math.round(percentage)}% attendance. Below ${alertThreshold}% threshold.`,
+          isRead: false,
+          isResolved: false,
+        },
+      });
+    }
+  }
+
+  // Create sample notifications
+  const sampleStudents = createdStudents.slice(0, 3);
+  for (const student of sampleStudents) {
+    await prisma.attendanceNotification.create({
+      data: {
+        studentId: student.id,
+        batchId: createdBatches[0].id,
+        date: new Date(),
+        status: "ABSENT",
+        sentTo: student.firstName,
+        sentVia: "WHATSAPP",
+        message: `Dear Parent, ${student.firstName} was absent from class today.`,
+        isSent: true,
+        sentAt: new Date(),
+      },
+    });
+  }
+
+  console.log(`✓ Seeded attendance records for past ${pastDays} days`);
+  console.log(`✓ Created ${Object.keys(studentAttendanceCounts).length} student attendance records`);
+  console.log(`✓ Created attendance alerts for low attendance students`);
+  console.log(`✓ Created sample attendance notifications`);
 }
 
 main()

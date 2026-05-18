@@ -80,11 +80,11 @@ const FeeBarChart: React.FC = () => {
               borderRadius: '8px',
               color: '#f1f5f9',
             }}
-            formatter={(value: number) => `₹ ${value.toLocaleString('en-IN')}`}
+            formatter={(value) => `₹ ${Number(value ?? 0).toLocaleString('en-IN')}`}
           />
           <Legend />
-          <Bar dataKey="collected" fill="#3b82f6" name="Collected" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="pending" fill="#ef4444" name="Pending" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="collected" fill="#3b82f6" name="Collected" radius={8} />
+          <Bar dataKey="pending" fill="#ef4444" name="Pending" radius={8} />
         </BarChart>
       </ResponsiveContainer>
     </div>

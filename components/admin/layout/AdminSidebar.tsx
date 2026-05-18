@@ -148,8 +148,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
-  const handleLogout = () => {
-    router.push('/api/auth/logout');
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (res.ok) {
+        router.push('/login');
+        router.refresh();
+      }
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
   };
 
   const sidebarWidth = isCollapsed ? 72 : 260;

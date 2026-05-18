@@ -11,6 +11,8 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useState } from "react";
 import { LogOut, LayoutDashboard, ChevronRight } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardLayout({
   children,
 }: {

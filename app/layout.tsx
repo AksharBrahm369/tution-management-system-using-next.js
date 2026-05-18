@@ -48,8 +48,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="h-full antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <body className="h-full antialiased" suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
       </body>
