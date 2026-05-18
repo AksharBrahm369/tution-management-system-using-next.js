@@ -104,11 +104,33 @@ export interface StudentProfileData {
   }>;
   feeRecords: Array<{
     id: string;
-    amount: number;
+    receiptNumber: string;
+    month: number;
+    year: number;
+    academicYear: string;
+    baseFee: number;
+    discountAmount: number;
+    scholarshipAmount: number;
+    lateFee: number;
+    otherCharges: number;
+    gstAmount: number;
+    totalAmount: number;
+    paidAmount: number;
+    pendingAmount: number;
     status: string;
-    paidAt: string | null;
+    paidDate: string | null;
     dueDate: string | null;
-    method: string | null;
+    batch: StudentBatch;
+    payments: Array<{
+      id: string;
+      paymentNumber: string;
+      amount: number;
+      paymentMode: string;
+      status: string;
+      paidAt: string;
+      collectedBy: string;
+      notes: string | null;
+    }>;
   }>;
   examResults: Array<{
     id: string;

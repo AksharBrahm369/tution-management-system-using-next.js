@@ -53,7 +53,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
       case "attendance":
         return <AttendanceTab student={data} />;
       case "fees":
-        return <FeesTab student={data} />;
+        return <FeesTab student={data} onChanged={() => { setRefreshKey((value) => value + 1); refetch(); }} />;
       case "exams":
         return <ExamsTab />;
       case "documents":

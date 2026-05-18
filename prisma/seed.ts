@@ -96,7 +96,15 @@ async function main() {
   
   // Module 3 cleanup
   await prisma.studentActivity.deleteMany();
+  await prisma.onlineAttempt.deleteMany();
+  await prisma.studentAnswer.deleteMany();
+  await prisma.examQuestion.deleteMany();
   await prisma.examResult.deleteMany();
+  await prisma.exam.deleteMany();
+  await prisma.gradeRange.deleteMany();
+  await prisma.gradeConfig.deleteMany();
+  await prisma.reportCard.deleteMany();
+  await prisma.performanceAnalysis.deleteMany();
   await prisma.feeRecord.deleteMany();
   await prisma.batchEnrollment.deleteMany();
   await prisma.siblingLink.deleteMany();
@@ -635,6 +643,216 @@ async function main() {
   console.log(`✓ Created ${Object.keys(studentAttendanceCounts).length} student attendance records`);
   console.log(`✓ Created attendance alerts for low attendance students`);
   console.log(`✓ Created sample attendance notifications`);
+
+  // ─── Module 8: Exams & Results Seeding ────────────────────────────────────
+
+  // Create default Grade Config
+  const gradeConfig = await prisma.gradeConfig.create({
+    data: {
+      name: "Standard Percentage Grading",
+      description: "Default grading system used by the institute",
+      isDefault: true,
+      grades: {
+        create: [
+          { grade: "A+", minPercentage: 90, maxPercentage: 100, gradePoint: 10, remark: "Excellent", color: "#10B981" },
+          { grade: "A", minPercentage: 80, maxPercentage: 89.99, gradePoint: 9, remark: "Very Good", color: "#34D399" },
+          { grade: "B+", minPercentage: 70, maxPercentage: 79.99, gradePoint: 8, remark: "Good", color: "#60A5FA" },
+          { grade: "B", minPercentage: 60, maxPercentage: 69.99, gradePoint: 7, remark: "Above Average", color: "#93C5FD" },
+          { grade: "C", minPercentage: 50, maxPercentage: 59.99, gradePoint: 6, remark: "Average", color: "#FBBF24" },
+          { grade: "D", minPercentage: 40, maxPercentage: 49.99, gradePoint: 5, remark: "Below Average", color: "#F87171" },
+          { grade: "F", minPercentage: 0, maxPercentage: 39.99, gradePoint: 0, remark: "Fail", color: "#DC2626" },
+        ]
+      }
+    }
+  });
+
+  const mathBatch = createdBatches[0];
+  const phyBatch = createdBatches[1];
+  const engBatch = createdBatches[3];
+
+  // Exam 1
+  const exam1 = await prisma.exam.create({
+    data: {
+      title: "Unit Test 1 - January",
+      code: "EXM-2025-001",
+      type: "UNIT_TEST",
+      batchId: mathBatch.id,
+      subjectId: mathBatch.subjectId,
+      academicYear: "2025-26",
+      examDate: new Date(2025, 0, 20),
+      totalMarks: 50,
+      passingMarks: 20,
+      status: "RESULT_PUBLISHED",
+      isResultPublished: true,
+      resultPublishedAt: new Date(2025, 0, 22),
+      gradingSystem: "PERCENTAGE",
+      gradeConfig: JSON.stringify(gradeConfig),
+      createdBy: adminUser!.id,
+    }
+  });
+
+  // Exam 2
+  const exam2 = await prisma.exam.create({
+    data: {
+      title: "Unit Test 1 - Physics",
+      code: "EXM-2025-002",
+      type: "UNIT_TEST",
+      batchId: phyBatch.id,
+      subjectId: phyBatch.subjectId,
+      academicYear: "2025-26",
+      examDate: new Date(2025, 0, 22),
+      totalMarks: 50,
+      passingMarks: 20,
+      status: "RESULT_PUBLISHED",
+      isResultPublished: true,
+      resultPublishedAt: new Date(2025, 0, 24),
+      gradingSystem: "PERCENTAGE",
+      gradeConfig: JSON.stringify(gradeConfig),
+      createdBy: adminUser!.id,
+    }
+  });
+
+  // Exam 3
+  await prisma.exam.create({
+    data: {
+      title: "Mid Term - Mathematics",
+      code: "EXM-2025-003",
+      type: "MID_TERM",
+      batchId: mathBatch.id,
+      subjectId: mathBatch.subjectId,
+      academicYear: "2025-26",
+      examDate: new Date(2025, 1, 15),
+      totalMarks: 100,
+      passingMarks: 35,
+      status: "RESULT_PENDING",
+      gradingSystem: "PERCENTAGE",
+      gradeConfig: JSON.stringify(gradeConfig),
+      createdBy: adminUser!.id,
+    }
+  });
+
+  // Exam 4
+  await prisma.exam.create({
+    data: {
+      title: "Class Test - English",
+      code: "EXM-2025-004",
+      type: "CLASS_TEST",
+      batchId: engBatch.id,
+      subjectId: engBatch.subjectId,
+      academicYear: "2025-26",
+      examDate: new Date(2025, 1, 25),
+      totalMarks: 25,
+      passingMarks: 10,
+      status: "UPCOMING",
+      gradingSystem: "PERCENTAGE",
+      gradeConfig: JSON.stringify(gradeConfig),
+      createdBy: adminUser!.id,
+    }
+  });
+
+  // Exam 5 (Online Test)
+  const exam5 = await prisma.exam.create({
+    data: {
+      title: "Online Quiz - Math",
+      code: "EXM-2025-005",
+      type: "ONLINE_TEST",
+      batchId: mathBatch.id,
+      subjectId: mathBatch.subjectId,
+      academicYear: "2025-26",
+      examDate: new Date(2025, 1, 28),
+      totalMarks: 30,
+      passingMarks: 12,
+      status: "UPCOMING",
+      gradingSystem: "PERCENTAGE",
+      gradeConfig: JSON.stringify(gradeConfig),
+      createdBy: adminUser!.id,
+      duration: 30,
+    }
+  });
+
+  // Seed Questions for Exam 5
+  const questionsData = Array.from({ length: 10 }).map((_, i) => ({
+    examId: exam5.id,
+    questionNumber: i + 1,
+    questionText: `Sample Multiple Choice Question ${i + 1} for Math Quiz`,
+    questionType: "MCQ" as const,
+    marks: 3,
+    optionA: "Option 1",
+    optionB: "Option 2",
+    optionC: "Option 3",
+    optionD: "Option 4",
+    correctOption: "B",
+    difficulty: i < 3 ? "EASY" : (i < 7 ? "MEDIUM" : "HARD") as any,
+    topic: "Algebra",
+  }));
+  await prisma.examQuestion.createMany({ data: questionsData });
+
+  // Generate Results for Exam 1 & 2
+  const generateResults = async (exam: any, batchId: string) => {
+    const studentsInBatch = await prisma.batchEnrollment.findMany({ where: { batchId, isActive: true }, include: { student: true } });
+    const results = [];
+
+    for (const enr of studentsInBatch) {
+      const isAbsent = Math.random() < 0.1;
+      let marks = null;
+      let percent = null;
+
+      if (!isAbsent) {
+        marks = parseFloat((exam.passingMarks + Math.random() * (exam.totalMarks - exam.passingMarks + 5)).toFixed(1));
+        if (marks > exam.totalMarks) marks = exam.totalMarks;
+        percent = parseFloat(((marks / exam.totalMarks) * 100).toFixed(2));
+      }
+
+      results.push({
+        examId: exam.id,
+        studentId: enr.studentId,
+        batchId: exam.batchId,
+        marksObtained: marks,
+        totalMarks: exam.totalMarks,
+        percentage: percent,
+        status: isAbsent ? "PUBLISHED" as any : "PUBLISHED" as any,
+        isAbsent,
+        teacherRemarks: isAbsent ? "Absent for exam" : (percent && percent > 80 ? "Excellent work" : "Needs improvement"),
+        enteredBy: adminUser!.id,
+        enteredAt: new Date(),
+        verifiedBy: adminUser!.id,
+        verifiedAt: new Date(),
+      });
+    }
+
+    // Sort to calculate ranks
+    const presentResults = results.filter(r => !r.isAbsent).sort((a, b) => (b.marksObtained || 0) - (a.marksObtained || 0));
+    
+    let currentRank = 1;
+    for (let i = 0; i < presentResults.length; i++) {
+      if (i > 0 && presentResults[i].marksObtained === presentResults[i-1].marksObtained) {
+        (presentResults[i] as any).batchRank = (presentResults[i-1] as any).batchRank;
+      } else {
+        (presentResults[i] as any).batchRank = currentRank;
+      }
+      
+      // Calculate grade
+      const p = presentResults[i].percentage || 0;
+      let grade = "F"; let gp = 0;
+      if (p >= 90) { grade = "A+"; gp = 10; }
+      else if (p >= 80) { grade = "A"; gp = 9; }
+      else if (p >= 70) { grade = "B+"; gp = 8; }
+      else if (p >= 60) { grade = "B"; gp = 7; }
+      else if (p >= 50) { grade = "C"; gp = 6; }
+      else if (p >= 40) { grade = "D"; gp = 5; }
+
+      (presentResults[i] as any).grade = grade;
+      (presentResults[i] as any).gradePoint = gp;
+      currentRank++;
+    }
+
+    await prisma.examResult.createMany({ data: results });
+  };
+
+  await generateResults(exam1, mathBatch.id);
+  await generateResults(exam2, phyBatch.id);
+
+  console.log(`✓ Seeded Exams, Grade Configs and generated Exam Results`);
 }
 
 main()

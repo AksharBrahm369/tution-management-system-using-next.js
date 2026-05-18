@@ -221,6 +221,64 @@ enum DiscountType {
   EARLY_PAYMENT
 }
 
+// Module 8 enums: Exams and results
+enum ExamType {
+  UNIT_TEST
+  MID_TERM
+  FINAL
+  MOCK_TEST
+  CLASS_TEST
+  ASSIGNMENT
+  PRACTICAL
+  ONLINE_TEST
+}
+
+enum ExamStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+  RESULT_PENDING
+  RESULT_PUBLISHED
+}
+
+enum GradingSystem {
+  PERCENTAGE
+  GRADE_POINTS
+  MARKS
+  PASS_FAIL
+}
+
+enum ResultStatus {
+  PENDING
+  ENTERED
+  VERIFIED
+  PUBLISHED
+}
+
+enum QuestionType {
+  MCQ
+  SHORT_ANSWER
+  LONG_ANSWER
+  TRUE_FALSE
+  FILL_BLANK
+  MATCH
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum AttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+  TERMINATED
+}
+
 enum ChequeStatus {
   PENDING
   CLEARED
@@ -471,6 +529,10 @@ model Student {
   attendanceNotifications AttendanceNotification[]
   feeRecords              FeeRecord[]
   examResults             ExamResult[]
+  studentAnswers          StudentAnswer[]
+  onlineAttempts          OnlineAttempt[]
+  reportCards             ReportCard[]
+  performanceAnalyses     PerformanceAnalysis[]
   documents               StudentDocument[]
   emergencyContacts       EmergencyContact[]
   medicalInfo             MedicalInfo?
@@ -922,21 +984,266 @@ model OnlinePaymentOrder {
   @@map("online_payment_orders")
 }
 
-model ExamResult {
-  id         String   @id @default(cuid())
-  studentId  String
-  examName   String
-  subject    String
-  score      Float
-  totalMarks Float
-  examDate   DateTime
-  note       String?
+model Exam {
+  id String @id @default(cuid())
 
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title       String
+  code        String   @unique
+  description String?
+  type        ExamType
+
+  batchId      String
+  subjectId    String
+  academicYear String
+
+  examDate  DateTime
+  startTime String?
+  endTime   String?
+  duration  Int?
+
+  totalMarks         Float
+  passingMarks       Float
+  hasNegativeMarking Boolean @default(false)
+  negativeMarkValue  Float   @default(0)
+
+  gradingSystem GradingSystem @default(PERCENTAGE)
+  gradeConfig   Json?
+
+  status            ExamStatus @default(UPCOMING)
+  isResultPublished Boolean    @default(false)
+  resultPublishedAt DateTime?
+  publishedBy       String?
+
+  batch          Batch           @relation(fields: [batchId], references: [id])
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+  results        ExamResult[]
+  questions      ExamQuestion[]
+  onlineAttempts OnlineAttempt[]
+  createdBy      String
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@index([batchId])
+  @@index([subjectId])
+  @@index([status])
+  @@index([examDate])
+  @@map("exams")
+}
+
+model ExamResult {
+  id String @id @default(cuid())
+
+  examId    String
+  studentId String
+  batchId   String
+
+  marksObtained Float?
+  totalMarks    Float
+  percentage    Float?
+
+  grade      String?
+  gradePoint Float?
+
+  batchRank   Int?
+  overallRank Int?
+
+  status           ResultStatus @default(PENDING)
+  isAbsent         Boolean      @default(false)
+  isDisqualified   Boolean      @default(false)
+  disqualifyReason String?
+
+  answerSheetUrl String?
+
+  teacherRemarks String?
+  strengthAreas  String[]
+  weakAreas      String[]
+
+  enteredBy  String?
+  enteredAt  DateTime?
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examId, studentId])
+  @@index([batchId, examId])
   @@index([studentId])
   @@map("exam_results")
+}
+
+model ExamQuestion {
+  id String @id @default(cuid())
+
+  examId         String
+  questionNumber Int
+  questionText   String
+  questionType   QuestionType
+  marks          Float
+  negativeMarks  Float        @default(0)
+
+  optionA       String?
+  optionB       String?
+  optionC       String?
+  optionD       String?
+  correctOption String?
+
+  modelAnswer     String?
+  answerKeyPoints String[]
+
+  topic      String?
+  difficulty Difficulty @default(MEDIUM)
+
+  exam           Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentAnswers StudentAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examId, questionNumber])
+  @@map("exam_questions")
+}
+
+model StudentAnswer {
+  id String @id @default(cuid())
+
+  questionId String
+  studentId  String
+  attemptId  String?
+
+  selectedOption String?
+  writtenAnswer  String?
+  marksAwarded   Float?
+  isCorrect      Boolean?
+
+  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  student  Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attempt  OnlineAttempt? @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([questionId])
+  @@index([studentId])
+  @@index([attemptId])
+  @@map("student_answers")
+}
+
+model OnlineAttempt {
+  id String @id @default(cuid())
+
+  examId    String
+  studentId String
+
+  startedAt        DateTime?
+  submittedAt      DateTime?
+  timeSpentMinutes Int?
+
+  status AttemptStatus @default(NOT_STARTED)
+
+  autoScore  Float?
+  finalScore Float?
+
+  tabSwitchCount  Int     @default(0)
+  isTerminated    Boolean @default(false)
+  terminateReason String?
+
+  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers StudentAnswer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+  @@map("online_attempts")
+}
+
+model GradeConfig {
+  id String @id @default(cuid())
+
+  name        String
+  description String?
+  isDefault   Boolean @default(false)
+
+  grades GradeRange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("grade_configs")
+}
+
+model GradeRange {
+  id String @id @default(cuid())
+
+  configId      String
+  grade         String
+  minPercentage Float
+  maxPercentage Float
+  gradePoint    Float
+  remark        String?
+  color         String?
+
+  config GradeConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([configId])
+  @@map("grade_ranges")
+}
+
+model ReportCard {
+  id String @id @default(cuid())
+
+  studentId    String
+  batchId      String
+  academicYear String
+  term         String
+  generatedAt  DateTime @default(now())
+  generatedBy  String
+  pdfUrl       String?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, batchId, academicYear, term])
+  @@index([batchId])
+  @@map("report_cards")
+}
+
+model PerformanceAnalysis {
+  id String @id @default(cuid())
+
+  studentId String
+  batchId   String
+  subjectId String
+  month     Int
+  year      Int
+
+  avgScore        Float
+  highestScore    Float
+  lowestScore     Float
+  examsTaken      Int
+  examsAbsent     Int
+  improvementRate Float?
+
+  strongTopics String[]
+  weakTopics   String[]
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, batchId, month, year])
+  @@index([subjectId])
+  @@map("performance_analysis")
 }
 
 model StudentActivity {
@@ -1031,6 +1338,7 @@ model Subject {
 
   teachers TeacherSubject[]
   batches  Batch[]
+  exams    Exam[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1231,6 +1539,7 @@ model Batch {
   updatedAt     DateTime       @updatedAt
   feeStructures FeeStructure[]
   feeRecords    FeeRecord[]
+  exams         Exam[]
 
   @@index([code])
   @@index([status])

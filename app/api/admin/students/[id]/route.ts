@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { BloodGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { studentUpdateSchema } from "@/lib/validations/student";
@@ -23,7 +24,14 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
         parent: true,
         batchEnrollments: { include: { batch: true } },
         attendance: { orderBy: { date: "desc" }, take: 100 },
-        feeRecords: { orderBy: { createdAt: "desc" }, take: 50 },
+        feeRecords: {
+          include: {
+            batch: true,
+            payments: { orderBy: { paidAt: "desc" } },
+          },
+          orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
+          take: 50,
+        },
         examResults: { orderBy: { examDate: "desc" }, take: 50 },
         documents: { orderBy: { uploadedAt: "desc" } },
         emergencyContacts: true,
@@ -39,8 +47,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
     const attendanceTotal = student.attendance.length;
     const attendancePresent = student.attendance.filter((item) => item.status === "PRESENT").length;
-    const feePaid = student.feeRecords.filter((record) => record.status === "PAID").reduce((sum, record) => sum + record.amount, 0);
-    const feePending = student.feeRecords.filter((record) => record.status !== "PAID").reduce((sum, record) => sum + record.amount, 0);
+    const feePaid = student.feeRecords.reduce((sum, record) => sum + record.paidAmount, 0);
+    const feePending = student.feeRecords.reduce((sum, record) => sum + record.pendingAmount, 0);
 
     return NextResponse.json(
       {
@@ -79,7 +87,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : null;
 
     // Convert bloodGroup from validation schema to Prisma enum
-    const bloodGroupValue = data.bloodGroup as any;
+    const bloodGroupValue = data.bloodGroup as BloodGroup | undefined;
 
     if (email && email !== existing.email) {
       const duplicateEmail = await prisma.student.findFirst({
