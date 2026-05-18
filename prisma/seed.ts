@@ -454,6 +454,183 @@ async function main() {
     });
   }
 
+  // ─── Seed Fee Structures, FeeRecords and Payments (Module 7) ─────────────
+  const feeStructuresData = [
+    {
+      name: "Standard Class 10",
+      description: "Standard tuition structure for Grade 10",
+      academicYear: "2025-26",
+      tuitionFee: 1500,
+      admissionFee: 0,
+      examFee: 0,
+      materialFee: 0,
+      otherFee: 0,
+      totalFee: 1500,
+      isGSTApplicable: false,
+      lateFeeEnabled: true,
+      lateFeeType: "FIXED",
+      lateFeeAmount: 50,
+      lateFeeAfterDays: 5,
+      dueDateType: "DAY_OF_MONTH",
+      dueDateDay: 10,
+      batchId: createdBatches[0].id,
+    },
+    {
+      name: "Standard Class 9",
+      description: "Standard tuition structure for Grade 9",
+      academicYear: "2025-26",
+      tuitionFee: 1200,
+      totalFee: 1200,
+      isGSTApplicable: false,
+      lateFeeEnabled: true,
+      lateFeeType: "FIXED",
+      lateFeeAmount: 30,
+      lateFeeAfterDays: 5,
+      dueDateType: "DAY_OF_MONTH",
+      dueDateDay: 10,
+      batchId: createdBatches[1].id,
+    },
+    {
+      name: "English Classes",
+      description: "English communication classes",
+      academicYear: "2025-26",
+      tuitionFee: 1000,
+      totalFee: 1000,
+      isGSTApplicable: false,
+      lateFeeEnabled: true,
+      lateFeeType: "FIXED",
+      lateFeeAmount: 25,
+      lateFeeAfterDays: 5,
+      dueDateType: "DAY_OF_MONTH",
+      dueDateDay: 10,
+      batchId: createdBatches[3].id,
+    },
+  ];
+
+  const createdFeeStructures = [];
+  for (const fs of feeStructuresData) {
+    createdFeeStructures.push(await prisma.feeStructure.create({ data: fs as any }));
+  }
+
+  // Generate FeeRecords for last 3 months for all active enrollments
+  const enrollments = await prisma.batchEnrollment.findMany({ where: { isActive: true }, include: { student: true, batch: true } });
+  const now = new Date();
+  const monthsToGenerate = [0, 1, 2].map(i => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    return { month: d.getMonth() + 1, year: d.getFullYear() };
+  });
+
+  for (const enrollment of enrollments) {
+    const feeStructure = await prisma.feeStructure.findFirst({ where: { batchId: enrollment.batchId } });
+    for (const m of monthsToGenerate) {
+      const exists = await prisma.feeRecord.findFirst({ where: { studentId: enrollment.studentId, batchId: enrollment.batchId, month: m.month, year: m.year } });
+      if (exists) continue;
+
+      const baseFee = feeStructure ? feeStructure.tuitionFee : enrollment.batch.fees || 0;
+      const gstAmount = feeStructure && feeStructure.isGSTApplicable ? (baseFee * (feeStructure.gstPercentage || 18)) / 100 : 0;
+      const totalAmount = baseFee + gstAmount;
+
+      // Determine status by weighted random
+      const r = Math.random() * 100;
+      let status: any = "PENDING";
+      let paidAmount = 0;
+
+      if (r < 60) {
+        status = "PAID";
+        paidAmount = totalAmount;
+      } else if (r < 80) {
+        status = "PENDING";
+        paidAmount = 0;
+      } else if (r < 95) {
+        status = "PARTIAL";
+        paidAmount = parseFloat((totalAmount * (0.2 + Math.random() * 0.6)).toFixed(2));
+      } else {
+        status = "OVERDUE";
+        paidAmount = 0;
+      }
+
+      const pendingAmount = parseFloat((totalAmount - paidAmount).toFixed(2));
+      const dueDate = new Date(m.year, m.month - 1, feeStructure ? feeStructure.dueDateDay || 10 : 10);
+
+      const receiptNumber = `RCP-${m.year}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+
+      const feeRecord = await prisma.feeRecord.create({
+        data: {
+          receiptNumber,
+          studentId: enrollment.studentId,
+          batchId: enrollment.batchId,
+          feeStructureId: feeStructure ? feeStructure.id : null,
+          month: m.month,
+          year: m.year,
+          academicYear: enrollment.batch.academicYear,
+          baseFee,
+          discountAmount: 0,
+          scholarshipAmount: 0,
+          lateFee: 0,
+          otherCharges: 0,
+          totalAmount: parseFloat(totalAmount.toFixed(2)),
+          paidAmount: parseFloat(paidAmount.toFixed(2)),
+          pendingAmount,
+          status: status as any,
+          dueDate,
+          isGSTApplicable: feeStructure ? feeStructure.isGSTApplicable : false,
+          gstAmount: parseFloat(gstAmount.toFixed(2)),
+        },
+      });
+
+      // Create payment records for PAID and PARTIAL
+      if (status === "PAID" || status === "PARTIAL") {
+        const paymentNumber = `PAY-${m.year}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+        const paymentModeOptions = ["CASH", "ONLINE", "UPI", "CHEQUE"];
+        const chosenMode = paymentModeOptions[Math.floor(Math.random() * paymentModeOptions.length)];
+
+        await prisma.feePayment.create({
+          data: {
+            paymentNumber,
+            feeRecordId: feeRecord.id,
+            amount: parseFloat(feeRecord.paidAmount.toFixed(2)),
+            paymentMode: chosenMode as any,
+            transactionId: chosenMode === "ONLINE" ? `TXN-${Math.random().toString(36).slice(2, 9).toUpperCase()}` : null,
+            gatewayName: chosenMode === "ONLINE" ? "Razorpay" : null,
+            status: "COMPLETED",
+            collectedBy: "seed",
+            receiptUrl: null,
+          },
+        });
+      }
+    }
+  }
+
+  // Create some sample discounts & scholarships
+  if (createdStudents.length > 1) {
+    await prisma.discount.create({
+      data: {
+        studentId: createdStudents[1].id,
+        name: "Sibling Discount",
+        type: "PERCENTAGE",
+        value: 10,
+        reason: "Sibling in institute",
+        validFrom: new Date(),
+        validTo: null,
+        approvedBy: adminUser!.id,
+      },
+    });
+
+    await prisma.scholarship.create({
+      data: {
+        studentId: createdStudents[2].id,
+        name: "Merit Scholarship",
+        description: "Top performer scholarship",
+        amount: 200,
+        percentage: null,
+        validFrom: new Date(),
+        validTo: null,
+        approvedBy: adminUser!.id,
+      },
+    });
+  }
+
+
   console.log(`✓ Seeded attendance records for past ${pastDays} days`);
   console.log(`✓ Created ${Object.keys(studentAttendanceCounts).length} student attendance records`);
   console.log(`✓ Created attendance alerts for low attendance students`);

@@ -143,7 +143,7 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
   const { data: codeData, refetch: refetchGeneratedCode } = useQuery({
     queryKey: ["admin-student-code", studentId ?? "new"],
     queryFn: async () => {
-      const response = await fetch("/api/admin/students/generate-code");
+      const response = await fetch("/api/admin/students/generate-code", { credentials: "include" });
       if (!response.ok) {
         return { code: "" };
       }
@@ -160,9 +160,14 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
   } = useQuery({
     queryKey: ["admin-students", studentId],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/students/${studentId}`);
+      const response = await fetch(`/api/admin/students/${studentId}`, { credentials: "include" });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          // session expired
+          router.push("/auth/login");
+          throw new Error(payload.error ?? "Unauthorized: Please log in again.");
+        }
         throw new Error(payload.error ?? "Failed to load student");
       }
       return (await response.json()) as StudentApiResponse;
@@ -233,6 +238,7 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
           method: method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
+          credentials: "include",
         });
 
         console.log(`📥 Response received - Status: ${response.status} ${response.statusText}`);
@@ -240,6 +246,11 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
           console.error("❌ API Error Response:", payload);
+          if (response.status === 401) {
+            // Session expired or unauthorized - redirect to login
+            router.push("/auth/login");
+            throw new Error(payload.error ?? "Unauthorized: Please log in again.");
+          }
           throw new Error(payload.error ?? "Failed to save student");
         }
 

@@ -1,4 +1,4 @@
-// TuitionPro - Prisma Database Schema
+ // TuitionPro - Prisma Database Schema
 // Modules 1-5: Auth, Dashboard, Students, Teachers, Batches & Schedules
 
 generator client {
@@ -95,6 +95,7 @@ enum PaymentStatus {
   PAID
   PARTIAL
   ON_HOLD
+  COMPLETED
 }
 
 enum TeacherDocType {
@@ -178,6 +179,82 @@ enum AttendanceStatus {
   ON_LEAVE
   HOLIDAY
   CANCELLED
+}
+
+// Fee module enums
+enum FeeStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  WAIVED
+  REFUNDED
+}
+
+enum PaymentMode {
+  CASH
+  ONLINE
+  CHEQUE
+  UPI
+  BANK_TRANSFER
+  DD
+}
+
+enum LateFeeType {
+  FIXED
+  PERCENTAGE
+  PER_DAY
+}
+
+enum DueDateType {
+  DAY_OF_MONTH
+  FIXED_DATE
+}
+
+enum DiscountType {
+  FIXED
+  PERCENTAGE
+  SIBLING
+  MERIT
+  NEED_BASED
+  STAFF_CHILD
+  EARLY_PAYMENT
+}
+
+enum ChequeStatus {
+  PENDING
+  CLEARED
+  BOUNCED
+  CANCELLED
+}
+
+enum ReminderChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+  ALL
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+}
+
+enum OrderStatus {
+  CREATED
+  ATTEMPTED
+  PAID
+  FAILED
+  EXPIRED
 }
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -356,10 +433,10 @@ enum DocumentType {
 model Student {
   id String @id @default(cuid())
 
-  studentCode  String  @unique
+  studentCode  String      @unique
   firstName    String
   lastName     String
-  email        String? @unique
+  email        String?     @unique
   phone        String?
   dateOfBirth  DateTime?
   gender       Gender
@@ -375,35 +452,39 @@ model Student {
   previousSchool String?
   previousClass  String?
   previousMarks  String?
-  joiningDate    DateTime        @default(now())
+  joiningDate    DateTime @default(now())
   academicYear   String
 
   status     StudentStatus   @default(ACTIVE)
   category   StudentCategory @default(AVERAGE)
   referredBy String?
 
-  userId   String? @unique
-  user     User?   @relation(fields: [userId], references: [id])
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   parentId String?
   parent   Parent? @relation(fields: [parentId], references: [id])
 
-  batchEnrollments  BatchEnrollment[]
-  attendance        Attendance[]
-  attendanceAlerts  AttendanceAlert[]
+  batchEnrollments        BatchEnrollment[]
+  attendance              Attendance[]
+  attendanceAlerts        AttendanceAlert[]
   attendanceNotifications AttendanceNotification[]
-  feeRecords        FeeRecord[]
-  examResults       ExamResult[]
-  documents         StudentDocument[]
-  emergencyContacts EmergencyContact[]
-  medicalInfo       MedicalInfo?
-  siblings          SiblingLink[]      @relation("StudentSiblings")
-  siblingOf         SiblingLink[]      @relation("SiblingOfStudent")
-  notifications     Notification[]
-  activities        StudentActivity[]
+  feeRecords              FeeRecord[]
+  examResults             ExamResult[]
+  documents               StudentDocument[]
+  emergencyContacts       EmergencyContact[]
+  medicalInfo             MedicalInfo?
+  siblings                SiblingLink[]            @relation("StudentSiblings")
+  siblingOf               SiblingLink[]            @relation("SiblingOfStudent")
+  notifications           Notification[]
+  activities              StudentActivity[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  discounts           Discount[]
+  scholarships        Scholarship[]
+  refunds             Refund[]
+  onlinePaymentOrders OnlinePaymentOrder[]
 
   @@index([studentCode])
   @@index([firstName, lastName])
@@ -414,18 +495,18 @@ model Student {
 }
 
 model Parent {
-  id            String  @id @default(cuid())
-  fatherName    String?
-  fatherPhone   String?
-  fatherEmail   String?
-  fatherOccup   String?
-  motherName    String?
-  motherPhone   String?
-  motherEmail   String?
-  motherOccup   String?
-  guardianName  String?
-  guardianPhone String?
-  guardianRel   String?
+  id             String  @id @default(cuid())
+  fatherName     String?
+  fatherPhone    String?
+  fatherEmail    String?
+  fatherOccup    String?
+  motherName     String?
+  motherPhone    String?
+  motherEmail    String?
+  motherOccup    String?
+  guardianName   String?
+  guardianPhone  String?
+  guardianRel    String?
   primaryContact String  @default("FATHER")
 
   userId String? @unique
@@ -502,33 +583,33 @@ model SiblingLink {
 }
 
 model Attendance {
-  id              String           @id @default(cuid())
-  studentId       String
-  batchId         String
-  sessionId       String?
-  date            DateTime
-  markedAt        DateTime         @default(now())
-  markedBy        String
-  status          AttendanceStatus @default(ABSENT)
-  lateMinutes     Int?
-  arrivalTime     String?
-  isLeaveApproved Boolean          @default(false)
-  leaveReason     String?
-  markedViaQR     Boolean          @default(false)
-  qrToken         String?
-  isCorrected     Boolean          @default(false)
-  correctedBy     String?
-  correctedAt     DateTime?
-  originalStatus  AttendanceStatus?
+  id               String            @id @default(cuid())
+  studentId        String
+  batchId          String
+  sessionId        String?
+  date             DateTime
+  markedAt         DateTime          @default(now())
+  markedBy         String
+  status           AttendanceStatus  @default(ABSENT)
+  lateMinutes      Int?
+  arrivalTime      String?
+  isLeaveApproved  Boolean           @default(false)
+  leaveReason      String?
+  markedViaQR      Boolean           @default(false)
+  qrToken          String?
+  isCorrected      Boolean           @default(false)
+  correctedBy      String?
+  correctedAt      DateTime?
+  originalStatus   AttendanceStatus?
   correctionReason String?
-  parentNotified  Boolean          @default(false)
-  notifiedAt      DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  parentNotified   Boolean           @default(false)
+  notifiedAt       DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  batch           Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  session         ClassSession?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch   Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  session ClassSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
   @@unique([studentId, batchId, date])
   @@index([batchId, date])
@@ -537,26 +618,26 @@ model Attendance {
 }
 
 model AttendanceSession {
-  id              String           @id @default(cuid())
-  batchId         String
-  sessionId       String?
-  date            DateTime
-  markedBy        String
-  markedAt        DateTime         @default(now())
-  isComplete      Boolean          @default(false)
-  completedAt     DateTime?
-  totalStudents   Int              @default(0)
-  presentCount    Int              @default(0)
-  absentCount     Int              @default(0)
-  lateCount       Int              @default(0)
-  leaveCount      Int              @default(0)
-  qrCode          String?          @unique
-  qrExpiresAt     DateTime?
-  qrIsActive      Boolean          @default(false)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id            String    @id @default(cuid())
+  batchId       String
+  sessionId     String?
+  date          DateTime
+  markedBy      String
+  markedAt      DateTime  @default(now())
+  isComplete    Boolean   @default(false)
+  completedAt   DateTime?
+  totalStudents Int       @default(0)
+  presentCount  Int       @default(0)
+  absentCount   Int       @default(0)
+  lateCount     Int       @default(0)
+  leaveCount    Int       @default(0)
+  qrCode        String?   @unique
+  qrExpiresAt   DateTime?
+  qrIsActive    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  batch           Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batch Batch @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@unique([batchId, date])
   @@index([batchId, date])
@@ -564,20 +645,20 @@ model AttendanceSession {
 }
 
 model AttendanceAlert {
-  id              String        @id @default(cuid())
-  studentId       String
-  batchId         String
-  alertType       AlertType
-  currentPercent  Float
-  threshold       Float
-  message         String
-  isRead          Boolean       @default(false)
-  isResolved      Boolean       @default(false)
-  resolvedAt      DateTime?
-  createdAt       DateTime      @default(now())
+  id             String    @id @default(cuid())
+  studentId      String
+  batchId        String
+  alertType      AlertType
+  currentPercent Float
+  threshold      Float
+  message        String
+  isRead         Boolean   @default(false)
+  isResolved     Boolean   @default(false)
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
 
-  student         Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  batch           Batch         @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@index([batchId])
@@ -586,21 +667,21 @@ model AttendanceAlert {
 }
 
 model AttendanceNotification {
-  id              String           @id @default(cuid())
-  studentId       String
-  batchId         String
-  date            DateTime
-  status          AttendanceStatus
-  sentTo          String
-  sentVia         String
-  message         String
-  isSent          Boolean          @default(false)
-  sentAt          DateTime?
-  failReason      String?
-  createdAt       DateTime         @default(now())
+  id         String           @id @default(cuid())
+  studentId  String
+  batchId    String
+  date       DateTime
+  status     AttendanceStatus
+  sentTo     String
+  sentVia    String
+  message    String
+  isSent     Boolean          @default(false)
+  sentAt     DateTime?
+  failReason String?
+  createdAt  DateTime         @default(now())
 
-  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  batch           Batch            @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  batch   Batch   @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
   @@index([batchId])
@@ -608,23 +689,237 @@ model AttendanceNotification {
   @@map("attendance_notifications")
 }
 
-model FeeRecord {
-  id        String   @id @default(cuid())
-  studentId String
-  amount    Float
-  status    String
-  dueDate   DateTime?
-  paidAt    DateTime?
-  method    String?
-  note      String?
+// Fee management models (Module 7)
 
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+model FeeStructure {
+  id String @id @default(cuid())
+
+  name         String
+  description  String?
+  academicYear String
+
+  tuitionFee   Float @default(0)
+  admissionFee Float @default(0)
+  examFee      Float @default(0)
+  materialFee  Float @default(0)
+  otherFee     Float @default(0)
+  totalFee     Float @default(0)
+
+  isGSTApplicable Boolean @default(false)
+  gstPercentage   Float   @default(18)
+  gstNumber       String?
+
+  lateFeeEnabled   Boolean     @default(true)
+  lateFeeType      LateFeeType @default(FIXED)
+  lateFeeAmount    Float       @default(0)
+  lateFeeAfterDays Int         @default(10)
+
+  dueDateType DueDateType @default(DAY_OF_MONTH)
+  dueDateDay  Int         @default(10)
+
+  batchId    String?
+  batch      Batch?      @relation(fields: [batchId], references: [id])
+  feeRecords FeeRecord[]
+
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([studentId])
-  @@index([status])
+  @@map("fee_structures")
+}
+
+model FeeRecord {
+  id String @id @default(cuid())
+
+  receiptNumber  String  @unique
+  studentId      String
+  batchId        String
+  feeStructureId String?
+
+  month        Int
+  year         Int
+  academicYear String
+
+  baseFee           Float
+  discountAmount    Float   @default(0)
+  discountReason    String?
+  scholarshipAmount Float   @default(0)
+  lateFee           Float   @default(0)
+  otherCharges      Float   @default(0)
+  totalAmount       Float
+  paidAmount        Float   @default(0)
+  pendingAmount     Float
+
+  status   FeeStatus @default(PENDING)
+  dueDate  DateTime
+  paidDate DateTime?
+
+  isGSTApplicable Boolean @default(false)
+  gstAmount       Float   @default(0)
+  gstNumber       String?
+
+  student      Student       @relation(fields: [studentId], references: [id])
+  batch        Batch         @relation(fields: [batchId], references: [id])
+  feeStructure FeeStructure? @relation(fields: [feeStructureId], references: [id])
+  payments     FeePayment[]
+  reminders    FeeReminder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, batchId, month, year])
+  @@index([studentId, status])
+  @@index([batchId, month, year])
   @@map("fee_records")
+}
+
+model FeePayment {
+  id String @id @default(cuid())
+
+  paymentNumber String @unique
+  feeRecordId   String
+
+  amount      Float
+  paymentMode PaymentMode
+
+  cashReceivedBy String?
+
+  transactionId   String?
+  gatewayName     String?
+  gatewayResponse Json?
+
+  chequeNumber String?
+  chequeDate   DateTime?
+  bankName     String?
+  chequeStatus ChequeStatus?
+
+  upiId            String?
+  upiTransactionId String?
+
+  status        PaymentStatus @default(COMPLETED)
+  failureReason String?
+
+  receiptUrl         String?
+  receiptGeneratedAt DateTime?
+
+  notes       String?
+  collectedBy String
+
+  feeRecord FeeRecord @relation(fields: [feeRecordId], references: [id])
+
+  paidAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("fee_payments")
+}
+
+model Discount {
+  id String @id @default(cuid())
+
+  studentId  String
+  batchId    String?
+  name       String
+  type       DiscountType
+  value      Float
+  reason     String
+  validFrom  DateTime
+  validTo    DateTime?
+  isActive   Boolean      @default(true)
+  approvedBy String
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("discounts")
+}
+
+model Scholarship {
+  id String @id @default(cuid())
+
+  studentId   String
+  name        String
+  description String?
+  amount      Float
+  percentage  Float?
+  validFrom   DateTime
+  validTo     DateTime?
+  isActive    Boolean   @default(true)
+  criteria    String?
+  approvedBy  String
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("scholarships")
+}
+
+model FeeReminder {
+  id String @id @default(cuid())
+
+  feeRecordId String
+  studentId   String
+  sentTo      String
+  sentVia     ReminderChannel
+  message     String
+  status      ReminderStatus  @default(PENDING)
+  sentAt      DateTime?
+  failReason  String?
+
+  feeRecord FeeRecord @relation(fields: [feeRecordId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@map("fee_reminders")
+}
+
+model Refund {
+  id String @id @default(cuid())
+
+  paymentId     String
+  studentId     String
+  amount        Float
+  reason        String
+  status        RefundStatus @default(PENDING)
+  processedBy   String?
+  processedAt   DateTime?
+  refundMode    PaymentMode?
+  transactionId String?
+  notes         String?
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("refunds")
+}
+
+model OnlinePaymentOrder {
+  id String @id @default(cuid())
+
+  orderId          String      @unique
+  feeRecordId      String
+  studentId        String
+  amount           Float
+  currency         String      @default("INR")
+  status           OrderStatus @default(CREATED)
+  gatewayOrderId   String?
+  gatewayPaymentId String?
+  gatewaySignature String?
+  attempts         Int         @default(0)
+  expiresAt        DateTime?
+
+  student Student @relation(fields: [studentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("online_payment_orders")
 }
 
 model ExamResult {
@@ -668,10 +963,10 @@ model Teacher {
   id String @id @default(cuid())
 
   // Basic Info
-  teacherCode    String  @unique
+  teacherCode    String      @unique
   firstName      String
   lastName       String
-  email          String  @unique
+  email          String      @unique
   phone          String
   alternatePhone String?
   dateOfBirth    DateTime?
@@ -687,11 +982,11 @@ model Teacher {
   pincode      String?
 
   // Professional Info
-  qualification   String?
-  specialization  String?
-  experience      Int?
-  joiningDate     DateTime       @default(now())
-  employmentType  EmploymentType @default(FULL_TIME)
+  qualification  String?
+  specialization String?
+  experience     Int?
+  joiningDate    DateTime       @default(now())
+  employmentType EmploymentType @default(FULL_TIME)
 
   // Salary Info
   salaryType     SalaryType @default(FIXED)
@@ -758,7 +1053,7 @@ model TeacherSubject {
 }
 
 model TeacherAttendance {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   teacherId String
   date      DateTime
   status    TeacherAttdStatus @default(PRESENT)
@@ -808,8 +1103,8 @@ model SalaryRecord {
   calculatedPay Float
 
   // Adjustments
-  bonus      Float @default(0)
-  deductions Float @default(0)
+  bonus       Float @default(0)
+  deductions  Float @default(0)
   finalAmount Float
 
   // Payment
@@ -913,7 +1208,7 @@ model Batch {
   academicYear String
   startDate    DateTime
   endDate      DateTime?
-  fees         Float    @default(0)
+  fees         Float     @default(0)
 
   // Status
   status      BatchStatus @default(ACTIVE)
@@ -921,19 +1216,21 @@ model Batch {
   meetingLink String?
 
   // Relations
-  subject        Subject           @relation(fields: [subjectId], references: [id])
-  teacher        Teacher           @relation(fields: [teacherId], references: [id])
-  room           Room?             @relation(fields: [roomId], references: [id])
-  enrollments    BatchEnrollment[]
-  sessions       ClassSession[]
-  attendance     Attendance[]
-  attendanceSessions AttendanceSession[]
-  attendanceAlerts AttendanceAlert[]
+  subject                 Subject                  @relation(fields: [subjectId], references: [id])
+  teacher                 Teacher                  @relation(fields: [teacherId], references: [id])
+  room                    Room?                    @relation(fields: [roomId], references: [id])
+  enrollments             BatchEnrollment[]
+  sessions                ClassSession[]
+  attendance              Attendance[]
+  attendanceSessions      AttendanceSession[]
+  attendanceAlerts        AttendanceAlert[]
   attendanceNotifications AttendanceNotification[]
-  timetableSlots TimetableSlot[]
+  timetableSlots          TimetableSlot[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  feeStructures FeeStructure[]
+  feeRecords    FeeRecord[]
 
   @@index([code])
   @@index([status])
@@ -953,8 +1250,8 @@ model BatchEnrollment {
   enrolledBy String
   notes      String?
 
-  student Student  @relation(fields: [studentId], references: [id])
-  batch   Batch    @relation(fields: [batchId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+  batch   Batch   @relation(fields: [batchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
