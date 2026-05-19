@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { ZodError } from "zod";
 import { Role } from "@prisma/client";
 import { validateJWT } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,8 +24,8 @@ export async function requireRole(request: NextRequest, roles: Role[]): Promise<
       id: true,
       role: true,
       teacher: { select: { id: true } },
-      student: { select: { id: true } },
-      parent: { select: { id: true } },
+      students: { select: { id: true }, take: 1 },
+      parents: { select: { id: true }, take: 1 },
     },
   });
 
@@ -35,12 +36,23 @@ export async function requireRole(request: NextRequest, roles: Role[]): Promise<
     userId: user.id,
     role: user.role,
     teacherId: user.teacher?.id,
-    studentId: user.student?.id,
-    parentId: user.parent?.id,
+    studentId: user.students?.[0]?.id,
+    parentId: user.parents?.[0]?.id,
   };
 }
 
-export function getRouteErrorStatus(error: unknown) {
+
+export function getRouteErrorStatus(error: any) {
+  // Safe check for ZodError that works across module boundaries
+  if (error && typeof error === 'object' && error.name === 'ZodError') {
+    const issues = error.issues || error.errors || [];
+    let message = issues[0]?.message || "Validation failed";
+    if (issues[0]?.code === "invalid_date" || message.includes("expected date, received Date") || message.includes("Invalid Date")) {
+      message = "Please select a valid date";
+    }
+    return { message, status: 400 };
+  }
+
   const message = error instanceof Error ? error.message : "Internal server error";
   if (message.startsWith("Unauthorized")) return { message, status: 401 };
   if (message.startsWith("Forbidden")) return { message, status: 403 };

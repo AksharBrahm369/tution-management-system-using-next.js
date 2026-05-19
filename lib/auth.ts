@@ -87,6 +87,24 @@ export async function validateJWT(
   }
 }
 
+/**
+ * Backward-compatible route helper.
+ * Returns normalized user fields expected by older route handlers.
+ */
+export async function verifyAuth(
+  request: NextRequest
+): Promise<{ id: string; userId: string; role: Role; email: string } | null> {
+  const payload = await validateJWT(request);
+  if (!payload) return null;
+
+  return {
+    id: payload.userId,
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  };
+}
+
 // ─── Password Utilities ───────────────────────────────────────────────────────
 
 /**

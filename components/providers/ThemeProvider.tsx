@@ -7,20 +7,12 @@ interface CustomThemeProviderProps extends Omit<ThemeProviderProps, 'children'> 
   children: ReactNode;
 }
 
-function ThemeProviderInner({ children, ...props }: CustomThemeProviderProps) {
+
+
+export function ThemeProvider({ children, ...props }: CustomThemeProviderProps) {
   return (
     <NextThemesProvider {...props}>
       {children}
     </NextThemesProvider>
-  );
-}
-
-export function ThemeProvider({ children, ...props }: CustomThemeProviderProps) {
-  return (
-    <Suspense fallback={<>{children}</>}>
-      <ThemeProviderInner {...props}>
-        {children}
-      </ThemeProviderInner>
-    </Suspense>
   );
 }

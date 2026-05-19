@@ -25,7 +25,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ error: "Marks exceed total marks" }, { status: 400 });
       }
       percent = parseFloat(((body.marksObtained / exam.totalMarks) * 100).toFixed(2));
-      const gradeConfig = exam.gradeConfig ? JSON.parse(exam.gradeConfig as string) : null;
+      const gradeConfig = typeof exam.gradeConfig === 'string'
+        ? JSON.parse(exam.gradeConfig)
+        : (exam.gradeConfig as any || null);
       if (exam.gradingSystem === "PERCENTAGE" && gradeConfig) {
         const g = calculateGradeFromConfig(percent, gradeConfig);
         grade = g.grade;

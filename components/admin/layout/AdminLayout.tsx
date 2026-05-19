@@ -15,7 +15,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed');
-    if (saved !== null) setIsSidebarCollapsed(JSON.parse(saved));
+    if (saved !== null) {
+      try {
+        setIsSidebarCollapsed(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse admin-sidebar-collapsed from localStorage:", e);
+      }
+    }
 
     const onResize = () => {
       const desktop = window.innerWidth >= 1024;

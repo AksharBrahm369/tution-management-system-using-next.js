@@ -41,7 +41,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const exam = await prisma.exam.findUnique({ where: { id } });
     if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
-    const gradeConfig = exam.gradeConfig ? JSON.parse(exam.gradeConfig as string) : null;
+    const gradeConfig = typeof exam.gradeConfig === 'string'
+      ? JSON.parse(exam.gradeConfig)
+      : (exam.gradeConfig as any || null);
 
     await prisma.$transaction(
       validated.results.map(r => {
