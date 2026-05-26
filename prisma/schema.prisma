@@ -199,6 +199,59 @@ enum FeedbackStatus {
   CLOSED
 }
 
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum EnquirySource {
+  WALK_IN
+  PHONE_CALL
+  WHATSAPP
+  WEBSITE
+  SOCIAL_MEDIA
+  REFERRAL
+  NEWSPAPER
+  PAMPHLET
+  OTHER
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  DEMO_SCHEDULED
+  DEMO_DONE
+  INTERESTED
+  NOT_INTERESTED
+  CONVERTED
+  LOST
+  ON_HOLD
+}
+
+enum FollowUpType {
+  CALL
+  WHATSAPP
+  EMAIL
+  VISIT
+  DEMO
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  MISSED
+  RESCHEDULED
+}
+
+enum DemoStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
 // ─── Module 6 Enums: Attendance ──────────────────────────────────────────────
 
 enum AttendanceStatus {
@@ -456,6 +509,96 @@ model Notification {
   @@index([isRead])
   @@index([createdAt])
   @@map("notifications")
+}
+
+model Enquiry {
+  id            String        @id @default(cuid())
+  enquiryNumber String        @unique
+
+  studentName   String
+  studentAge    Int?
+  studentClass  String?
+  parentName    String
+  parentPhone   String
+  parentEmail   String?
+  address       String?
+
+  interestedIn   String[]
+  preferredBatch String?
+  preferredTime  String?
+
+  source       EnquirySource
+  sourceDetail String?
+  referredBy   String?
+
+  status   EnquiryStatus @default(NEW)
+  priority Priority      @default(NORMAL)
+
+  assignedTo String?
+  assignedAt  DateTime?
+
+  isConverted Boolean   @default(false)
+  convertedAt DateTime?
+  studentId   String?
+
+  notes String?
+
+  followUps   FollowUp[]
+  demoClasses DemoClass[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([source])
+  @@index([priority])
+  @@index([assignedTo])
+  @@index([createdAt])
+  @@map("enquiries")
+}
+
+model FollowUp {
+  id             String         @id @default(cuid())
+  enquiryId       String
+  type            FollowUpType
+  scheduledAt     DateTime
+  completedAt     DateTime?
+  status          FollowUpStatus @default(PENDING)
+  notes           String?
+  outcome         String?
+  nextFollowUpAt  DateTime?
+  doneBy          String?
+
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([enquiryId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("follow_ups")
+}
+
+model DemoClass {
+  id             String      @id @default(cuid())
+  enquiryId      String
+  batchId        String?
+  scheduledDate  DateTime
+  scheduledTime  String
+  status         DemoStatus  @default(SCHEDULED)
+  teacherNotes   String?
+  parentFeedback String?
+  interested     Boolean?
+
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enquiryId])
+  @@index([status])
+  @@index([scheduledDate])
+  @@map("demo_classes")
 }
 
 model DashboardAlert {

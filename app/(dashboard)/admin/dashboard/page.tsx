@@ -10,6 +10,7 @@ import RecentPayments from '@/components/admin/dashboard/RecentPayments';
 import AlertsPanel from '@/components/admin/dashboard/AlertsPanel';
 import RecentStudents from '@/components/admin/dashboard/RecentStudents';
 import QuickActions from '@/components/admin/dashboard/QuickActions';
+import FollowUpReminderWidget from '@/components/admin/enquiries/FollowUpReminderWidget';
 
 const DashboardPage: React.FC = () => {
   return (
@@ -43,6 +44,10 @@ const DashboardPage: React.FC = () => {
         <div className="min-w-0 md:col-span-2 xl:col-span-1">
           <AlertsPanel />
         </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <FollowUpReminderWidget />
       </section>
 
       {/* Quick Actions */}

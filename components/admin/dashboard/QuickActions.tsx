@@ -11,6 +11,7 @@ import {
   Megaphone,
   BarChart3,
   Clock,
+  HelpCircle,
 } from 'lucide-react';
 
 interface QuickAction {
@@ -69,6 +70,12 @@ const QuickActions: React.FC = () => {
       color: 'pink',
     },
     {
+      label: 'Manage Enquiries',
+      icon: <HelpCircle size={24} />,
+      href: '/admin/enquiries',
+      color: 'green',
+    },
+    {
       label: 'Generate Report',
       icon: <BarChart3 size={24} />,
       href: '/admin/reports',
@@ -83,8 +90,8 @@ const QuickActions: React.FC = () => {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm">
-      <h3 className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-6">
+    <div className="rounded-2xl border border-slate-200/50 bg-white p-6 shadow-lg dark:border-slate-700/50 dark:bg-slate-900/50">
+      <h3 className="mb-6 text-lg font-bold text-slate-900 dark:text-white">
         Quick Actions
       </h3>
 

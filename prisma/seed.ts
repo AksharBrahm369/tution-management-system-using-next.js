@@ -93,6 +93,11 @@ async function main() {
   await prisma.attendanceAlert.deleteMany();
   await prisma.attendanceSession.deleteMany();
   await prisma.attendance.deleteMany();
+
+  // Module 12 cleanup
+  await prisma.followUp.deleteMany();
+  await prisma.demoClass.deleteMany();
+  await prisma.enquiry.deleteMany();
   
   // Module 3 cleanup
   await prisma.studentActivity.deleteMany();
@@ -1196,6 +1201,306 @@ async function main() {
   }
 
   console.log(`✓ Seeded sample PTM meeting and parent feedback`);
+
+  // ─── Module 12: Enquiry Management Seed Data ───────────────────────────
+  const enquirySeedData = [
+    {
+      enquiryNumber: "ENQ-2025-001",
+      studentName: "Aarav Shah",
+      studentAge: 15,
+      studentClass: "Class 10",
+      parentName: "Rajesh Shah",
+      parentPhone: "9876543211",
+      parentEmail: "rajesh.shah@example.com",
+      address: "Mumbai, Maharashtra",
+      interestedIn: ["Mathematics", "Science"],
+      preferredBatch: "Grade 10 - Mathematics Morning",
+      preferredTime: "5:00 PM",
+      source: "REFERRAL" as const,
+      sourceDetail: "Referred by existing parent",
+      referredBy: "Priya Patel",
+      status: "NEW" as const,
+      priority: "HIGH" as const,
+      assignedTo: "Counsellor Team",
+      notes: "Wants weekend support classes.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-002",
+      studentName: "Ishita Mehta",
+      studentAge: 14,
+      studentClass: "Class 9",
+      parentName: "Nilesh Mehta",
+      parentPhone: "9876543251",
+      parentEmail: "nilesh.mehta@example.com",
+      address: "Rajkot, Gujarat",
+      interestedIn: ["Physics"],
+      preferredBatch: "Grade 9 - Physics Evening",
+      preferredTime: "6:00 PM",
+      source: "WALK_IN" as const,
+      sourceDetail: "Visited admission desk",
+      referredBy: null,
+      status: "CONTACTED" as const,
+      priority: "NORMAL" as const,
+      assignedTo: "Admissions Desk",
+      notes: "Requested brochure and fee details.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-003",
+      studentName: "Kiara Shah",
+      studentAge: 16,
+      studentClass: "Class 11",
+      parentName: "Anil Shah",
+      parentPhone: "9876543241",
+      parentEmail: "anil.shah@example.com",
+      address: "Surat, Gujarat",
+      interestedIn: ["Chemistry", "Biology"],
+      preferredBatch: "Grade 11 - Chemistry",
+      preferredTime: "7:00 PM",
+      source: "WEBSITE" as const,
+      sourceDetail: "Landing page form",
+      referredBy: null,
+      status: "DEMO_SCHEDULED" as const,
+      priority: "NORMAL" as const,
+      assignedTo: "Demo Coordinator",
+      notes: "Looking for science stream coaching.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-004",
+      studentName: "Vihaan Patel",
+      studentAge: 17,
+      studentClass: "Class 12",
+      parentName: "Suresh Patel",
+      parentPhone: "9876543221",
+      parentEmail: "suresh.patel@example.com",
+      address: "Ahmedabad, Gujarat",
+      interestedIn: ["English"],
+      preferredBatch: "Grade 12 - English Communication",
+      preferredTime: "4:00 PM",
+      source: "PHONE_CALL" as const,
+      sourceDetail: "Called admissions line",
+      referredBy: null,
+      status: "DEMO_DONE" as const,
+      priority: "HIGH" as const,
+      assignedTo: "Admissions Desk",
+      notes: "Demo completed successfully.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-005",
+      studentName: "Mahi Joshi",
+      studentAge: 13,
+      studentClass: "Class 8",
+      parentName: "Amit Joshi",
+      parentPhone: "9876543291",
+      parentEmail: "amit.joshi@example.com",
+      address: "Vadodara, Gujarat",
+      interestedIn: ["Mathematics"],
+      preferredBatch: "Grade 10 - Mathematics Morning",
+      preferredTime: "5:30 PM",
+      source: "SOCIAL_MEDIA" as const,
+      sourceDetail: "Instagram ad",
+      referredBy: null,
+      status: "INTERESTED" as const,
+      priority: "HIGH" as const,
+      assignedTo: "Lead Executive",
+      notes: "Parent wants admission this month.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-006",
+      studentName: "Dev Malhotra",
+      studentAge: 15,
+      studentClass: "Class 10",
+      parentName: "Rohan Malhotra",
+      parentPhone: "9876543301",
+      parentEmail: "rohan.malhotra@example.com",
+      address: "Mumbai, Maharashtra",
+      interestedIn: ["English", "Computer Science"],
+      preferredBatch: "Grade 12 - English Communication",
+      preferredTime: "3:00 PM",
+      source: "WHATSAPP" as const,
+      sourceDetail: "Shared through WhatsApp",
+      referredBy: null,
+      status: "ON_HOLD" as const,
+      priority: "NORMAL" as const,
+      assignedTo: "Counsellor Team",
+      notes: "Waiting for board exam schedule.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-007",
+      studentName: "Sara Khan",
+      studentAge: 14,
+      studentClass: "Class 9",
+      parentName: "Farhan Khan",
+      parentPhone: "9876543311",
+      parentEmail: "farhan.khan@example.com",
+      address: "Surat, Gujarat",
+      interestedIn: ["Science"],
+      preferredBatch: "Grade 9 - Physics Evening",
+      preferredTime: "6:30 PM",
+      source: "REFERRAL" as const,
+      sourceDetail: "Referred by student parent",
+      referredBy: "Rajesh Shah",
+      status: "LOST" as const,
+      priority: "LOW" as const,
+      assignedTo: "Admissions Desk",
+      notes: "Parent chose another institute.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-008",
+      studentName: "Rudra Desai",
+      studentAge: 12,
+      studentClass: "Class 7",
+      parentName: "Minal Desai",
+      parentPhone: "9876543321",
+      parentEmail: "minal.desai@example.com",
+      address: "Rajkot, Gujarat",
+      interestedIn: ["Mathematics", "Computer"],
+      preferredBatch: "Grade 10 - Mathematics Morning",
+      preferredTime: "4:30 PM",
+      source: "PAMPHLET" as const,
+      sourceDetail: "School pamphlet",
+      referredBy: null,
+      status: "CONTACTED" as const,
+      priority: "NORMAL" as const,
+      assignedTo: "Lead Executive",
+      notes: "Interested in long-term coaching.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-009",
+      studentName: "Nisha Verma",
+      studentAge: 15,
+      studentClass: "Class 10",
+      parentName: "Akhil Verma",
+      parentPhone: "9876543331",
+      parentEmail: "akhil.verma@example.com",
+      address: "Ahmedabad, Gujarat",
+      interestedIn: ["English"],
+      preferredBatch: "Grade 12 - English Communication",
+      preferredTime: "5:00 PM",
+      source: "NEWSPAPER" as const,
+      sourceDetail: "Sunday newspaper ad",
+      referredBy: null,
+      status: "NEW" as const,
+      priority: "NORMAL" as const,
+      assignedTo: null,
+      notes: "Just submitted enquiry.",
+    },
+    {
+      enquiryNumber: "ENQ-2025-010",
+      studentName: "Kabir Sinha",
+      studentAge: 16,
+      studentClass: "Class 11",
+      parentName: "Manish Sinha",
+      parentPhone: "9876543341",
+      parentEmail: "manish.sinha@example.com",
+      address: "Mumbai, Maharashtra",
+      interestedIn: ["Chemistry"],
+      preferredBatch: "Grade 11 - Chemistry",
+      preferredTime: "7:30 PM",
+      source: "WEBSITE" as const,
+      sourceDetail: "Public enquiry form",
+      referredBy: null,
+      status: "INTERESTED" as const,
+      priority: "HIGH" as const,
+      assignedTo: "Demo Coordinator",
+      notes: "Wants to start next month.",
+    },
+  ];
+
+  const createdEnquiries = [];
+  for (const entry of enquirySeedData) {
+    createdEnquiries.push(
+      await prisma.enquiry.create({
+        data: {
+          ...entry,
+          studentAge: entry.studentAge ?? null,
+          studentClass: entry.studentClass ?? null,
+          parentEmail: entry.parentEmail ?? null,
+          address: entry.address ?? null,
+          preferredBatch: entry.preferredBatch ?? null,
+          preferredTime: entry.preferredTime ?? null,
+          sourceDetail: entry.sourceDetail ?? null,
+          referredBy: entry.referredBy ?? null,
+          assignedTo: entry.assignedTo ?? null,
+          notes: entry.notes ?? null,
+          assignedAt: entry.assignedTo ? new Date() : null,
+        },
+      })
+    );
+  }
+
+  await prisma.followUp.createMany({
+    data: [
+      {
+        enquiryId: createdEnquiries[0].id,
+        type: "CALL",
+        scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+        status: "PENDING",
+        notes: "Call parent about batch timing.",
+        doneBy: adminUser!.id,
+      },
+      {
+        enquiryId: createdEnquiries[1].id,
+        type: "WHATSAPP",
+        scheduledAt: new Date(Date.now() - 1000 * 60 * 60 * 5),
+        completedAt: new Date(Date.now() - 1000 * 60 * 60 * 4),
+        status: "COMPLETED",
+        notes: "Shared brochure and fee sheet.",
+        outcome: "Parent will revisit this week.",
+        doneBy: adminUser!.id,
+      },
+      {
+        enquiryId: createdEnquiries[4].id,
+        type: "DEMO",
+        scheduledAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
+        status: "PENDING",
+        notes: "Schedule demo for science classes.",
+        doneBy: adminUser!.id,
+      },
+    ],
+  });
+
+  await prisma.demoClass.createMany({
+    data: [
+      {
+        enquiryId: createdEnquiries[2].id,
+        batchId: createdBatches[2].id,
+        scheduledDate: new Date(2025, 1, 25),
+        scheduledTime: "17:00",
+        status: "SCHEDULED",
+        teacherNotes: "Show chapter walkthrough.",
+        interested: true,
+      },
+      {
+        enquiryId: createdEnquiries[3].id,
+        batchId: createdBatches[3].id,
+        scheduledDate: new Date(2025, 1, 27),
+        scheduledTime: "16:30",
+        status: "COMPLETED",
+        teacherNotes: "Excellent participation.",
+        parentFeedback: "Loved the trial class.",
+        interested: true,
+      },
+    ],
+  });
+
+  const convertedTargets = [
+    { enquiry: createdEnquiries[3], student: createdStudents[0], batch: createdBatches[3] },
+    { enquiry: createdEnquiries[4], student: createdStudents[1], batch: createdBatches[0] },
+  ];
+
+  for (const target of convertedTargets) {
+    await prisma.enquiry.update({
+      where: { id: target.enquiry.id },
+      data: {
+        isConverted: true,
+        convertedAt: new Date(),
+        status: "CONVERTED",
+        studentId: target.student.id,
+      },
+    });
+  }
+
+  console.log(`✓ Seeded ${createdEnquiries.length} enquiries, follow-ups, demo classes, and converted leads`);
 }
 
 main()
