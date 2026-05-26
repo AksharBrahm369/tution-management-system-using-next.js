@@ -191,7 +191,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {/* Sidebar Header */}
         <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
           <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center w-full' : ''}`}>
-            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="shrink-0 w-10 h-10 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
               <GraduationCap size={24} className="text-white" />
             </div>
             {!isCollapsed && (
@@ -250,12 +250,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     `}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <span className="flex-shrink-0">{item.icon}</span>
+                    <span className="shrink-0">{item.icon}</span>
                     {!isCollapsed && (
                       <>
                         <span className="flex-1 font-medium">{item.label}</span>
                         {item.badge && (
-                          <span className="flex-shrink-0 bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                          <span className="shrink-0 bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
                             {item.badge}
                           </span>
                         )}
@@ -280,7 +280,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               ${isCollapsed ? 'justify-center' : ''}
             `}
           >
-            <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm">
+            <div className="shrink-0 w-9 h-9 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm">
               A
             </div>
             {!isCollapsed && (

@@ -252,6 +252,19 @@ enum DemoStatus {
   NO_SHOW
 }
 
+enum BackupType {
+  MANUAL
+  SCHEDULED
+  AUTO
+}
+
+enum BackupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
 // ─── Module 6 Enums: Attendance ──────────────────────────────────────────────
 
 enum AttendanceStatus {
@@ -614,6 +627,127 @@ model DashboardAlert {
   @@index([isResolved])
   @@index([createdAt])
   @@map("dashboard_alerts")
+}
+
+model InstituteSettings {
+  id String @id @default(cuid())
+
+  name        String
+  tagline     String?
+  description String?
+  logo        String?
+  favicon     String?
+
+  phone          String?
+  alternatePhone String?
+  email          String?
+  website        String?
+
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  pincode      String?
+  country      String  @default("India")
+
+  currentAcademicYear String
+  academicYears       String[]
+  workingDays         String[]
+  workingHours        Json?
+
+  gstEnabled   Boolean @default(false)
+  gstNumber    String?
+  gstPercentage Float  @default(18)
+  panNumber    String?
+
+  receiptPrefix     String @default("RCP")
+  receiptStartNumber String @default("001")
+  receiptFooterText  String?
+
+  razorpayKeyId     String?
+  razorpayKeySecret String?
+  razorpayMode      String @default("TEST")
+
+  twilioAccountSid  String?
+  twilioAuthToken   String?
+  twilioWhatsAppNumber String?
+
+  cloudinaryCloudName String?
+  cloudinaryApiKey    String?
+  cloudinaryApiSecret String?
+
+  firebaseProjectId String?
+  firebaseApiKey    String?
+
+  passwordMinLength      Int     @default(8)
+  requireUppercase       Boolean @default(true)
+  requireNumber          Boolean @default(true)
+  requireSpecialChar     Boolean @default(true)
+  passwordExpiryDays     Int     @default(90)
+  sessionTimeoutMinutes  Int     @default(30)
+  rememberMeDays         Int     @default(7)
+  maxFailedAttempts      Int     @default(5)
+  lockoutDurationMinutes Int     @default(30)
+  twoFactorEnabled       Boolean @default(false)
+
+  autoBackupEnabled Boolean @default(false)
+  backupFrequency   String  @default("WEEKLY")
+  backupTime        String?
+  backupRetention   Int     @default(10)
+
+  currency   String @default("INR")
+  dateFormat String @default("DD/MM/YYYY")
+  timeFormat String @default("12H")
+  language   String @default("EN")
+  timezone   String @default("Asia/Kolkata")
+
+  primaryColor   String @default("#2563EB")
+  secondaryColor String @default("#10B981")
+
+  onlinePaymentEnabled Boolean @default(false)
+  qrAttendanceEnabled   Boolean @default(true)
+  parentPortalEnabled   Boolean @default(true)
+  studentPortalEnabled  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("institute_settings")
+}
+
+model AcademicYear {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  startDate DateTime
+  endDate   DateTime
+  isCurrent Boolean  @default(false)
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isCurrent])
+  @@index([isActive])
+  @@map("academic_years")
+}
+
+model BackupRecord {
+  id          String       @id @default(cuid())
+  fileName    String
+  fileUrl     String?
+  fileSize    String?
+  type        BackupType
+  status      BackupStatus @default(PENDING)
+  triggeredBy String
+  completedAt DateTime?
+  errorMsg    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("backup_records")
 }
 
 // ─── Module 3: Student Management ────────────────────────────────────────────

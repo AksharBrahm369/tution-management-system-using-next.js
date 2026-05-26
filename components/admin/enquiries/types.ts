@@ -35,6 +35,7 @@ export interface EnquiryFollowUp {
   outcome: string | null;
   nextFollowUpAt: string | null;
   doneBy: string | null;
+  doneByName: string | null;
   createdAt: string;
 }
 

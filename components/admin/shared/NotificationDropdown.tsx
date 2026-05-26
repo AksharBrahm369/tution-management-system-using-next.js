@@ -60,7 +60,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
             >
               <div className="flex items-start gap-3">
                 <div
-                  className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${
+                  className={`mt-1 w-2 h-2 rounded-full shrink-0 ${
                     !notification.isRead ? 'bg-blue-600' : 'bg-transparent'
                   }`}
                 />
@@ -70,7 +70,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
                       {notification.title}
                     </h4>
                     <span
-                      className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ${getNotificationColor(
+                      className={`text-xs px-2 py-1 rounded-full shrink-0 ${getNotificationColor(
                         notification.type
                       )}`}
                     >

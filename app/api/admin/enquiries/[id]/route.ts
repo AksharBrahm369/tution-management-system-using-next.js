@@ -71,6 +71,9 @@ type EnquiryClient = PrismaClient & {
   student: {
     findUnique: (args: unknown) => Promise<{ id: string; studentCode: string; firstName: string; lastName: string } | null>;
   };
+  user: {
+    findMany: (args: unknown) => Promise<Array<{ id: string; name: string }>>;
+  };
 };
 
 const enquiryDb = prisma as EnquiryClient;
@@ -182,6 +185,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         })
       : null;
 
+    const followUpUserIds = [...new Set(enquiry.followUps.map((item: EnquiryFollowUpRow) => item.doneBy).filter((value): value is string => Boolean(value)))];
+    const followUpUsers = followUpUserIds.length > 0
+      ? await enquiryDb.user.findMany({
+          where: { id: { in: followUpUserIds } },
+          select: { id: true, name: true },
+        })
+      : [];
+    const followUpUserMap = new Map(followUpUsers.map((user: { id: string; name: string }) => [user.id, user.name]));
+
     const latestFollowUp = enquiry.followUps[enquiry.followUps.length - 1] ?? null;
     const nextFollowUp = enquiry.followUps.find((item: EnquiryFollowUpRow) => item.status === "PENDING") ?? null;
     const latestDemo = enquiry.demoClasses[enquiry.demoClasses.length - 1] ?? null;
@@ -228,6 +240,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           outcome: item.outcome,
           nextFollowUpAt: toIso(item.nextFollowUpAt),
           doneBy: item.doneBy,
+          doneByName: item.doneBy ? followUpUserMap.get(item.doneBy) ?? null : null,
           createdAt: item.createdAt.toISOString(),
         })),
         demoClasses: enquiry.demoClasses.map((item: EnquiryDemoClassRow) => ({

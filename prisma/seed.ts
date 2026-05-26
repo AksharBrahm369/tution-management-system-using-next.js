@@ -2,6 +2,7 @@ import bcryptjs from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { createDefaultSettings } from "../lib/settings";
 
 const connectionString = process.env.DATABASE_URL;
 const pool = connectionString ? new Pool({ connectionString }) : new Pool();
@@ -130,6 +131,11 @@ async function main() {
   await prisma.parent.deleteMany();
   await prisma.batch.deleteMany();
   await prisma.room.deleteMany();
+  
+  // Module 13 cleanup and seed
+  await prisma.backupRecord.deleteMany();
+  await prisma.academicYear.deleteMany();
+  await prisma.instituteSettings.deleteMany();
   
   await prisma.teacher.deleteMany();
   await prisma.subject.deleteMany();
@@ -325,6 +331,47 @@ async function main() {
       { title: "Parent-Teacher Meeting", startDate: new Date(new Date().getFullYear(), 3, 15), type: "PTM", color: "#8B5CF6", isAllDay: true, createdBy: adminUser!.id },
       { title: "Enrollment Period 2025-26", startDate: new Date(new Date().getFullYear(), 3, 1), endDate: new Date(new Date().getFullYear(), 4, 31), type: "ENROLLMENT", color: "#10B981", createdBy: adminUser!.id },
     ],
+  });
+
+  const academicYearPrevious = await prisma.academicYear.create({
+    data: {
+      name: "2024-25",
+      startDate: new Date(2024, 3, 1),
+      endDate: new Date(2025, 2, 31),
+      isCurrent: false,
+      isActive: true,
+    },
+  });
+
+  const academicYearCurrent = await prisma.academicYear.create({
+    data: {
+      name: "2025-26",
+      startDate: new Date(2025, 3, 1),
+      endDate: new Date(2026, 2, 31),
+      isCurrent: true,
+      isActive: true,
+    },
+  });
+
+  const defaultSettings = createDefaultSettings();
+  await prisma.instituteSettings.create({
+    data: {
+      ...defaultSettings,
+      currentAcademicYear: academicYearCurrent.name,
+      academicYears: [academicYearPrevious.name, academicYearCurrent.name],
+    },
+  });
+
+  await prisma.backupRecord.create({
+    data: {
+      fileName: "seed-backup.json",
+      fileUrl: "/backups/seed-backup.json",
+      fileSize: "12.4 KB",
+      type: "MANUAL",
+      status: "COMPLETED",
+      triggeredBy: adminUser!.id,
+      completedAt: new Date(),
+    },
   });
 
   console.log(`Seeded ${createdSubjects.length} subjects, ${createdTeachers.length} teachers, ${createdStudents.length} students, ${createdBatches.length} batches, ${createdRooms.length} rooms, ${holidays.length} holidays.`);
