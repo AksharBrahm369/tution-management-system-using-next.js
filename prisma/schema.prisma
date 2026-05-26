@@ -169,6 +169,36 @@ enum ConflictType {
   BATCH_TIME_OVERLAP
 }
 
+enum PTMStatus {
+  SCHEDULED
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum FeedbackType {
+  COMPLAINT
+  SUGGESTION
+  APPRECIATION
+  QUERY
+  OTHER
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
 // ─── Module 6 Enums: Attendance ──────────────────────────────────────────────
 
 enum AttendanceStatus {
@@ -335,6 +365,7 @@ model User {
   sessions          Session[]
   activityLogs      ActivityLog[]
   notifications     Notification[]
+  announcements     Announcement[]
   students          Student[]
   parents           Parent[]
   teacher           Teacher?
@@ -540,6 +571,10 @@ model Student {
   siblingOf               SiblingLink[]            @relation("SiblingOfStudent")
   notifications           Notification[]
   activities              StudentActivity[]
+  // Reports relation
+  studentProgressReports  StudentProgressReport[]
+  ptmSlots                PTMSlot[]
+  parentFeedbacks         ParentFeedback[]
 
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
@@ -575,6 +610,9 @@ model Parent {
   user   User?   @relation(fields: [userId], references: [id])
 
   students Student[]
+
+  ptmSlots       PTMSlot[]
+  feedbacks      ParentFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -984,6 +1022,352 @@ model OnlinePaymentOrder {
   @@map("online_payment_orders")
 }
 
+// Announcements model (Module: Communication)
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  CANCELLED
+}
+
+model Announcement {
+  id         String             @id @default(cuid())
+  userId     String
+  title      String
+  message    String
+  audience   String             @default("ALL")
+  channels   String?            // comma-separated channels (WHATSAPP,SMS,EMAIL)
+  scheduleAt DateTime?
+  status     AnnouncementStatus @default(DRAFT)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("announcements")
+}
+
+// Enums for Reports & Analytics
+enum ReportType {
+  FINANCIAL
+  ACADEMIC
+  ATTENDANCE
+  STUDENT_PROGRESS
+  TEACHER_PERFORMANCE
+  BATCH_PERFORMANCE
+  INSTITUTE_OVERVIEW
+  CUSTOM
+}
+
+enum ReportCategory {
+  STANDARD
+  CUSTOM
+  SCHEDULED
+  SYSTEM
+}
+
+enum ScheduleFreq {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum RunType {
+  MANUAL
+  SCHEDULED
+  AUTO
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum SnapshotType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+// Reports & Analytics Models
+model Report {
+  id                String          @id @default(cuid())
+
+  // Identity
+  name              String
+  description       String?
+  type              ReportType
+  category          ReportCategory
+
+  // Config
+  config            Json
+  filters           Json?
+  columns           String[]
+  groupBy           String?
+  sortBy            String?
+  sortOrder         String?
+
+  // Schedule
+  isScheduled       Boolean         @default(false)
+  scheduleFrequency ScheduleFreq?
+  scheduleDay       Int?
+  scheduleTime      String?
+  lastRunAt         DateTime?
+  nextRunAt         DateTime?
+
+  // Email
+  emailEnabled      Boolean         @default(false)
+  emailRecipients   String[]
+
+  // Status
+  isActive          Boolean         @default(true)
+  isFavorite        Boolean         @default(false)
+  isDefault         Boolean         @default(false)
+
+  createdBy         String
+  runs              ReportRun[]
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("reports")
+}
+
+model ReportRun {
+  id                String          @id @default(cuid())
+
+  reportId          String
+  runBy             String
+  runType           RunType         @default(MANUAL)
+
+  // Status
+  status            RunStatus       @default(PENDING)
+  startedAt         DateTime        @default(now())
+  completedAt       DateTime?
+  errorMessage      String?
+
+  // Output
+  rowCount          Int?
+  fileUrl           String?
+  fileType          String?
+  fileSize          String?
+
+  // Filters used
+  filtersUsed       Json?
+  dateRange         Json?
+
+  report            Report          @relation(fields:[reportId], references:[id])
+
+  createdAt         DateTime        @default(now())
+
+  @@map("report_runs")
+}
+
+model AnalyticsSnapshot {
+  id                String          @id @default(cuid())
+
+  date              DateTime
+  type              SnapshotType
+
+  // Student Metrics
+  totalStudents     Int             @default(0)
+  activeStudents    Int             @default(0)
+  newStudents       Int             @default(0)
+  leftStudents      Int             @default(0)
+
+  // Attendance Metrics
+  avgAttendance     Float           @default(0)
+  presentCount      Int             @default(0)
+  absentCount       Int             @default(0)
+
+  // Fee Metrics
+  feeDue            Float           @default(0)
+  feeCollected      Float           @default(0)
+  feePending        Float           @default(0)
+  collectionRate    Float           @default(0)
+
+  // Exam Metrics
+  examsHeld         Int             @default(0)
+  avgExamScore      Float           @default(0)
+  passRate          Float           @default(0)
+
+  // Communication Metrics
+  messagesSent      Int             @default(0)
+  deliveryRate      Float           @default(0)
+
+  createdAt         DateTime        @default(now())
+
+  @@unique([date, type])
+  @@map("analytics_snapshots")
+}
+
+model StudentProgressReport {
+  id                String          @id @default(cuid())
+
+  studentId         String
+  batchId           String
+  month             Int
+  year              Int
+
+  // Attendance
+  attendancePercent Float           @default(0)
+  classesPresent    Int             @default(0)
+  classesAbsent     Int             @default(0)
+
+  // Academic
+  examsTaken        Int             @default(0)
+  avgScore          Float           @default(0)
+  highestScore      Float           @default(0)
+  lowestScore       Float           @default(0)
+  avgGrade          String?
+
+  // Fee
+  feeStatus         String?
+  feePaid           Float           @default(0)
+  feePending        Float           @default(0)
+
+  // Rank
+  batchRank         Int?
+  totalInBatch      Int?
+
+  // Overall
+  overallRating     String?
+  teacherComment    String?
+  adminComment      String?
+
+  student           Student         @relation(fields:[studentId], references:[id])
+
+  generatedAt       DateTime        @default(now())
+
+  @@unique([studentId, batchId, month, year])
+  @@map("student_progress_reports")
+}
+
+model PTMMeeting {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  meetingDate DateTime
+  startTime   String
+  endTime     String
+  venue       String?
+  isOnline    Boolean   @default(false)
+  meetingLink String?
+  batchId     String?
+  isForAll    Boolean   @default(true)
+  status      PTMStatus @default(SCHEDULED)
+
+  slots       PTMSlot[]
+
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([meetingDate])
+  @@index([batchId])
+  @@map("ptm_meetings")
+}
+
+model PTMSlot {
+  id             String     @id @default(cuid())
+  meetingId      String
+  parentId       String
+  studentId      String
+  teacherId      String?
+  slotTime       String
+  duration       Int        @default(15)
+  status         SlotStatus @default(BOOKED)
+  notes          String?
+  adminNotes     String?
+  parentFeedback String?
+
+  meeting PTMMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  parent  Parent     @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher Teacher?   @relation(fields: [teacherId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([meetingId, parentId, studentId])
+  @@index([meetingId])
+  @@index([parentId])
+  @@index([studentId])
+  @@map("ptm_slots")
+}
+
+model ParentFeedback {
+  id            String         @id @default(cuid())
+  parentId      String
+  studentId     String
+  teacherId     String?
+  batchId       String?
+  subject       String
+  message       String
+  type          FeedbackType
+  rating        Int?
+  status        FeedbackStatus @default(OPEN)
+  adminResponse String?
+  respondedBy   String?
+  respondedAt   DateTime?
+
+  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation(fields: [teacherId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("parent_feedbacks")
+}
+
+model TeacherPerformanceReport {
+  id                String          @id @default(cuid())
+
+  teacherId         String
+  month             Int
+  year              Int
+
+  // Attendance
+  attendancePercent Float           @default(0)
+  daysPresent       Int             @default(0)
+  daysAbsent        Int             @default(0)
+
+  // Classes
+  classesScheduled  Int             @default(0)
+  classesTaken      Int             @default(0)
+  classesCancelled  Int             @default(0)
+
+  // Student Performance
+  avgStudentScore   Float           @default(0)
+  studentPassRate   Float           @default(0)
+
+  // Salary
+  salaryStatus      String?
+  salaryAmount      Float           @default(0)
+
+  // Rating
+  rating            Float?
+  adminNotes        String?
+
+  teacher           Teacher         @relation(fields:[teacherId], references:[id])
+
+  generatedAt       DateTime        @default(now())
+
+  @@unique([teacherId, month, year])
+  @@map("teacher_performance_reports")
+}
+
+
 model Exam {
   id String @id @default(cuid())
 
@@ -1322,6 +1706,10 @@ model Teacher {
   salaryRecords SalaryRecord[]
   documents     TeacherDocument[]
   performance   TeacherPerformance[]
+  // Reports relation
+  teacherPerformanceReports TeacherPerformanceReport[]
+  ptmSlots                  PTMSlot[]
+  parentFeedbacks           ParentFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

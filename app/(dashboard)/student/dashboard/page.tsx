@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BookOpen, Clock, Trophy, Calendar, CheckCircle, BarChart3 } from "lucide-react";
+import CommunicationPanel from "@/components/shared/CommunicationPanel";
 
 export const metadata: Metadata = { title: "Student Dashboard" };
 
@@ -16,7 +17,7 @@ export default function StudentDashboardPage() {
       </div>
 
       {/* Coming Soon Banner */}
-      <div className="overflow-hidden rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-600 to-violet-700 p-8 text-white shadow-lg shadow-violet-600/20">
+      <div className="overflow-hidden rounded-2xl border border-violet-100 bg-linear-to-br from-violet-600 to-violet-700 p-8 text-white shadow-lg shadow-violet-600/20">
         <div className="flex items-center gap-3">
           <Clock className="h-8 w-8 text-violet-200" />
           <div>
@@ -54,6 +55,12 @@ export default function StudentDashboardPage() {
           ))}
         </div>
       </div>
+
+      <CommunicationPanel
+        title="Stay updated with class announcements"
+        subtitle="Announcements, reminders, and notifications sent by the institute now appear here for students."
+        accent="violet"
+      />
     </div>
   );
 }
