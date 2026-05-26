@@ -82,7 +82,7 @@ export async function listParents(filters: ParentListFilters) {
 }
 
 export async function getParentProfile(parentId: string) {
-  return prisma.parent.findUnique({
+  const parent = await prisma.parent.findUnique({
     where: { id: parentId },
     include: {
       user: { select: { id: true, email: true, isActive: true, lastLogin: true, createdAt: true, updatedAt: true } },
@@ -107,18 +107,96 @@ export async function getParentProfile(parentId: string) {
         include: {
           meeting: true,
           student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-          teacher: { select: { id: true, name: true } },
+          teacher: { select: { id: true, firstName: true, lastName: true } },
         },
       },
       feedbacks: {
         orderBy: { createdAt: "desc" },
         include: {
           student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-          teacher: { select: { id: true, name: true } },
+          teacher: { select: { id: true, firstName: true, lastName: true } },
         },
       },
     },
   });
+
+  if (!parent) {
+    return null;
+  }
+
+  const batchIds = parent.students
+    .flatMap((student) => student.batchEnrollments.map((enrollment) => enrollment.batchId))
+    .filter((value, index, list) => list.indexOf(value) === index);
+
+  const [messages, ptmMeetings] = await Promise.all([
+    parent.userId
+      ? prisma.notification.findMany({
+          where: { userId: parent.userId },
+          orderBy: { createdAt: "desc" },
+          take: 30,
+        })
+      : Promise.resolve([]),
+    prisma.pTMMeeting.findMany({
+      where: {
+        OR: [{ isForAll: true }, ...(batchIds.length ? [{ batchId: { in: batchIds } }] : [])],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      include: {
+        slots: {
+          where: { parentId: parent.id },
+          include: {
+            student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
+            teacher: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const announcements = await prisma.announcement.findMany({
+    where: {
+      OR: [{ audience: "ALL" }, { audience: "PARENT" }],
+      status: { in: ["PUBLISHED", "SCHEDULED"] },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      title: true,
+      message: true,
+      audience: true,
+      status: true,
+      createdAt: true,
+    },
+  });
+
+  const communication = [
+    ...messages.map((item) => ({
+      id: item.id,
+      kind: "notification" as const,
+      title: item.title,
+      message: item.message,
+      status: item.isRead ? "Read" : "Unread",
+      createdAt: item.createdAt,
+    })),
+    ...announcements.map((item) => ({
+      id: item.id,
+      kind: "announcement" as const,
+      title: item.title,
+      message: item.message,
+      status: item.status,
+      createdAt: item.createdAt,
+    })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return {
+    ...parent,
+    messages,
+    announcements,
+    communication,
+    ptmMeetings,
+  };
 }
 
 export async function listPTMMeetings() {
@@ -129,7 +207,7 @@ export async function listPTMMeetings() {
         include: {
           parent: { select: { id: true, fatherName: true, motherName: true, guardianName: true } },
           student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-          teacher: { select: { id: true, name: true } },
+          teacher: { select: { id: true, firstName: true, lastName: true } },
         },
       },
     },
@@ -142,7 +220,7 @@ export async function listParentFeedback() {
     include: {
       parent: { select: { id: true, fatherName: true, motherName: true, guardianName: true } },
       student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-      teacher: { select: { id: true, name: true } },
+      teacher: { select: { id: true, firstName: true, lastName: true } },
     },
   });
 }

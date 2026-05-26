@@ -1,29 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
-
-function buildSlots(startTime: string, endTime: string, duration: number) {
-  const slots: string[] = [];
-  const baseDate = new Date("2025-01-01T00:00:00Z");
-  const [startHour, startMinute] = startTime.split(":").map(Number);
-  const [endHour, endMinute] = endTime.split(":").map(Number);
-  const start = new Date(baseDate);
-  start.setUTCHours(startHour, startMinute, 0, 0);
-  const end = new Date(baseDate);
-  end.setUTCHours(endHour, endMinute, 0, 0);
-
-  const current = new Date(start);
-  while (current < end) {
-    const next = new Date(current.getTime() + duration * 60_000);
-    if (next > end) break;
-    const format = (date: Date) => date.toISOString().slice(11, 16);
-    slots.push(`${format(current)}-${format(next)}`);
-    current.setTime(next.getTime());
-  }
-  return slots;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +15,7 @@ export async function GET(request: NextRequest) {
           include: {
             parent: { select: { id: true, fatherName: true, motherName: true, guardianName: true } },
             student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-            teacher: { select: { id: true, name: true } },
+            teacher: { select: { id: true, firstName: true, lastName: true } },
           },
         },
       },
@@ -66,11 +46,20 @@ export async function POST(request: NextRequest) {
       autoGenerateSlots = false,
     } = body;
 
+    if (!meetingDate || typeof meetingDate !== "string") {
+      return NextResponse.json({ error: "Please select a valid PTM date" }, { status: 400 });
+    }
+
+    const parsedMeetingDate = new Date(meetingDate);
+    if (Number.isNaN(parsedMeetingDate.getTime())) {
+      return NextResponse.json({ error: "Please select a valid PTM date" }, { status: 400 });
+    }
+
     const meeting = await prisma.pTMMeeting.create({
       data: {
         title,
         description,
-        meetingDate: new Date(meetingDate),
+        meetingDate: parsedMeetingDate,
         startTime,
         endTime,
         venue,
@@ -83,17 +72,37 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (autoGenerateSlots) {
-      const slotTimes = buildSlots(startTime, endTime, Number(slotDuration) || 15);
-      await prisma.pTMSlot.createMany({
-        data: slotTimes.map((slotTime) => ({
-          meetingId: meeting.id,
-          parentId: auth.parentId ?? auth.userId,
-          studentId: auth.studentId ?? auth.userId,
-          slotTime,
-          duration: Number(slotDuration) || 15,
-          status: "AVAILABLE",
-        })),
+    const parentWhere: Prisma.ParentWhereInput = { userId: { not: null } };
+    if (!isForAll && batchId) {
+      parentWhere.students = {
+        some: {
+          batchEnrollments: {
+            some: {
+              batchId,
+              isActive: true,
+            },
+          },
+        },
+      };
+    }
+
+    const notifiedParents = await prisma.parent.findMany({
+      where: parentWhere,
+      select: { userId: true },
+    });
+
+    if (notifiedParents.length > 0) {
+      await prisma.notification.createMany({
+        data: notifiedParents
+          .filter((parent) => parent.userId)
+          .map((parent) => ({
+            userId: parent.userId as string,
+            title: "New PTM Scheduled",
+            message: `${title} is scheduled for ${parsedMeetingDate.toLocaleDateString()} at ${startTime}.`,
+            type: "GENERAL",
+            link: "/parent/ptm",
+            isRead: false,
+          })),
       });
     }
 

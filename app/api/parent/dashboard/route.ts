@@ -34,14 +34,27 @@ export async function GET(request: NextRequest) {
       take: 3,
     });
 
-    const ptmSlots = await prisma.pTMSlot.findMany({
-      where: { parentId: parent.id },
+    const childBatchIds = parent.students
+      .flatMap((student) => student.batchEnrollments.map((enrollment) => enrollment.batchId))
+      .filter((value, index, list) => list.indexOf(value) === index);
+
+    const ptmMeetings = await prisma.pTMMeeting.findMany({
+      where: {
+        OR: [
+          { isForAll: true },
+          ...(childBatchIds.length ? [{ batchId: { in: childBatchIds } }] : []),
+        ],
+      },
       orderBy: { createdAt: "desc" },
       take: 10,
       include: {
-        meeting: true,
-        student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-        teacher: { select: { id: true, name: true } },
+        slots: {
+          where: { parentId: parent.id },
+          include: {
+            student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
+            teacher: { select: { id: true, firstName: true, lastName: true } },
+          },
+        },
       },
     });
 
@@ -56,7 +69,7 @@ export async function GET(request: NextRequest) {
     });
 
     const upcomingEvents = [
-      ...ptmSlots.map((slot) => ({ type: "PTM", title: slot.meeting.title, date: slot.meeting.meetingDate })),
+      ...ptmMeetings.map((meeting) => ({ type: "PTM", title: meeting.title, date: meeting.meetingDate })),
       ...parent.students.flatMap((student) =>
         student.examResults.slice(0, 1).map((result) => ({ type: "EXAM", title: result.exam.title, date: result.exam.examDate }))
       ),
@@ -68,7 +81,7 @@ export async function GET(request: NextRequest) {
       parent,
       children: parent.students,
       notices,
-      ptmSlots,
+      ptmMeetings,
       feeRecords,
       upcomingEvents,
       stats: {

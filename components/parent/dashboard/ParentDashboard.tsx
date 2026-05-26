@@ -10,6 +10,7 @@ type DashboardData = {
   children: any[];
   notices: any[];
   ptmSlots: any[];
+  ptmMeetings?: any[];
   feeRecords: any[];
   upcomingEvents: Array<{ type: string; title: string; date: string }>;
   stats: { attendance: number; unreadMessages: number };
@@ -141,6 +142,27 @@ export default function ParentDashboard() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
             <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900 dark:text-white">PTM Meetings</h3>
+              <Link href="/parent/ptm" className="text-sm font-medium text-cyan-600 hover:underline dark:text-cyan-400">Open PTM</Link>
+            </div>
+            <div className="mt-4 space-y-3">
+              {(data.ptmMeetings ?? []).slice(0, 4).map((meeting) => (
+                <div key={meeting.id} className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 dark:border-cyan-900/40 dark:bg-cyan-950/20">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">{meeting.title}</div>
+                  <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{new Date(meeting.meetingDate).toLocaleDateString()} • {meeting.startTime} - {meeting.endTime}</div>
+                  <div className="mt-2 text-xs text-cyan-700 dark:text-cyan-300">{meeting.slots?.length ? `${meeting.slots.length} booked slot(s)` : "Scheduled, waiting for slot booking"}</div>
+                </div>
+              ))}
+              {!data.ptmMeetings?.length && (
+                <div className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  No PTM scheduled yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-900 dark:text-white">Upcoming Events</h3>
               <CalendarDays className="h-5 w-5 text-cyan-600" />
             </div>
@@ -152,6 +174,13 @@ export default function ParentDashboard() {
                     <div className="text-xs text-slate-500 dark:text-slate-400">{event.type}</div>
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">{new Date(event.date).toLocaleDateString()}</div>
+                </div>
+              ))}
+              {(data.ptmMeetings ?? []).slice(0, 3).map((meeting) => (
+                <div key={meeting.id} className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 dark:border-cyan-900/40 dark:bg-cyan-950/20">
+                  <div className="text-sm font-medium text-slate-900 dark:text-white">{meeting.title}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">PTM scheduled for {new Date(meeting.meetingDate).toLocaleDateString()}</div>
+                  <div className="mt-2 text-xs text-cyan-700 dark:text-cyan-300">{meeting.slots?.length ? `${meeting.slots.length} booked slot(s)` : "No slot booked yet"}</div>
                 </div>
               ))}
             </div>

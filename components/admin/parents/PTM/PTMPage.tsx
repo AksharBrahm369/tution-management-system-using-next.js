@@ -7,7 +7,7 @@ export default function PTMPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "February Parent Meeting", description: "", meetingDate: "", startTime: "15:00", endTime: "18:00", venue: "Conference Room", isOnline: false, meetingLink: "", batchId: "", isForAll: true, slotDuration: 15, autoGenerateSlots: true });
+  const [form, setForm] = useState({ title: "February Parent Meeting", description: "", meetingDate: new Date().toISOString().slice(0, 10), startTime: "15:00", endTime: "18:00", venue: "Conference Room", isOnline: false, meetingLink: "", batchId: "", isForAll: true, slotDuration: 15, autoGenerateSlots: false });
 
   async function load() {
     const res = await fetch("/api/admin/parents/ptm", { credentials: "same-origin" });
@@ -55,7 +55,7 @@ export default function PTMPage() {
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 md:col-span-2 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200">{error}</div>}
         {success && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 md:col-span-2 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200">{success}</div>}
         <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="rounded-2xl border px-4 py-3 dark:bg-slate-950" placeholder="Title" />
-        <input value={form.meetingDate} onChange={(e) => setForm({ ...form, meetingDate: e.target.value })} type="date" className="rounded-2xl border px-4 py-3 dark:bg-slate-950" />
+        <input value={form.meetingDate} onChange={(e) => setForm({ ...form, meetingDate: e.target.value })} type="date" required className="rounded-2xl border px-4 py-3 dark:bg-slate-950" />
         <input value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} type="time" className="rounded-2xl border px-4 py-3 dark:bg-slate-950" />
         <input value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} type="time" className="rounded-2xl border px-4 py-3 dark:bg-slate-950" />
         <input value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} className="rounded-2xl border px-4 py-3 dark:bg-slate-950" placeholder="Venue" />
