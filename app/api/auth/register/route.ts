@@ -14,15 +14,18 @@ import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function GET(request: NextRequest) {
   try {
-    const existingAdmin = await prisma.user.findFirst({
-      where: { role: "SUPER_ADMIN" },
+    const existingSecondaryAdmin = await prisma.user.findFirst({
+      where: {
+        role: "SUPER_ADMIN",
+        NOT: {
+          email: "darshanzala369@gmail.com",
+        },
+      },
     });
 
-    const isDefaultAdmin = existingAdmin?.email === "darshanzala369@gmail.com";
-
     return successResponse({
-      exists: !!existingAdmin && !isDefaultAdmin,
-      email: existingAdmin?.email,
+      exists: !!existingSecondaryAdmin,
+      email: existingSecondaryAdmin?.email,
     });
   } catch (error) {
     console.error("[REGISTER_STATUS]", error);
@@ -51,23 +54,27 @@ export async function POST(request: NextRequest) {
 
     const { name, email, phone, password } = parsed.data;
 
-    // ── 2. Check if SUPER_ADMIN already exists ────────────────────────────────
-    const existingAdmin = await prisma.user.findFirst({
-      where: { role: "SUPER_ADMIN" },
-    });
-
-    const isDefaultAdmin = existingAdmin?.email === "darshanzala369@gmail.com";
-
-    if (existingAdmin && !isDefaultAdmin) {
+    // Prevent modifying or registering as the permanent Super Admin
+    if (email === "darshanzala369@gmail.com") {
       return errorResponse(
-        "Super admin already exists. Contact your administrator.",
-        409
+        "This email is reserved for the primary Super Admin and cannot be modified.",
+        403
       );
     }
 
-    // ── 3. Check duplicate email ──────────────────────────────────────────────
+    // ── 2. Check if a secondary admin (SUPER_ADMIN other than the main darshanzala369@gmail.com) already exists ────────────────────────────────
+    const existingSecondaryAdmin = await prisma.user.findFirst({
+      where: {
+        role: "SUPER_ADMIN",
+        NOT: {
+          email: "darshanzala369@gmail.com",
+        },
+      },
+    });
+
+    // ── 3. Check duplicate email (other than the secondary admin we are about to overwrite)
     const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser && (!existingAdmin || existingUser.id !== existingAdmin.id)) {
+    if (existingUser && (!existingSecondaryAdmin || existingUser.id !== existingSecondaryAdmin.id)) {
       return errorResponse("This email is already registered", 409);
     }
 
@@ -76,10 +83,10 @@ export async function POST(request: NextRequest) {
 
     // ── 5. Create or Update user ──────────────────────────────────────────────
     let user;
-    if (existingAdmin && isDefaultAdmin) {
-      // Update the default seeded admin to avoid foreign key violations on referenced tables
+    if (existingSecondaryAdmin) {
+      // Overwrite/update the existing secondary admin account to maintain referential integrity
       user = await prisma.user.update({
-        where: { id: existingAdmin.id },
+        where: { id: existingSecondaryAdmin.id },
         data: {
           name,
           email,
@@ -135,13 +142,21 @@ export async function POST(request: NextRequest) {
       action: "USER_CREATED",
       category: "USER_MANAGEMENT",
       severity: "INFO",
-      description: "Super Admin account created",
+      description: existingSecondaryAdmin
+        ? "Admin account credentials updated/changed"
+        : "Initial Admin account created",
       entityType: "User",
       entityId: user.id,
       entityName: user.email,
     });
 
-    return successResponse({ user }, "Account created successfully", 201);
+    return successResponse(
+      { user },
+      existingSecondaryAdmin
+        ? "Admin credentials changed successfully"
+        : "Admin account created successfully",
+      201
+    );
   } catch (error) {
     console.error("[REGISTER]", error);
     return errorResponse("Something went wrong. Please try again", 500);
