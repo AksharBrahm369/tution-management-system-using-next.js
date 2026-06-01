@@ -76,18 +76,13 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
   }
 
   async function collectPayment() {
-    if (!validSelectedIds.length) {
-      alert("Select at least one pending fee record.");
-      return;
-    }
-
     if (amount <= 0) {
       alert("Enter a valid payment amount.");
       return;
     }
 
     if (!collectedBy.trim()) {
-      alert("Enter collected by.");
+      alert("Enter the name of who collected this payment.");
       return;
     }
 
@@ -159,6 +154,12 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
           <h4 className="font-semibold text-slate-900 dark:text-white">Fee Records</h4>
           <div className="mt-4 overflow-x-auto">
+            {student.feeRecords.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-slate-500 dark:text-slate-400 text-sm">No fee records found for this student.</p>
+                <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">You can still collect a payment using the form on the right.</p>
+              </div>
+            ) : (
             <table className="min-w-full text-sm">
               <thead className="text-left text-xs uppercase text-slate-500">
                 <tr>
@@ -202,13 +203,9 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
                     </tr>
                   );
                 })}
-                {student.feeRecords.length === 0 && (
-                  <tr>
-                    <td className="py-6 text-center text-slate-500" colSpan={9}>No fee records found for this student.</td>
-                  </tr>
-                )}
               </tbody>
             </table>
+            )}
           </div>
         </div>
 
@@ -254,12 +251,19 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
                 onChange={(event) => setNotes(event.target.value)}
               />
             </label>
-            <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              Selected pending: <span className="font-semibold">{formatCurrency(selectedPending)}</span>
-            </div>
+            {validSelectedIds.length > 0 && (
+              <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                Selected pending: <span className="font-semibold">{formatCurrency(selectedPending)}</span>
+              </div>
+            )}
+            {pendingRecords.length === 0 && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">
+                No fee records linked — this will be recorded as an advance/ad-hoc payment.
+              </div>
+            )}
             <button
               className="w-full rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={saving || !validSelectedIds.length || pendingRecords.length === 0}
+              disabled={saving || amount <= 0 || !collectedBy.trim()}
               onClick={collectPayment}
             >
               {saving ? "Saving..." : "Collect Payment"}

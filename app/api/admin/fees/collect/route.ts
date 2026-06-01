@@ -43,69 +43,140 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data;
-    const feeRecords = await prisma.feeRecord.findMany({
-      where: { id: { in: data.feeRecordIds }, studentId: data.studentId },
-      include: { student: true, batch: true },
-      orderBy: [{ year: "asc" }, { month: "asc" }],
-    });
-
-    if (!feeRecords.length) {
-      return NextResponse.json({ error: "No matching fee records found" }, { status: 404 });
-    }
-
-    const totalPending = feeRecords.reduce((sum, record) => sum + record.pendingAmount, 0);
-    const amountToCollect = Math.min(data.amount, totalPending);
+    const amountToCollect = Number(data.amount);
     if (amountToCollect <= 0) {
       return NextResponse.json({ error: "Amount must be greater than zero" }, { status: 400 });
     }
 
     const collectedAt = new Date();
     const paymentNumber = `PAY-${Date.now()}`;
-    let remaining = amountToCollect;
     let firstPaymentId: string | null = null;
-
     const updatedRecords = [];
 
-    for (let index = 0; index < feeRecords.length; index += 1) {
-      if (remaining <= 0) break;
+    // ── Case 1: Fee records provided — apply payment to them ──────────────────
+    if (data.feeRecordIds.length > 0) {
+      const feeRecords = await prisma.feeRecord.findMany({
+        where: { id: { in: data.feeRecordIds }, studentId: data.studentId },
+        include: { student: true, batch: true },
+        orderBy: [{ year: "asc" }, { month: "asc" }],
+      });
 
-      const record = feeRecords[index];
-      const payable = Math.min(record.pendingAmount, remaining);
-      const nextPending = parseFloat((record.pendingAmount - payable).toFixed(2));
-      const nextPaid = parseFloat((record.paidAmount + payable).toFixed(2));
-      const nextStatus = nextPending <= 0 ? "PAID" : "PARTIAL";
+      if (!feeRecords.length) {
+        return NextResponse.json({ error: "No matching fee records found" }, { status: 404 });
+      }
 
-      const updated = await prisma.feeRecord.update({
-        where: { id: record.id },
+      const totalPending = feeRecords.reduce((sum, record) => sum + record.pendingAmount, 0);
+      const toCollect = Math.min(amountToCollect, totalPending);
+
+      let remaining = toCollect;
+      for (let index = 0; index < feeRecords.length; index += 1) {
+        if (remaining <= 0) break;
+
+        const record = feeRecords[index];
+        const payable = Math.min(record.pendingAmount, remaining);
+        const nextPending = parseFloat((record.pendingAmount - payable).toFixed(2));
+        const nextPaid = parseFloat((record.paidAmount + payable).toFixed(2));
+        const nextStatus = nextPending <= 0 ? "PAID" : "PARTIAL";
+
+        const updated = await prisma.feeRecord.update({
+          where: { id: record.id },
+          data: {
+            paidAmount: nextPaid,
+            pendingAmount: nextPending,
+            status: nextStatus,
+            paidDate: nextPending <= 0 ? collectedAt : record.paidDate,
+          },
+        });
+
+        const payment = await prisma.feePayment.create({
+          data: {
+            paymentNumber: `${paymentNumber}-${index + 1}`,
+            feeRecordId: record.id,
+            amount: payable,
+            paymentMode: data.paymentMode,
+            status: "COMPLETED",
+            transactionId: data.transactionDetails?.transactionId ?? null,
+            gatewayName: data.transactionDetails?.gatewayName ?? null,
+            gatewayResponse: data.transactionDetails ?? undefined,
+            upiId: data.transactionDetails?.upiId ?? null,
+            collectedBy: data.collectedBy,
+            notes: data.notes,
+            cashReceivedBy: data.paymentMode === "CASH" ? data.collectedBy : null,
+            paidAt: collectedAt,
+          },
+        });
+
+        if (!firstPaymentId) firstPaymentId = payment.id;
+        updatedRecords.push(updated);
+        remaining = parseFloat((remaining - payable).toFixed(2));
+      }
+
+    // ── Case 2: No fee records — create an ad-hoc advance fee record ──────────
+    } else {
+      // Fetch student to get academicYear
+      const student = await prisma.student.findUnique({
+        where: { id: data.studentId },
+        select: { academicYear: true, firstName: true, lastName: true },
+      });
+      if (!student) {
+        return NextResponse.json({ error: "Student not found" }, { status: 404 });
+      }
+
+      const now = new Date();
+      const receiptNumber = `ADH-${Date.now()}`;
+
+      // Resolve a batchId — prefer the student's active enrollment, fallback to any batch
+      const batchEnrollment = await prisma.batchEnrollment.findFirst({
+        where: { studentId: data.studentId, isActive: true },
+        select: { batchId: true },
+      });
+      const anyBatch = batchEnrollment
+        ? null
+        : await prisma.batch.findFirst({ select: { id: true } });
+      const batchId = batchEnrollment?.batchId ?? anyBatch?.id;
+
+      if (!batchId) {
+        return NextResponse.json(
+          { error: "Cannot collect payment: student has no enrolled batch. Please enroll the student in a batch first." },
+          { status: 400 }
+        );
+      }
+
+      // Create a self-contained fee record that is immediately marked PAID
+      const adHocRecord = await prisma.feeRecord.create({
         data: {
-          paidAmount: nextPaid,
-          pendingAmount: nextPending,
-          status: nextStatus,
-          paidDate: nextPending <= 0 ? collectedAt : record.paidDate,
+          receiptNumber,
+          studentId: data.studentId,
+          batchId,
+          month: now.getMonth() + 1,
+          year: now.getFullYear(),
+          academicYear: student.academicYear,
+          baseFee: amountToCollect,
+          totalAmount: amountToCollect,
+          paidAmount: amountToCollect,
+          pendingAmount: 0,
+          status: "PAID",
+          dueDate: now,
+          paidDate: now,
         },
       });
 
       const payment = await prisma.feePayment.create({
         data: {
-          paymentNumber: `${paymentNumber}-${index + 1}`,
-          feeRecordId: record.id,
-          amount: payable,
+          paymentNumber: `${paymentNumber}-1`,
+          feeRecordId: adHocRecord.id,
+          amount: amountToCollect,
           paymentMode: data.paymentMode,
           status: "COMPLETED",
-          transactionId: data.transactionDetails?.transactionId ?? null,
-          gatewayName: data.transactionDetails?.gatewayName ?? null,
-          gatewayResponse: data.transactionDetails ?? undefined,
-          upiId: data.transactionDetails?.upiId ?? null,
           collectedBy: data.collectedBy,
-          notes: data.notes,
+          notes: data.notes ?? "Ad-hoc payment",
           cashReceivedBy: data.paymentMode === "CASH" ? data.collectedBy : null,
           paidAt: collectedAt,
         },
       });
 
-      if (!firstPaymentId) firstPaymentId = payment.id;
-      updatedRecords.push(updated);
-      remaining = parseFloat((remaining - payable).toFixed(2));
+      firstPaymentId = payment.id;
+      updatedRecords.push(adHocRecord);
     }
 
     const receiptBytes = firstPaymentId ? (await generateReceiptPDF(firstPaymentId)).length : 0;
@@ -115,7 +186,7 @@ export async function POST(request: NextRequest) {
       action: "FEE_COLLECTED",
       category: "FEE",
       severity: "INFO",
-      description: `Collected ₹${amountToCollect} for student ${feeRecords[0]?.student?.firstName ?? data.studentId}`,
+      description: `Collected ₹${amountToCollect} for student ${data.studentId}`,
       entityType: "FeePayment",
       entityId: firstPaymentId ?? undefined,
       entityName: paymentNumber,

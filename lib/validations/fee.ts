@@ -8,7 +8,7 @@ export const generateFeesSchema = z.object({
 
 export const collectFeeSchema = z.object({
   studentId: z.string(),
-  feeRecordIds: z.array(z.string()),
+  feeRecordIds: z.array(z.string()).optional().default([]),
   amount: z.number().min(0),
   paymentMode: z.enum(["CASH", "ONLINE", "CHEQUE", "UPI", "BANK_TRANSFER", "DD"]),
   discountAmount: z.number().optional(),
