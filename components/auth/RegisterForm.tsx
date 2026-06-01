@@ -66,12 +66,28 @@ function FieldError({ message }: { message?: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+import { useEffect } from "react";
+
 export function RegisterForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [adminExists, setAdminExists] = useState(false);
+  const [existingEmail, setExistingEmail] = useState("");
+
+  useEffect(() => {
+    fetch("/api/auth/register")
+      .then((res) => res.json())
+      .then((resJson) => {
+        if (resJson.success && resJson.data?.exists) {
+          setAdminExists(true);
+          setExistingEmail(resJson.data.email || "");
+        }
+      })
+      .catch((err) => console.error("Error checking register status:", err));
+  }, []);
 
   const {
     register,
@@ -112,6 +128,28 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+      {adminExists && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-indigo-150 bg-indigo-50/50 p-5 dark:border-indigo-900/30 dark:bg-indigo-950/20">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <div>
+              <p className="text-sm font-bold text-slate-900 dark:text-slate-50">
+                Super Admin Already Configured
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-350">
+                An administrator account is already set up in the database{existingEmail ? ` (${existingEmail})` : ""}. Please sign in to access the system.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/login"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/10 transition-all hover:bg-indigo-700 hover:shadow-indigo-600/20"
+          >
+            Go to Sign In Page
+          </Link>
+        </div>
+      )}
+
       {/* Server error */}
       {serverError && (
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

@@ -12,6 +12,24 @@ import { registerApiSchema } from "@/lib/validations/auth";
 import { errorResponse, successResponse } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 
+export async function GET(request: NextRequest) {
+  try {
+    const existingAdmin = await prisma.user.findFirst({
+      where: { role: "SUPER_ADMIN" },
+    });
+
+    const isDefaultAdmin = existingAdmin?.email === "darshanzala369@gmail.com";
+
+    return successResponse({
+      exists: !!existingAdmin && !isDefaultAdmin,
+      email: existingAdmin?.email,
+    });
+  } catch (error) {
+    console.error("[REGISTER_STATUS]", error);
+    return errorResponse("Failed to check registration status", 500);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // ── 1. Parse & validate request body ──────────────────────────────────────
