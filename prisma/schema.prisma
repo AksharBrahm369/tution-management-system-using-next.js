@@ -2054,11 +2054,38 @@ model Subject {
   teachers TeacherSubject[]
   batches  Batch[]
   exams    Exam[]
+  materials StudyMaterial[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("subjects")
+}
+
+model StudyMaterial {
+  id String @id @default(cuid())
+
+  title       String
+  description String?
+  subjectId   String?
+  batchId     String?
+  resourceType String
+  accessLevel  String @default("PUBLIC")
+  resourceUrl  String?
+  fileName     String?
+  fileSize     String?
+  createdBy    String?
+
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  batch   Batch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([subjectId])
+  @@index([batchId])
+  @@index([accessLevel])
+  @@map("study_materials")
 }
 
 model TeacherSubject {
@@ -2255,6 +2282,7 @@ model Batch {
   feeStructures FeeStructure[]
   feeRecords    FeeRecord[]
   exams         Exam[]
+  materials     StudyMaterial[]
 
   @@index([code])
   @@index([status])
