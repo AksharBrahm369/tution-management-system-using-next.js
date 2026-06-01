@@ -2,44 +2,83 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireSuperAdmin } from '@/lib/adminAuth';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin(request);
 
-    // Mock today's classes - will be updated with actual Batch/Class model
-    const todaysClasses = [
-      {
-        id: '1',
-        name: 'Mathematics - Grade 10',
-        teacher: 'Mr. Sharma',
-        time: '09:00 AM - 10:00 AM',
-        room: 'Room 101',
-        status: 'upcoming',
-      },
-      {
-        id: '2',
-        name: 'English - Grade 9',
-        teacher: 'Ms. Patel',
-        time: '10:30 AM - 11:30 AM',
-        room: 'Room 102',
-        status: 'ongoing',
-      },
-      {
-        id: '3',
-        name: 'Science - Grade 10',
-        teacher: 'Dr. Kumar',
-        time: '02:00 PM - 03:00 PM',
-        room: 'Lab 1',
-        status: 'upcoming',
-      },
-    ];
+    const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
 
-    return NextResponse.json(todaysClasses, { status: 200 });
+    // Fetch real class sessions from the database for today
+    const sessions = await prisma.classSession.findMany({
+      where: {
+        date: {
+          gte: todayStart,
+          lte: todayEnd,
+        },
+        status: {
+          in: ['SCHEDULED', 'ONGOING', 'COMPLETED'],
+        },
+      },
+      orderBy: { startTime: 'asc' },
+      take: 10,
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        topic: true,
+        status: true,
+        batch: {
+          select: {
+            name: true,
+            teacher: {
+              select: {
+                user: {
+                  select: { name: true },
+                },
+              },
+            },
+          },
+        },
+        room: {
+          select: { name: true },
+        },
+      },
+    });
+
+    const formatted = sessions.map((s) => {
+      const rawStatus = s.status.toLowerCase();
+      const mappedStatus =
+        rawStatus === 'scheduled'
+          ? 'upcoming'
+          : rawStatus === 'ongoing'
+          ? 'ongoing'
+          : 'completed';
+
+      return {
+        id: s.id,
+        name: s.topic ? `${s.batch.name} — ${s.topic}` : s.batch.name,
+        teacher: s.batch.teacher?.user?.name ?? 'TBA',
+        time: `${s.startTime} - ${s.endTime}`,
+        room: s.room?.name ?? 'Online',
+        status: mappedStatus,
+      };
+    });
+
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
     console.error('Today classes error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    const status = message.startsWith('Forbidden')
+      ? 403
+      : message.startsWith('Unauthorized')
+        ? 401
+        : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

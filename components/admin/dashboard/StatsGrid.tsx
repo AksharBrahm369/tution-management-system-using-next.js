@@ -57,7 +57,7 @@ const StatsGrid: React.FC = () => {
 
       <StatsCard
         label="Active Batches"
-        value={stats.activeBatches || 12}
+        value={stats.activeBatches ?? 0}
         icon={<BookOpen />}
         color="green"
         changeLabel="running this month"
@@ -66,10 +66,10 @@ const StatsGrid: React.FC = () => {
 
       <StatsCard
         label="Today's Attendance"
-        value={`${stats.todayAttendance || 95}%`}
+        value={`${stats.todayAttendance ?? 0}%`}
         icon={<CheckCircle />}
         color="orange"
-        changeLabel="235 present out of 247"
+        changeLabel="attendance percentage today"
       />
 
       <StatsCard
@@ -85,11 +85,10 @@ const StatsGrid: React.FC = () => {
 
       <StatsCard
         label="Pending Fees"
-        value={stats.pendingFees || 5}
+        value={`₹ ${(stats.pendingFees ?? 0).toLocaleString('en-IN')}`}
         icon={<AlertCircle />}
         color="red"
-        change={-15}
-        changeLabel="vs last month"
+        changeLabel="outstanding amount"
         onClick={() => router.push('/admin/fees')}
       />
     </div>

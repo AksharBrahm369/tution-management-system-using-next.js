@@ -54,41 +54,47 @@ const RecentPayments: React.FC = () => {
       </h3>
 
       <div className="space-y-3">
-        {payments?.map((payment) => (
-          <div
-            key={payment.id}
-            className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                {payment.avatar}
+        {payments && payments.length > 0 ? (
+          payments.map((payment) => (
+            <div
+              key={payment.id}
+              className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                  {payment.avatar}
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-white">
+                    {payment.studentName}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {formatDistanceToNow(new Date(payment.date), { addSuffix: true })}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-slate-900 dark:text-white">
-                  {payment.studentName}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {formatDistanceToNow(new Date(payment.date), { addSuffix: true })}
-                </p>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="font-semibold text-slate-900 dark:text-white">
-                  ₹ {payment.amount.toLocaleString('en-IN')}
-                </p>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${getMethodColor(
-                    payment.method
-                  )}`}
-                >
-                  {payment.method}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="font-semibold text-slate-900 dark:text-white">
+                    ₹ {payment.amount.toLocaleString('en-IN')}
+                  </p>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${getMethodColor(
+                      payment.method
+                    )}`}
+                  >
+                    {payment.method}
+                  </span>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="py-10 text-center text-slate-500 dark:text-slate-400">
+            <p className="text-sm">No payments recorded yet.</p>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

@@ -58,6 +58,12 @@ const RecentStudents: React.FC = () => {
           Recent Students
         </h3>
 
+        {!students || students.length === 0 ? (
+          <div className="py-12 text-center text-slate-500 dark:text-slate-400">
+            <p className="text-sm">No students enrolled yet.</p>
+            <p className="text-xs mt-1">Add students to see them here.</p>
+          </div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -80,7 +86,7 @@ const RecentStudents: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {students?.map((student) => (
+              {students.map((student) => (
                 <tr
                   key={student.id}
                   className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
@@ -123,6 +129,7 @@ const RecentStudents: React.FC = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

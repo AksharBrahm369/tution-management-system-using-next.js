@@ -2,52 +2,66 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireSuperAdmin } from '@/lib/adminAuth';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin(request);
 
-    // Mock recent payments - will be updated with actual Payment model
-    const recentPayments = [
-      {
-        id: '1',
-        studentName: 'Aarav Singh',
-        amount: 5000,
-        date: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        method: 'Online',
-        avatar: 'AS',
+    // Fetch real recent payments from the database
+    const payments = await prisma.feePayment.findMany({
+      where: { status: 'COMPLETED' },
+      orderBy: { paidAt: 'desc' },
+      take: 6,
+      select: {
+        id: true,
+        amount: true,
+        paymentMode: true,
+        paidAt: true,
+        feeRecord: {
+          select: {
+            student: {
+              select: {
+                user: {
+                  select: {
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
-      {
-        id: '2',
-        studentName: 'Priya Sharma',
-        amount: 15000,
-        date: new Date(Date.now() - 5 * 60 * 60 * 1000),
-        method: 'Cash',
-        avatar: 'PS',
-      },
-      {
-        id: '3',
-        studentName: 'Rohan Patel',
-        amount: 10000,
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        method: 'Cheque',
-        avatar: 'RP',
-      },
-      {
-        id: '4',
-        studentName: 'Neha Gupta',
-        amount: 7500,
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        method: 'Online',
-        avatar: 'NG',
-      },
-    ];
+    });
 
-    return NextResponse.json(recentPayments, { status: 200 });
+    const formatted = payments.map((p) => {
+      const name = p.feeRecord?.student?.user?.name ?? 'Unknown Student';
+      const initials = name
+        .split(' ')
+        .slice(0, 2)
+        .map((w: string) => w[0]?.toUpperCase() ?? '')
+        .join('');
+
+      return {
+        id: p.id,
+        studentName: name,
+        amount: p.amount,
+        date: p.paidAt,
+        method: (p.paymentMode as string) ?? 'Online',
+        avatar: initials || 'S',
+      };
+    });
+
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error) {
     console.error('Recent payments error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    const status = message.startsWith('Forbidden')
+      ? 403
+      : message.startsWith('Unauthorized')
+        ? 401
+        : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
