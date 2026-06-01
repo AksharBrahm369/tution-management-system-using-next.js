@@ -38,7 +38,9 @@ export async function POST(request: NextRequest) {
       where: { role: "SUPER_ADMIN" },
     });
 
-    if (existingAdmin) {
+    const isDefaultAdmin = existingAdmin?.email === "darshanzala369@gmail.com";
+
+    if (existingAdmin && !isDefaultAdmin) {
       return errorResponse(
         "Super admin already exists. Contact your administrator.",
         409
@@ -47,38 +49,67 @@ export async function POST(request: NextRequest) {
 
     // ── 3. Check duplicate email ──────────────────────────────────────────────
     const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    if (existingUser && (!existingAdmin || existingUser.id !== existingAdmin.id)) {
       return errorResponse("This email is already registered", 409);
     }
 
     // ── 4. Hash password ──────────────────────────────────────────────────────
     const hashedPassword = await hashPassword(password);
 
-    // ── 5. Create user ────────────────────────────────────────────────────────
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        phone: phone || null,
-        password: hashedPassword,
-        role: "SUPER_ADMIN",
-        isActive: true,
-        isVerified: true, // SUPER_ADMIN is auto-verified
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        avatar: true,
-        isActive: true,
-        isVerified: true,
-        createdAt: true,
-        updatedAt: true,
-        lastLogin: true,
-      },
-    });
+    // ── 5. Create or Update user ──────────────────────────────────────────────
+    let user;
+    if (existingAdmin && isDefaultAdmin) {
+      // Update the default seeded admin to avoid foreign key violations on referenced tables
+      user = await prisma.user.update({
+        where: { id: existingAdmin.id },
+        data: {
+          name,
+          email,
+          phone: phone || null,
+          password: hashedPassword,
+          isActive: true,
+          isVerified: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          avatar: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLogin: true,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name,
+          email,
+          phone: phone || null,
+          password: hashedPassword,
+          role: "SUPER_ADMIN",
+          isActive: true,
+          isVerified: true, // SUPER_ADMIN is auto-verified
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          avatar: true,
+          isActive: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true,
+          lastLogin: true,
+        },
+      });
+    }
 
     // ── 6. Log activity ────────────────────────────────────────────────────────
     await logActivityFromRequest(request, {
