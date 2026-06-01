@@ -40,7 +40,7 @@ const AttendanceDonutChart: React.FC = () => {
 
   const attendance = data.attendanceOverview;
   const total = attendance.present + attendance.absent + attendance.late;
-  const presentPercentage = Math.round((attendance.present / total) * 100);
+  const presentPercentage = total > 0 ? Math.round((attendance.present / total) * 100) : 0;
 
   const chartData = [
     { name: 'Present', value: attendance.present, fill: '#10b981' },
