@@ -50,11 +50,22 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
+
+    // Fetch the logged-in user profile dynamically
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((resJson) => {
+        if (resJson.success && resJson.data?.user) {
+          setUser(resJson.data.user);
+        }
+      })
+      .catch((err) => console.error('Error fetching user profile:', err));
   }, []);
 
   const isDarkMode = mounted ? theme === 'dark' : false;
@@ -146,11 +157,13 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
               className="flex items-center gap-2 rounded-xl py-1.5 pr-2 pl-1.5 transition-all hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-md shadow-indigo-500/30">
-                A
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
               </div>
               <ChevronDown size={16} className="hidden text-slate-500 md:block dark:text-slate-400" />
             </button>
-            {isProfileOpen && <UserProfileDropdown onClose={() => setIsProfileOpen(false)} />}
+            {isProfileOpen && (
+              <UserProfileDropdown user={user} onClose={() => setIsProfileOpen(false)} />
+            )}
           </div>
         </div>
       </header>
