@@ -30,5 +30,13 @@ export default async function AdminExamMarksPage({ params }: { params: Promise<{
 
   if (!exam) return notFound();
 
-  return <MarksEntryPage exam={exam} />;
+  return (
+    <MarksEntryPage
+      exam={{
+        ...exam,
+        examDate: exam.examDate.toISOString(),
+        resultPublishedAt: exam.resultPublishedAt?.toISOString() ?? null,
+      }}
+    />
+  );
 }

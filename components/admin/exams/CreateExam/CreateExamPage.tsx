@@ -78,7 +78,7 @@ export default function CreateExamPage({ batches, subjects }: { batches: BatchOp
         <p className="text-sm text-slate-600 dark:text-slate-400">Multi-step wizard for exam and result configuration.</p>
       </div>
 
-      <StepProgress currentStep={step} />
+      <StepProgress step={step} />
 
       {step === 1 && (
         <Step1ExamDetails

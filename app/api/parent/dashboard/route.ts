@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       take: 12,
       include: {
         student: { select: { id: true, firstName: true, lastName: true, studentCode: true } },
-        batch: { select: { id: true, name: true, batchCode: true } },
+        batch: { select: { id: true, name: true, code: true } },
       },
     });
 

@@ -3,7 +3,13 @@
  * Module 1: Authentication & User Management
  */
 
-import { Role } from "@prisma/client";
+export enum Role {
+  SUPER_ADMIN = "SUPER_ADMIN",
+  TEACHER = "TEACHER",
+  STUDENT = "STUDENT",
+  PARENT = "PARENT",
+}
+
 // ─── User Types ───────────────────────────────────────────────────────────────
 
 /**
@@ -93,5 +99,3 @@ export interface RouteGuardConfig {
 }
 
 // ─── Re-exports ───────────────────────────────────────────────────────────────
-
-export { Role };

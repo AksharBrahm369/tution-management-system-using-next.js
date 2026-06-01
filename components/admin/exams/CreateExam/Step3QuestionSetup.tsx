@@ -47,9 +47,10 @@ export default function Step3QuestionSetup({
               <Plus className="h-4 w-4" /> Add Question
             </button>
           </div>
-
-          <QuestionList questions={form.questions} />
-
+          <QuestionList
+            questions={form.questions}
+            onChange={(questions) => onChange({ ...form, questions })}
+          />
           {open && (
             <AddQuestionModal
               hasNegativeMarking={form.hasNegativeMarking}

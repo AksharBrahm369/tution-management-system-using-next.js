@@ -1,4 +1,5 @@
-import type { LogCategory, LogSeverity, Role } from "@prisma/client";
+import type { LogCategory, LogSeverity } from "@prisma/client";
+import type { Role } from "@/types";
 import type { Prisma } from "@prisma/client";
 
 export interface ActivityLogRow {

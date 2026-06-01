@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/adminAuth";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { restoreSchema } from "@/lib/validations/settings";
 import { getOrCreateInstituteSettings } from "@/lib/settings";
@@ -32,11 +33,15 @@ export async function POST(request: NextRequest) {
 
     await prisma.$transaction(async (tx) => {
       if (parsed.data.settings) {
+        const workingHours = parsed.data.settings.workingHours
+          ? (parsed.data.settings.workingHours as Prisma.InputJsonValue)
+          : Prisma.DbNull;
+
         await tx.instituteSettings.update({
           where: { id: settings.id },
           data: {
             ...parsed.data.settings,
-            workingHours: parsed.data.settings.workingHours ?? null,
+            workingHours,
           },
         });
       }

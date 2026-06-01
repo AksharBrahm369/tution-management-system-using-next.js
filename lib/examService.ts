@@ -24,7 +24,7 @@ export interface ExamFilters {
 export function getGradeRangesFromExam(exam: { gradeConfig: Prisma.JsonValue | null }): GradeRangeInput[] {
   if (!Array.isArray(exam.gradeConfig)) return defaultGradeRanges;
   return exam.gradeConfig
-    .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+    .filter((item): item is any => typeof item === "object" && item !== null)
     .map((item) => ({
       grade: String(item.grade ?? ""),
       minPercentage: Number(item.minPercentage ?? 0),
@@ -133,7 +133,7 @@ export async function createExam(rawInput: ExamCreateInput, createdBy: string) {
       hasNegativeMarking: input.hasNegativeMarking,
       negativeMarkValue: input.negativeMarkValue,
       gradingSystem: input.gradingSystem,
-      gradeConfig: input.gradeConfig === undefined ? defaultGradeRanges : (input.gradeConfig as Prisma.InputJsonValue),
+      gradeConfig: (input.gradeConfig === undefined ? defaultGradeRanges : input.gradeConfig) as any,
       status: input.status,
       createdBy,
       results: {

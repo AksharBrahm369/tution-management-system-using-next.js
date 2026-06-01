@@ -21,10 +21,15 @@ export async function POST(request: NextRequest) {
 
     let created = 0;
     for (const enrollment of enrollments) {
+      if (!enrollment.batch) {
+        continue;
+      }
+
       const exists = await prisma.feeRecord.findFirst({ where: { studentId: enrollment.studentId, batchId: enrollment.batchId, month, year } });
       if (exists) continue;
 
       const breakdown = await calculateFeeForStudent(enrollment.studentId, enrollment.batchId, month, year);
+      const feeStructure = await prisma.feeStructure.findFirst({ where: { batchId: enrollment.batchId } });
 
       const receiptNumber = `RCP-${year}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
@@ -33,7 +38,7 @@ export async function POST(request: NextRequest) {
           receiptNumber,
           studentId: enrollment.studentId,
           batchId: enrollment.batchId,
-          feeStructureId: enrollment.batch?.id ? (await prisma.feeStructure.findFirst({ where: { batchId: enrollment.batchId } })).then(f => f?.id) : null,
+          feeStructureId: feeStructure?.id ?? null,
           month,
           year,
           academicYear: enrollment.batch.academicYear,

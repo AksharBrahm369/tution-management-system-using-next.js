@@ -43,7 +43,7 @@ export default function ExamCard({ exam, onView, onEnterMarks }: any) {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent>
               <DropdownMenuItem onClick={() => onView(exam.id)}>View Details</DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEnterMarks(exam.id)}>Enter Marks</DropdownMenuItem>
               <DropdownMenuItem>Edit Exam</DropdownMenuItem>

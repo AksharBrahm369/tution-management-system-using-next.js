@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
           orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
           take: 50,
         },
-        examResults: { orderBy: { examDate: "desc" }, take: 50 },
+        examResults: { orderBy: { enteredAt: "desc" }, take: 50 },
         documents: { orderBy: { uploadedAt: "desc" } },
         emergencyContacts: true,
         medicalInfo: true,

@@ -24,5 +24,13 @@ export default async function AdminExamResultsPage() {
     orderBy: { examDate: "desc" },
   });
 
-  return <AllResultsPage exams={exams} />;
+  return (
+    <AllResultsPage
+      exams={exams.map((exam) => ({
+        ...exam,
+        examDate: exam.examDate.toISOString(),
+        resultPublishedAt: exam.resultPublishedAt?.toISOString() ?? null,
+      }))}
+    />
+  );
 }

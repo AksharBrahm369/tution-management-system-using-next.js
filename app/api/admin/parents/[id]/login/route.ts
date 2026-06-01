@@ -14,7 +14,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const parent = await prisma.parent.findUnique({ where: { id } });
     if (!parent) return NextResponse.json({ error: "Parent not found" }, { status: 404 });
 
-    const email = body.email || parent.fatherEmail || parent.motherEmail || parent.guardianEmail;
+    const email = body.email || parent.fatherEmail || parent.motherEmail;
     if (!email) return NextResponse.json({ error: "Parent email is required" }, { status: 400 });
 
     const name = parent.fatherName || parent.motherName || parent.guardianName || "Parent";

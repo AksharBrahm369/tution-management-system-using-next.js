@@ -24,5 +24,13 @@ export default async function AdminExamAnalyticsRoutePage() {
     orderBy: { examDate: "desc" },
   });
 
-  return <ExamAnalyticsPage exams={exams} />;
+  return (
+    <ExamAnalyticsPage
+      exams={exams.map((exam) => ({
+        ...exam,
+        examDate: exam.examDate.toISOString(),
+        resultPublishedAt: exam.resultPublishedAt?.toISOString() ?? null,
+      }))}
+    />
+  );
 }

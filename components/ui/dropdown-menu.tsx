@@ -7,7 +7,7 @@ export function DropdownMenu({ children }: { children: React.ReactNode }) {
   return <MenuContext.Provider value={{ open, setOpen }}><div className="relative inline-block">{children}</div></MenuContext.Provider>;
 }
 
-export function DropdownMenuTrigger({ asChild, children }: { asChild?: boolean; children: React.ReactElement }) {
+export function DropdownMenuTrigger({ asChild, children }: { asChild?: boolean; children: React.ReactElement<any> }) {
   const { open, setOpen } = React.useContext(MenuContext);
   return React.cloneElement(children, {
     onClick: () => setOpen(!open),

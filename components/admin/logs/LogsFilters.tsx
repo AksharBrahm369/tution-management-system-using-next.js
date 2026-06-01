@@ -1,8 +1,25 @@
 "use client";
 
-import { LogCategory, LogSeverity } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+const LOG_CATEGORIES = [
+  "AUTH",
+  "STUDENT",
+  "TEACHER",
+  "BATCH",
+  "ATTENDANCE",
+  "FEE",
+  "EXAM",
+  "COMMUNICATION",
+  "SETTINGS",
+  "USER_MANAGEMENT",
+  "REPORT",
+  "ENQUIRY",
+  "SYSTEM",
+] as const;
+
+const LOG_SEVERITIES = ["INFO", "WARNING", "ERROR", "CRITICAL"] as const;
 
 export interface LogsFilterState {
   search: string;
@@ -28,8 +45,8 @@ interface LogsFiltersProps {
   onExport: (format: "excel" | "pdf") => void;
 }
 
-const CATEGORIES = ["ALL", ...Object.values(LogCategory)] as const;
-const SEVERITIES = ["ALL", ...Object.values(LogSeverity)] as const;
+const CATEGORIES = ["ALL", ...LOG_CATEGORIES] as const;
+const SEVERITIES = ["ALL", ...LOG_SEVERITIES] as const;
 
 export default function LogsFilters({
   filters,

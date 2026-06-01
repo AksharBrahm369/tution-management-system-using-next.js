@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/adminAuth";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateInstituteSettings, normalizeOptional } from "@/lib/settings";
 import { instituteSettingsSchema } from "@/lib/validations/settings";
@@ -87,7 +88,9 @@ export async function PUT(request: NextRequest) {
         currentAcademicYear: data.currentAcademicYear.trim(),
         academicYears: data.academicYears,
         workingDays: data.workingDays,
-        workingHours: data.workingHours ?? null,
+        workingHours: data.workingHours
+          ? (data.workingHours as Prisma.InputJsonValue)
+          : Prisma.DbNull,
         gstEnabled: data.gstEnabled,
         gstNumber: normalizeOptional(data.gstNumber),
         gstPercentage: data.gstPercentage,

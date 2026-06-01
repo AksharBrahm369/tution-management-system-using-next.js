@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Ensure attempt not already submitted
     const attempt = await prisma.onlineAttempt.findUnique({
-      where: { examId_studentId: { examId: params.id, studentId: student.id } }
+      where: { examId_studentId: { examId: id, studentId: student.id } }
     });
 
     if (attempt && attempt.status === "SUBMITTED") {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!attempt) {
       await prisma.onlineAttempt.create({
         data: {
-          examId: params.id,
+          examId: id,
           studentId: student.id,
           status: "IN_PROGRESS",
           startedAt: new Date()
