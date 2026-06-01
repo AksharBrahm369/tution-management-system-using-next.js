@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { studentStatusUpdateSchema } from "@/lib/validations/student";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,17 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         },
         performedById: auth.userId,
       },
+    });
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "STUDENT_STATUS_CHANGED",
+      category: "STUDENT",
+      severity: "WARNING",
+      description: `Student status changed to ${parsed.data.status}`,
+      entityType: "Student",
+      entityId: id,
+      newValue: { status: parsed.data.status, reason: parsed.data.reason },
     });
 
     return NextResponse.json({ student }, { status: 200 });

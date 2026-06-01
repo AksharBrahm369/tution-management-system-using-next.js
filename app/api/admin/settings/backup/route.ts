@@ -5,6 +5,7 @@ import { requireSuperAdmin } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { backupCreateSchema } from "@/lib/validations/settings";
 import { getOrCreateInstituteSettings } from "@/lib/settings";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -46,6 +47,17 @@ export async function POST(request: NextRequest) {
         triggeredBy: auth.userId,
         completedAt: new Date(),
       },
+    });
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "BACKUP_CREATED",
+      category: "SETTINGS",
+      severity: "INFO",
+      description: `Manual backup created: ${fileName}`,
+      entityType: "BackupRecord",
+      entityId: record.id,
+      entityName: fileName,
     });
 
     return NextResponse.json({ backup: record, fileUrl: record.fileUrl });

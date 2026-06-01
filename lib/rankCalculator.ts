@@ -47,7 +47,8 @@ export async function calculateBatchRanks(examId: string, batchId: string) {
         where: { id: item.id },
         data: { batchRank: item.batchRank },
       })
-    )
+    ),
+    { timeout: 30000, maxWait: 10000 }
   );
 
   return ranked;
@@ -73,7 +74,8 @@ export async function calculateOverallRanks(examId: string) {
         where: { id: item.id },
         data: { overallRank: item.overallRank },
       })
-    )
+    ),
+    { timeout: 30000, maxWait: 10000 }
   );
 
   return ranked;

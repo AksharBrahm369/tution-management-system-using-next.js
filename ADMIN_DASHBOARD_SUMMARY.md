@@ -185,8 +185,8 @@ Created `prisma/seed.ts` with:
 - 5 Sample alerts (mixed severity)
 
 Credentials for testing:
-- Email: `admin@tuitionpro.com`
-- Password: `Admin@123`
+- Email: `darshanzala369@gmail.com`
+- Password: `Darshan@369`
 
 ## 📦 File Structure Created
 
@@ -267,8 +267,8 @@ http://localhost:3000/admin/dashboard
 ```
 
 ### 5. Login with
-- Email: `admin@tuitionpro.com`
-- Password: `Admin@123`
+- Email: `darshanzala369@gmail.com`
+- Password: `Darshan@369`
 
 ## 🔑 Key Features Implemented
 

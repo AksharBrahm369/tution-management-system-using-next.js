@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -24,6 +25,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await prisma.examResult.updateMany({
       where: { examId: id },
       data: { status: "PUBLISHED" }
+    });
+
+    await logActivityFromRequest(req, {
+      userId: user.id,
+      action: "RESULT_PUBLISHED",
+      category: "EXAM",
+      severity: "INFO",
+      description: `Results published for exam: ${exam.title}`,
+      entityType: "Exam",
+      entityId: id,
+      entityName: exam.title,
     });
 
     return NextResponse.json({ success: true });

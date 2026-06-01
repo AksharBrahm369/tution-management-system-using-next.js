@@ -245,6 +245,17 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     await createTimeline(id, "Student Updated", `Student profile updated by admin.`, auth.userId);
 
+    const { logActivityFromRequest } = await import("@/lib/activityLogger");
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "STUDENT_EDITED",
+      category: "STUDENT",
+      severity: "INFO",
+      description: `Student profile updated`,
+      entityType: "Student",
+      entityId: id,
+    });
+
     const updated = await prisma.student.findUnique({
       where: { id },
       include: {
@@ -271,8 +282,21 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const auth = await requireSuperAdmin(request);
     const { id } = await context.params;
 
+    const existing = await prisma.student.findUnique({ where: { id }, select: { firstName: true, lastName: true, studentCode: true } });
     await prisma.student.update({ where: { id }, data: { status: "INACTIVE" } });
     await createTimeline(id, "Student Deactivated", "Student was marked inactive by admin.", auth.userId);
+
+    const { logActivityFromRequest } = await import("@/lib/activityLogger");
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "STUDENT_DELETED",
+      category: "STUDENT",
+      severity: "WARNING",
+      description: `Student deactivated: ${existing?.firstName ?? ""} ${existing?.lastName ?? ""}`,
+      entityType: "Student",
+      entityId: id,
+      entityName: existing ? `${existing.firstName} ${existing.lastName}` : undefined,
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

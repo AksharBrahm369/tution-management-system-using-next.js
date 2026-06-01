@@ -19,7 +19,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       try {
         setIsSidebarCollapsed(JSON.parse(saved));
       } catch (e) {
-        console.error("Failed to parse admin-sidebar-collapsed from localStorage:", e);
+        console.error('Failed to parse admin-sidebar-collapsed from localStorage:', e);
       }
     }
 
@@ -49,12 +49,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     setIsMobileSidebarOpen(open);
   };
 
-  const desktopSidebarWidth = isSidebarCollapsed ? 72 : 260;
+  const desktopSidebarWidth = isSidebarCollapsed ? 76 : 268;
   const contentMarginLeft = isDesktop ? desktopSidebarWidth : 0;
 
   return (
-    <div className="h-screen w-full overflow-hidden bg-slate-50 dark:bg-[#0F172A]">
-      {/* Sidebar */}
+    <div className="app-mesh-bg relative h-screen w-full overflow-hidden">
+      <div className="blob -left-32 top-0 h-72 w-72 bg-indigo-400/20 dark:bg-indigo-600/15" />
+      <div
+        className="blob right-0 top-1/4 h-96 w-96 bg-cyan-400/15 dark:bg-cyan-500/10"
+        style={{ animationDelay: '-6s' }}
+      />
+
       <AdminSidebar
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={handleSidebarToggle}
@@ -63,20 +68,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         isDesktop={isDesktop}
       />
 
-      {/* Main Content Container */}
       <div
-        className="flex h-full flex-col overflow-hidden transition-[margin] duration-300 ease-in-out"
+        className="relative flex h-full flex-col overflow-hidden transition-[margin] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         style={{ marginLeft: `${contentMarginLeft}px` }}
       >
-        {/* Navbar */}
         <AdminNavbar
           isSidebarCollapsed={isSidebarCollapsed}
           onMobileMenuClick={() => handleMobileSidebarToggle(true)}
         />
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 md:px-4 md:py-4 xl:px-6 xl:py-6">
-          <div className="mx-auto w-full max-w-[1600px]">{children}</div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 md:px-5 md:py-5 xl:px-8 xl:py-6">
+          <div className="page-enter mx-auto w-full max-w-[1600px]">{children}</div>
         </main>
       </div>
     </div>

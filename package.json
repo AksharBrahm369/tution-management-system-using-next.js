@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
+    "test:e2e": "tsx scripts/e2e-production-test.ts",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev"
   },

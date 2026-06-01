@@ -10,7 +10,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateResetToken } from "@/lib/auth";
 import { forgotPasswordApiSchema } from "@/lib/validations/auth";
-import { errorResponse, successResponse, maskEmail, getClientIp } from "@/lib/utils";
+import { errorResponse, successResponse, maskEmail } from "@/lib/utils";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,13 +70,15 @@ export async function POST(request: NextRequest) {
     // await sendResetEmail({ to: email, name: user.name, resetUrl });
 
     // ── 7. Log activity ───────────────────────────────────────────────────────
-    await prisma.activityLog.create({
-      data: {
-        userId: user.id,
-        action: "FORGOT_PASSWORD",
-        details: "Password reset requested",
-        ipAddress: getClientIp(request),
-      },
+    await logActivityFromRequest(request, {
+      userId: user.id,
+      action: "PASSWORD_RESET_REQUESTED",
+      category: "AUTH",
+      severity: "INFO",
+      description: "Password reset requested",
+      entityType: "User",
+      entityId: user.id,
+      entityName: user.email,
     });
 
     return successResponse(

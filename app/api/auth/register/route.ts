@@ -9,7 +9,8 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
 import { registerApiSchema } from "@/lib/validations/auth";
-import { errorResponse, successResponse, getClientIp } from "@/lib/utils";
+import { errorResponse, successResponse } from "@/lib/utils";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -80,13 +81,15 @@ export async function POST(request: NextRequest) {
     });
 
     // ── 6. Log activity ────────────────────────────────────────────────────────
-    await prisma.activityLog.create({
-      data: {
-        userId: user.id,
-        action: "REGISTER",
-        details: "Super Admin account created",
-        ipAddress: getClientIp(request),
-      },
+    await logActivityFromRequest(request, {
+      userId: user.id,
+      action: "USER_CREATED",
+      category: "USER_MANAGEMENT",
+      severity: "INFO",
+      description: "Super Admin account created",
+      entityType: "User",
+      entityId: user.id,
+      entityName: user.email,
     });
 
     return successResponse({ user }, "Account created successfully", 201);

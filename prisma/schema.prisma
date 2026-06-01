@@ -43,6 +43,29 @@ enum Severity {
   CRITICAL
 }
 
+enum LogCategory {
+  AUTH
+  STUDENT
+  TEACHER
+  BATCH
+  ATTENDANCE
+  FEE
+  EXAM
+  COMMUNICATION
+  SETTINGS
+  USER_MANAGEMENT
+  REPORT
+  ENQUIRY
+  SYSTEM
+}
+
+enum LogSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
 enum EmploymentType {
   FULL_TIME
   PART_TIME
@@ -470,18 +493,45 @@ model OTPVerification {
 }
 
 model ActivityLog {
-  id        String   @id @default(cuid())
-  userId    String
-  action    String
-  details   String?
-  ipAddress String?
-  createdAt DateTime @default(now())
+  id           String      @id @default(cuid())
+
+  // Who
+  userId       String?
+  userName     String?
+  userRole     Role?
+  ipAddress    String?
+  userAgent    String?
+
+  // What
+  action       String
+  category     LogCategory  @default(SYSTEM)
+  severity     LogSeverity  @default(INFO)
+
+  // On What
+  entityType   String?
+  entityId     String?
+  entityName   String?
+
+  // Details
+  description  String       @default("")
+  oldValue     Json?
+  newValue     Json?
+  metadata     Json?
+
+  // Status
+  isSuccessful Boolean     @default(true)
+  errorMessage String?
+
+  createdAt    DateTime    @default(now())
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([category])
   @@index([createdAt])
+  @@index([entityType, entityId])
+  @@index([severity])
   @@map("activity_logs")
 }
 

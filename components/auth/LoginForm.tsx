@@ -9,10 +9,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2, LogIn, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, LogIn, AlertCircle } from "lucide-react";
 import { loginSchema } from "@/lib/validations/auth";
 import { z } from "zod";
 import { type SafeUser } from "@/types";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 // Derive the form type directly from the schema so resolver types align
 type LoginValues = z.infer<typeof loginSchema>;
@@ -83,19 +85,18 @@ export function LoginForm() {
 
       {/* Email */}
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="email" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
           Email Address
         </label>
         <input
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="admin@tuitionpro.com"
-          className={`w-full rounded-xl border px-4 py-3 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
-            errors.email
-              ? "border-red-400 bg-red-50"
-              : "border-slate-200 bg-slate-50 hover:border-slate-300"
-          }`}
+          placeholder="you@example.com"
+          className={cn(
+            "tp-input",
+            errors.email && "border-red-400 bg-red-50/80 focus:ring-red-500/20 dark:bg-red-950/20"
+          )}
           {...register("email")}
         />
         {errors.email && (
@@ -108,7 +109,7 @@ export function LoginForm() {
 
       {/* Password */}
       <div className="space-y-1.5">
-        <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="password" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
           Password
         </label>
         <div className="relative">
@@ -117,11 +118,10 @@ export function LoginForm() {
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Enter your password"
-            className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm text-slate-900 placeholder-slate-400 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 ${
-              errors.password
-                ? "border-red-400 bg-red-50"
-                : "border-slate-200 bg-slate-50 hover:border-slate-300"
-            }`}
+            className={cn(
+              "tp-input pr-12",
+              errors.password && "border-red-400 bg-red-50/80 focus:ring-red-500/20 dark:bg-red-950/20"
+            )}
             {...register("password")}
           />
           <button
@@ -147,45 +147,33 @@ export function LoginForm() {
           <input
             id="rememberMe"
             type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 accent-blue-600"
+            className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
             {...register("rememberMe")}
           />
           Remember me for 30 days
         </label>
         <Link
           href="/forgot-password"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline dark:text-indigo-400"
         >
           Forgot password?
         </Link>
       </div>
 
-      {/* Submit Button */}
-      <button
-        id="login-submit"
-        type="submit"
-        disabled={isSubmitting}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:bg-blue-700 hover:shadow-blue-600/40 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Signing in...
-          </>
-        ) : (
+      <Button id="login-submit" type="submit" disabled={isSubmitting} isLoading={isSubmitting} size="lg" className="w-full">
+        {!isSubmitting && (
           <>
             <LogIn className="h-4 w-4" />
             Sign In to TuitionPro
           </>
         )}
-      </button>
+      </Button>
 
-      {/* Register link */}
-      <p className="text-center text-sm text-slate-500">
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">
         Setting up for the first time?{" "}
         <Link
           href="/register"
-          className="font-medium text-blue-600 hover:text-blue-700 hover:underline"
+          className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline dark:text-indigo-400"
         >
           Create Admin Account
         </Link>

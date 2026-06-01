@@ -1,54 +1,80 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
+export const runtime = "nodejs";
+
+function startOfToday(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify JWT
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    await requireSuperAdmin(request);
 
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const userId = payload.sub as string;
+    const todayStart = startOfToday();
+    const monthStart = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1);
 
-    // Verify SUPER_ADMIN role
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { role: true },
-    });
-
-    if (user?.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Fetch statistics
-    const [totalUsers, totalTeachers, totalStudents] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.count({ where: { role: 'TEACHER' } }),
-      prisma.user.count({ where: { role: 'STUDENT' } }),
+    const [
+      totalStudents,
+      totalTeachers,
+      activeBatches,
+      studentsJoinedThisMonth,
+      todayAttendanceRecords,
+      todayPresent,
+      feePaymentsThisMonth,
+      pendingFeeRecords,
+    ] = await Promise.all([
+      prisma.student.count({ where: { status: "ACTIVE" } }),
+      prisma.teacher.count({ where: { status: "ACTIVE" } }),
+      prisma.batch.count({ where: { status: "ACTIVE" } }),
+      prisma.student.count({ where: { joiningDate: { gte: monthStart } } }),
+      prisma.attendance.count({
+        where: { date: { gte: todayStart } },
+      }),
+      prisma.attendance.count({
+        where: {
+          date: { gte: todayStart },
+          status: { in: ["PRESENT", "LATE", "HALF_DAY"] },
+        },
+      }),
+      prisma.feePayment.aggregate({
+        where: { paidAt: { gte: monthStart }, status: "COMPLETED" },
+        _sum: { amount: true },
+      }),
+      prisma.feeRecord.aggregate({
+        where: { pendingAmount: { gt: 0 } },
+        _sum: { pendingAmount: true },
+      }),
     ]);
+
+    const todayAttendancePercent =
+      todayAttendanceRecords > 0
+        ? Math.round((todayPresent / todayAttendanceRecords) * 100)
+        : 0;
 
     const stats = {
       totalStudents,
       totalTeachers,
-      activeBatches: 0, // Placeholder - will be updated with Batch model
-      todayAttendance: 0, // Placeholder - will be updated with Attendance model
-      feeCollected: 0, // Placeholder - will be updated with Fee model
-      pendingFees: 0, // Placeholder - will be updated with Fee model
-      monthlyJoinedStudents: 12, // Mock data
-      monthlyCollection: 45000, // Mock data in ₹
+      activeBatches,
+      todayAttendance: todayAttendancePercent,
+      feeCollected: feePaymentsThisMonth._sum.amount ?? 0,
+      pendingFees: pendingFeeRecords._sum.pendingAmount ?? 0,
+      monthlyJoinedStudents: studentsJoinedThisMonth,
+      monthlyCollection: feePaymentsThisMonth._sum.amount ?? 0,
     };
 
     return NextResponse.json(stats, { status: 200 });
   } catch (error) {
-    console.error('Dashboard stats error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.startsWith("Forbidden")
+      ? 403
+      : message.startsWith("Unauthorized")
+        ? 401
+        : 500;
+    console.error("Dashboard stats error:", error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

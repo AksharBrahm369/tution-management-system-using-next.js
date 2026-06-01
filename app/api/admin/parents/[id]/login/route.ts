@@ -32,12 +32,16 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     await prisma.parent.update({ where: { id }, data: { userId: user.id } });
 
-    await prisma.activityLog.create({
-      data: {
-        userId: auth.userId,
-        action: "PARENT_LOGIN_ACCOUNT_CREATED",
-        details: JSON.stringify({ parentId: id, accountUserId: user.id }),
-      },
+    const { logActivityFromRequest } = await import("@/lib/activityLogger");
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "ADMIN_PASSWORD_RESET",
+      category: "USER_MANAGEMENT",
+      severity: "WARNING",
+      description: `Parent portal login account configured for ${name}`,
+      entityType: "Parent",
+      entityId: parent.id,
+      metadata: { accountUserId: user.id, email },
     });
 
     return NextResponse.json({ message: "Login account ready", email, password }, { status: 200 });

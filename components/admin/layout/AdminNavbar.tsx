@@ -2,14 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import {
-  Search,
-  Bell,
-  Moon,
-  Sun,
-  ChevronDown,
-  Menu,
-} from 'lucide-react';
+import { Search, Bell, Moon, Sun, ChevronDown, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import GlobalSearchModal from '@/components/admin/shared/GlobalSearchModal';
 import NotificationDropdown from '@/components/admin/shared/NotificationDropdown';
@@ -21,7 +14,6 @@ interface AdminNavbarProps {
 }
 
 function isEntityIdSegment(segment: string): boolean {
-  // Handles common DB id patterns: cuid-like, uuid and long opaque ids.
   return (
     /^c[a-z0-9]{20,}$/i.test(segment) ||
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(segment) ||
@@ -53,10 +45,7 @@ function formatSegmentLabel(segment: string, index: number, allSegments: string[
   return toTitleCase(segment);
 }
 
-const AdminNavbar: React.FC<AdminNavbarProps> = ({
-  isSidebarCollapsed,
-  onMobileMenuClick,
-}) => {
+const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -70,7 +59,6 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
   const isDarkMode = mounted ? theme === 'dark' : false;
 
-  // Generate breadcrumb
   const segments = pathname.split('/').filter(Boolean);
   const breadcrumbItems = segments.map((segment, idx) => {
     const href = '/' + segments.slice(0, idx + 1).join('/');
@@ -82,34 +70,29 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({
 
   return (
     <>
-      <header
-        className={`sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200/90 bg-white/95 px-3 backdrop-blur md:px-4 xl:px-6 dark:border-[#1F2937] dark:bg-[#111827]/95 ${
-          isSidebarCollapsed ? 'shadow-sm' : 'shadow-sm'
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          {/* Mobile Menu Button */}
+      <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-200/60 px-3 md:px-5 xl:px-8 dark:border-slate-800/60">
+        <div className="flex min-w-0 items-center gap-3 md:gap-4">
           <button
+            type="button"
             onClick={onMobileMenuClick}
-            className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
+            className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50 lg:hidden"
           >
             <Menu size={22} />
           </button>
 
-          {/* Title & Breadcrumb */}
-          <div>
-            <h1 className="text-lg font-bold text-slate-900 md:text-xl dark:text-[#F8FAFC]">
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">
               {pageTitle}
             </h1>
-            {breadcrumbItems.length > 0 && (
-              <div className="mt-0.5 hidden items-center gap-1.5 text-xs text-slate-500 dark:text-[#94A3B8] md:flex">
+            {breadcrumbItems.length > 1 && (
+              <div className="mt-0.5 hidden items-center gap-1 text-xs text-slate-500 md:flex dark:text-slate-400">
                 {breadcrumbItems.map((item, idx) => (
-                  <span key={item.href}>
+                  <span key={item.href} className="flex items-center gap-1">
                     {idx > 0 && <span className="text-slate-300 dark:text-slate-600">/</span>}
                     <span
                       className={
                         idx === breadcrumbItems.length - 1
-                          ? 'font-medium text-slate-700 dark:text-slate-200'
+                          ? 'font-semibold text-indigo-600 dark:text-indigo-400'
                           : ''
                       }
                     >
@@ -122,60 +105,56 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({
           </div>
         </div>
 
-        {/* Right Side Actions */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Search Button */}
+        <div className="flex items-center gap-1.5 md:gap-2">
           <button
+            type="button"
             onClick={() => setIsSearchOpen(true)}
-            className="rounded-xl p-2 text-slate-600 transition-all duration-200 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
             title="Search"
           >
             <Search size={20} />
           </button>
 
-          {/* Notifications */}
           <div className="relative">
             <button
+              type="button"
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-              className="relative rounded-xl p-2 text-slate-600 transition-all duration-200 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="relative rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
               title="Notifications"
             >
               <Bell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-900"></span>
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
             </button>
             {isNotificationOpen && (
               <NotificationDropdown onClose={() => setIsNotificationOpen(false)} />
             )}
           </div>
 
-          {/* Dark Mode Toggle */}
           <button
+            type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="rounded-xl p-2 text-slate-600 transition-all duration-200 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-            title="Toggle dark mode"
+            className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
+            title="Toggle theme"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          {/* User Profile Dropdown */}
-          <div className="relative">
+          <div className="relative ml-1">
             <button
+              type="button"
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 transition-all duration-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="flex items-center gap-2 rounded-xl py-1.5 pr-2 pl-1.5 transition-all hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-blue-600 text-sm font-semibold text-white shadow-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-md shadow-indigo-500/30">
                 A
               </div>
-              <ChevronDown size={16} className="text-slate-500 dark:text-slate-400 hidden md:block" />
+              <ChevronDown size={16} className="hidden text-slate-500 md:block dark:text-slate-400" />
             </button>
-            {isProfileOpen && (
-              <UserProfileDropdown onClose={() => setIsProfileOpen(false)} />
-            )}
+            {isProfileOpen && <UserProfileDropdown onClose={() => setIsProfileOpen(false)} />}
           </div>
         </div>
       </header>
 
-      {/* Search Modal */}
       {isSearchOpen && <GlobalSearchModal onClose={() => setIsSearchOpen(false)} />}
     </>
   );

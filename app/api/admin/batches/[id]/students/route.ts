@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { enrollStudentsSchema } from "@/lib/validations/batch";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -106,6 +107,17 @@ export async function POST(
     // Update current strength
     const newCount = await prisma.batchEnrollment.count({ where: { batchId: id, isActive: true } });
     await prisma.batch.update({ where: { id }, data: { currentStrength: newCount } });
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "BATCH_ASSIGNED",
+      category: "STUDENT",
+      severity: "INFO",
+      description: `${studentIds.length} student(s) enrolled in batch`,
+      entityType: "Batch",
+      entityId: id,
+      metadata: { studentIds, count: studentIds.length },
+    });
 
     return NextResponse.json({ enrolled: studentIds.length, currentStrength: newCount });
   } catch (error) {

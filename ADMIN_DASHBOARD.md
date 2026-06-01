@@ -49,8 +49,8 @@ This module provides a full-featured admin dashboard with:
    ```
 
 ### Login Credentials
-- **Email**: `admin@tuitionpro.com`
-- **Password**: `Admin@123`
+- **Email**: `darshanzala369@gmail.com`
+- **Password**: `Darshan@369`
 
 ## 📁 Project Structure
 

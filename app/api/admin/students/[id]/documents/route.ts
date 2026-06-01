@@ -4,6 +4,7 @@ import { Readable } from "stream";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { documentTypeSchema } from "@/lib/validations/student";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -33,7 +34,7 @@ async function uploadBufferToCloudinary(buffer: Buffer, folder: string, filename
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const { id } = await context.params;
     const formData = await request.formData();
     const file = formData.get("file");
@@ -69,6 +70,17 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         title: "Document uploaded",
         description: `${name} uploaded successfully.`,
       },
+    });
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "DOCUMENT_UPLOADED",
+      category: "STUDENT",
+      severity: "INFO",
+      description: `Document uploaded: ${name}`,
+      entityType: "Student",
+      entityId: id,
+      entityName: name,
     });
 
     return NextResponse.json({ document }, { status: 201 });

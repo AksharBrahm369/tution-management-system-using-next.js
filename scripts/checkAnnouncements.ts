@@ -3,7 +3,7 @@ async function main() {
   const loginRes = await fetch('http://localhost:3000/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'darshanzala369@gmail.com', password: 'Aksharbrahm@505', rememberMe: true }),
+    body: JSON.stringify({ email: 'darshanzala369@gmail.com', password: 'Darshan@369', rememberMe: true }),
   });
   const setCookie = loginRes.headers.get('set-cookie') || '';
   const cookiePair = setCookie.split(';')[0];

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { collectFeeSchema } from "@/lib/validations/fee";
 import { generateReceiptPDF } from "@/lib/receiptGenerator";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -108,6 +109,18 @@ export async function POST(request: NextRequest) {
     }
 
     const receiptBytes = firstPaymentId ? (await generateReceiptPDF(firstPaymentId)).length : 0;
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "FEE_COLLECTED",
+      category: "FEE",
+      severity: "INFO",
+      description: `Collected ₹${amountToCollect} for student ${feeRecords[0]?.student?.firstName ?? data.studentId}`,
+      entityType: "FeePayment",
+      entityId: firstPaymentId ?? undefined,
+      entityName: paymentNumber,
+      metadata: { amount: amountToCollect, paymentMode: data.paymentMode },
+    });
 
     return NextResponse.json(
       {

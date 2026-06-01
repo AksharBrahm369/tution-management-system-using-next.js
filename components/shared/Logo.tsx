@@ -1,7 +1,3 @@
-/**
- * TuitionPro - Logo Component
- */
-
 import Link from "next/link";
 import { GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,9 +10,9 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  sm: { icon: 20, text: "text-lg" },
-  md: { icon: 24, text: "text-xl" },
-  lg: { icon: 32, text: "text-2xl" },
+  sm: { icon: 20, text: "text-lg", box: "h-9 w-9 rounded-xl" },
+  md: { icon: 24, text: "text-xl", box: "h-10 w-10 rounded-xl" },
+  lg: { icon: 32, text: "text-2xl", box: "h-12 w-12 rounded-2xl" },
 };
 
 export function Logo({
@@ -25,37 +21,36 @@ export function Logo({
   href = "/",
   className,
 }: LogoProps) {
-  const { icon, text } = sizeMap[size];
+  const { icon, text, box } = sizeMap[size];
   const isLight = variant === "light";
 
   const content = (
-    <div className={cn("flex items-center gap-2.5", className)}>
+    <div className={cn("flex items-center gap-3", className)}>
       <div
         className={cn(
-          "flex items-center justify-center rounded-xl p-1.5",
-          isLight ? "bg-white/20" : "bg-blue-600"
+          "flex items-center justify-center bg-linear-to-br from-indigo-500 via-violet-500 to-cyan-500 shadow-lg shadow-indigo-500/30",
+          box,
+          isLight && "ring-2 ring-white/30"
         )}
       >
-        <GraduationCap
-          size={icon}
-          className={isLight ? "text-white" : "text-white"}
-        />
+        <GraduationCap size={icon} className="text-white" />
       </div>
       <span
         className={cn(
           "font-bold tracking-tight",
           text,
-          isLight ? "text-white" : "text-slate-900"
+          isLight ? "text-white" : "text-slate-900 dark:text-white"
         )}
       >
-        Tuition<span className={isLight ? "text-blue-200" : "text-blue-600"}>Pro</span>
+        Tuition
+        <span className={isLight ? "text-cyan-200" : "text-gradient"}>Pro</span>
       </span>
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="inline-flex">
+      <Link href={href} className="inline-flex transition-opacity hover:opacity-90">
         {content}
       </Link>
     );

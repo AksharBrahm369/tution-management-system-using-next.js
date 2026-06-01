@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { generateNextStudentCode } from "@/lib/studentCode";
 import { studentCreateSchema } from "@/lib/validations/student";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -328,6 +329,18 @@ export async function POST(request: NextRequest) {
 
       await prisma.student.update({ where: { id: student.id }, data: { userId: studentUser.id } });
     }
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "STUDENT_ADDED",
+      category: "STUDENT",
+      severity: "INFO",
+      description: `Student ${student.firstName} ${student.lastName} (${student.studentCode}) added`,
+      entityType: "Student",
+      entityId: student.id,
+      entityName: `${student.firstName} ${student.lastName}`,
+      newValue: { studentCode: student.studentCode, status: student.status },
+    });
 
     return NextResponse.json({ student }, { status: 201 });
   } catch (error) {

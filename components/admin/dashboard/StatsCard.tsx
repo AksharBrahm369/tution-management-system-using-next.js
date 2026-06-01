@@ -11,36 +11,39 @@ interface StatsCardProps {
   onClick?: () => void;
 }
 
-const colorClasses: Record<string, { bg: string; text: string; icon: string }> = {
+const colorClasses: Record<
+  string,
+  { gradient: string; icon: string; glow: string }
+> = {
   blue: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    text: 'text-blue-600 dark:text-blue-400',
-    icon: 'bg-blue-100 dark:bg-blue-900/30',
+    gradient: 'from-blue-500/10 to-cyan-500/5',
+    icon: 'bg-blue-500/15 text-blue-600 dark:text-blue-400',
+    glow: 'group-hover:shadow-blue-500/10',
   },
   purple: {
-    bg: 'bg-purple-50 dark:bg-purple-900/20',
-    text: 'text-purple-600 dark:text-purple-400',
-    icon: 'bg-purple-100 dark:bg-purple-900/30',
+    gradient: 'from-violet-500/10 to-purple-500/5',
+    icon: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+    glow: 'group-hover:shadow-violet-500/10',
   },
   green: {
-    bg: 'bg-green-50 dark:bg-green-900/20',
-    text: 'text-green-600 dark:text-green-400',
-    icon: 'bg-green-100 dark:bg-green-900/30',
+    gradient: 'from-emerald-500/10 to-teal-500/5',
+    icon: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    glow: 'group-hover:shadow-emerald-500/10',
   },
   orange: {
-    bg: 'bg-orange-50 dark:bg-orange-900/20',
-    text: 'text-orange-600 dark:text-orange-400',
-    icon: 'bg-orange-100 dark:bg-orange-900/30',
+    gradient: 'from-amber-500/10 to-orange-500/5',
+    icon: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    glow: 'group-hover:shadow-amber-500/10',
   },
   red: {
-    bg: 'bg-red-50 dark:bg-red-900/20',
-    text: 'text-red-600 dark:text-red-400',
-    icon: 'bg-red-100 dark:bg-red-900/30',
+    gradient: 'from-red-500/10 to-rose-500/5',
+    icon: 'bg-red-500/15 text-red-600 dark:text-red-400',
+    glow: 'group-hover:shadow-red-500/10',
   },
   indigo: {
-    bg: 'bg-indigo-50 dark:bg-indigo-900/20',
-    text: 'text-indigo-600 dark:text-indigo-400',
-    icon: 'bg-indigo-100 dark:bg-indigo-900/30',
+    gradient: 'from-indigo-500/10 to-violet-500/5',
+    icon: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+    glow: 'group-hover:shadow-indigo-500/10',
   },
 };
 
@@ -59,44 +62,54 @@ const StatsCard: React.FC<StatsCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 ease-in-out dark:border-[#1F2937] dark:bg-[#111827] ${onClick ? 'cursor-pointer hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg dark:hover:border-slate-600 dark:hover:shadow-slate-950/40' : ''
-        }`}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all duration-300 ease-out dark:border-slate-800/80 dark:bg-slate-900/90 ${
+        onClick
+          ? `cursor-pointer tp-card-interactive hover:shadow-xl ${colors.glow}`
+          : 'tp-card'
+      }`}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 opacity-70 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700" />
-      
-      <div className="relative z-10 mb-4 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+      <div
+        className={`pointer-events-none absolute inset-0 bg-linear-to-br ${colors.gradient} opacity-80`}
+      />
+      <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/40 blur-2xl dark:bg-white/5" />
+
+      <div className="relative z-10 mb-4 flex items-start justify-between gap-3">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
           {label}
         </h3>
-        <div className={`rounded-xl p-3 ${colors.icon}`}>
-          <div className={`w-5 h-5 ${colors.text}`}>{icon}</div>
+        <div className={`rounded-xl p-3 transition-transform duration-300 group-hover:scale-110 ${colors.icon}`}>
+          <div className="h-5 w-5">{icon}</div>
         </div>
       </div>
 
-      <div className="relative z-10 mb-4">
-        <p className="text-3xl font-bold text-slate-900 dark:text-[#F8FAFC]">
+      <div className="relative z-10">
+        <p className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           {typeof value === 'number' ? value.toLocaleString() : value}
         </p>
         {changeLabel && change !== undefined && (
-          <div className="mt-2 flex items-center gap-1">
-            <div className={`flex items-center gap-0.5 text-xs font-medium ${isPositive
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
-              }`}>
+          <div className="mt-2 flex items-center gap-1.5">
+            <span
+              className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+                isPositive
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
+                  : 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400'
+              }`}
+            >
               {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
               {Math.abs(change)}%
-            </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {changeLabel}
             </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{changeLabel}</span>
           </div>
         )}
       </div>
 
       {onClick && (
-        <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          Click to view details →
-        </div>
+        <p className="relative z-10 mt-4 text-xs font-semibold text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-indigo-400">
+          View details →
+        </p>
       )}
     </div>
   );

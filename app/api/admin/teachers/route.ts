@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { teacherSchema } from "@/lib/validations/teacher";
 import { generateTeacherCode } from "@/lib/teacherCode";
 import * as z from "zod";
+import { logActivity } from "@/lib/activityLogger";
 
 export async function GET(req: Request) {
   try {
@@ -102,6 +103,16 @@ export async function POST(req: Request) {
       include: {
         subjects: true,
       },
+    });
+
+    await logActivity({
+      action: "TEACHER_ADDED",
+      category: "TEACHER",
+      severity: "INFO",
+      description: `Teacher ${teacher.firstName} ${teacher.lastName} (${teacher.teacherCode}) added`,
+      entityType: "Teacher",
+      entityId: teacher.id,
+      entityName: `${teacher.firstName} ${teacher.lastName}`,
     });
 
     return NextResponse.json(teacher, { status: 201 });

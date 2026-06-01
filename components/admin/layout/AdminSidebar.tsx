@@ -21,6 +21,7 @@ import {
   ActivitySquare,
   LogOut,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 
 interface NavItem {
@@ -55,93 +56,33 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const navSections: NavSection[] = [
     {
-      title: 'MAIN MENU',
+      title: 'Main',
       items: [
-        {
-          label: 'Dashboard',
-          href: '/admin/dashboard',
-          icon: <LayoutDashboard size={20} />,
-        },
-        {
-          label: 'Students',
-          href: '/admin/students',
-          icon: <Users size={20} />,
-        },
-        {
-          label: 'Teachers',
-          href: '/admin/teachers',
-          icon: <GraduationCap size={20} />,
-        },
-        {
-          label: 'Batches',
-          href: '/admin/batches',
-          icon: <BookOpen size={20} />,
-        },
-        {
-          label: 'Attendance',
-          href: '/admin/attendance',
-          icon: <CheckCircle size={20} />,
-        },
-        {
-          label: 'Fees',
-          href: '/admin/fees',
-          icon: <Banknote size={20} />,
-        },
-        {
-          label: 'Exams & Results',
-          href: '/admin/exams',
-          icon: <FileText size={20} />,
-        },
-        {
-          label: 'Study Material',
-          href: '/admin/materials',
-          icon: <BookMarked size={20} />,
-        },
-        {
-          label: 'Communication',
-          href: '/admin/communication',
-          icon: <MessageSquare size={20} />,
-        },
+        { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={20} /> },
+        { label: 'Students', href: '/admin/students', icon: <Users size={20} /> },
+        { label: 'Teachers', href: '/admin/teachers', icon: <GraduationCap size={20} /> },
+        { label: 'Batches', href: '/admin/batches', icon: <BookOpen size={20} /> },
+        { label: 'Attendance', href: '/admin/attendance', icon: <CheckCircle size={20} /> },
+        { label: 'Fees', href: '/admin/fees', icon: <Banknote size={20} /> },
+        { label: 'Exams & Results', href: '/admin/exams', icon: <FileText size={20} /> },
+        { label: 'Study Material', href: '/admin/materials', icon: <BookMarked size={20} /> },
+        { label: 'Communication', href: '/admin/communication', icon: <MessageSquare size={20} /> },
       ],
     },
     {
-      title: 'MANAGEMENT',
+      title: 'Management',
       items: [
-        {
-          label: 'Parents',
-          href: '/admin/parents',
-          icon: <Users2 size={20} />,
-        },
-        {
-          label: 'Enquiries',
-          href: '/admin/enquiries',
-          icon: <HelpCircle size={20} />,
-        },
-        {
-          label: 'Reports',
-          href: '/admin/reports',
-          icon: <BarChart3 size={20} />,
-        },
+        { label: 'Parents', href: '/admin/parents', icon: <Users2 size={20} /> },
+        { label: 'Enquiries', href: '/admin/enquiries', icon: <HelpCircle size={20} /> },
+        { label: 'Reports', href: '/admin/reports', icon: <BarChart3 size={20} /> },
       ],
     },
     {
-      title: 'SETTINGS',
+      title: 'System',
       items: [
-        {
-          label: 'Settings',
-          href: '/admin/settings',
-          icon: <Settings size={20} />,
-        },
-        {
-          label: 'User Management',
-          href: '/admin/users',
-          icon: <Shield size={20} />,
-        },
-        {
-          label: 'Activity Logs',
-          href: '/admin/logs',
-          icon: <ActivitySquare size={20} />,
-        },
+        { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },
+        { label: 'User Management', href: '/admin/users', icon: <Shield size={20} /> },
+        { label: 'Activity Logs', href: '/admin/logs', icon: <ActivitySquare size={20} /> },
       ],
     },
   ];
@@ -160,154 +101,141 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     }
   };
 
-  const sidebarWidth = isCollapsed ? 72 : 260;
+  const sidebarWidth = isCollapsed ? 76 : 268;
   const sidebarTransform = isDesktop || isMobileOpen ? 'translateX(0)' : 'translateX(-100%)';
 
   return (
     <>
-      {/* Mobile Overlay */}
       {!isDesktop && isMobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-[1px]"
+          className="fixed inset-0 z-30 bg-slate-950/50 backdrop-blur-sm transition-opacity"
           onClick={() => onMobileToggle(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className="
-          fixed top-0 left-0 z-40 h-screen
-          flex flex-col
-          bg-[#0B1120] text-white
-          border-r border-slate-800/80
-          shadow-2xl shadow-slate-950/40
-          transition-all duration-300 ease-in-out
-        "
+        className="fixed top-0 left-0 z-40 flex h-screen flex-col border-r border-white/10 bg-linear-to-b from-[#0c0f1a] via-[#111827] to-[#0f172a] text-white shadow-2xl shadow-indigo-950/30 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         style={{
           width: `${sidebarWidth}px`,
           transform: sidebarTransform,
         }}
       >
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
-          <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center w-full' : ''}`}>
-            <div className="shrink-0 w-10 h-10 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-              <GraduationCap size={24} className="text-white" />
+        <div className="relative flex items-center justify-between border-b border-white/10 px-4 py-4">
+          <div className={`flex items-center gap-3 ${isCollapsed ? 'w-full justify-center' : ''}`}>
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-500 via-violet-500 to-cyan-500 shadow-lg shadow-indigo-500/40">
+              <GraduationCap size={22} className="text-white" />
+              <Sparkles
+                size={12}
+                className="absolute -right-0.5 -top-0.5 text-amber-300 animate-pulse-soft"
+              />
             </div>
             {!isCollapsed && (
-              <span className="font-bold text-xl tracking-tight">TuitionPro</span>
+              <div>
+                <span className="block text-lg font-bold tracking-tight">TuitionPro</span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-indigo-300/80">
+                  Admin
+                </span>
+              </div>
             )}
           </div>
 
-          {/* Collapse Toggle */}
           {!isCollapsed && (
             <button
+              type="button"
               onClick={() => onToggleCollapse(true)}
-              className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+              className="rounded-xl p-2 text-slate-400 transition-all hover:bg-white/10 hover:text-white"
             >
               <ChevronRight size={18} />
             </button>
           )}
 
-          {/* Expand Toggle */}
           {isCollapsed && (
             <button
+              type="button"
               onClick={() => onToggleCollapse(false)}
-              className="absolute -right-3 top-6 hidden rounded-full border-2 border-slate-700 bg-slate-800 p-1 text-slate-300 shadow-md transition-all hover:bg-slate-700 hover:text-white lg:flex"
+              className="absolute -right-3 top-7 hidden rounded-full border border-white/20 bg-slate-800 p-1.5 text-slate-300 shadow-lg transition-all hover:bg-indigo-600 hover:text-white lg:flex"
             >
               <ChevronRight size={14} className="rotate-180" />
             </button>
           )}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-6">
+        <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
           {navSections.map((section) => (
             <div key={section.title} className="space-y-1">
               {!isCollapsed && (
-                <h3 className="px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-[0.12em]">
+                <h3 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
                   {section.title}
                 </h3>
               )}
-
-              <div className="space-y-1">
-                {section.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => onMobileToggle(false)}
-                    className={`
-                      flex items-center gap-3
-                      px-3 py-2.5
-                      rounded-xl text-sm
-                      transition-all duration-200 ease-in-out
-                      ${
-                        isActive(item.href)
-                          ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-900/30'
-                          : 'text-slate-300 hover:bg-slate-800/90 hover:text-white'
-                      }
-                      ${isCollapsed ? 'justify-center' : ''}
-                    `}
-                    title={isCollapsed ? item.label : undefined}
-                  >
-                    <span className="shrink-0">{item.icon}</span>
-                    {!isCollapsed && (
-                      <>
-                        <span className="flex-1 font-medium">{item.label}</span>
-                        {item.badge && (
-                          <span className="shrink-0 bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                            {item.badge}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </Link>
-                ))}
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => onMobileToggle(false)}
+                      title={isCollapsed ? item.label : undefined}
+                      className={`
+                        group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+                        transition-all duration-200 ease-out
+                        ${active
+                          ? 'bg-linear-to-r from-indigo-600 to-violet-600 text-white nav-active-glow'
+                          : 'text-slate-400 hover:bg-white/8 hover:text-white'
+                        }
+                        ${isCollapsed ? 'justify-center' : ''}
+                      `}
+                    >
+                      {active && (
+                        <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-white/90" />
+                      )}
+                      <span
+                        className={`shrink-0 transition-transform duration-200 ${!active && 'group-hover:scale-110'}`}
+                      >
+                        {item.icon}
+                      </span>
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1">{item.label}</span>
+                          {item.badge != null && item.badge > 0 && (
+                            <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                              {item.badge}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           ))}
         </nav>
 
-        {/* Bottom Section - User & Logout */}
-        <div className="border-t border-slate-800 p-3">
-          {/* User Profile */}
+        <div className="border-t border-white/10 p-3">
           <div
-            className={`
-              flex items-center gap-3 mb-3
-              px-3 py-2.5
-              rounded-xl
-              bg-slate-800/60
-              ${isCollapsed ? 'justify-center' : ''}
-            `}
+            className={`mb-2 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5 backdrop-blur-sm ${isCollapsed ? 'justify-center' : ''}`}
           >
-            <div className="shrink-0 w-9 h-9 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold shadow-sm">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-400 to-violet-500 text-sm font-bold text-white ring-2 ring-white/20">
               A
             </div>
             {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">Admin User</p>
-                <p className="text-xs text-slate-400 truncate">Super Admin</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-white">Admin User</p>
+                <p className="truncate text-xs text-indigo-300/70">Super Admin</p>
               </div>
             )}
           </div>
 
-          {/* Logout Button */}
           <button
+            type="button"
             onClick={handleLogout}
-            className={`
-              w-full flex items-center gap-3
-              px-3 py-2.5
-              rounded-xl
-              text-slate-300
-              hover:bg-slate-800
-              hover:text-white
-              transition-all duration-200 ease-in-out
-              ${isCollapsed ? 'justify-center' : ''}
-            `}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-red-500/15 hover:text-red-300 ${isCollapsed ? 'justify-center' : ''}`}
             title={isCollapsed ? 'Logout' : undefined}
           >
             <LogOut size={20} />
-            {!isCollapsed && <span className="text-sm font-medium">Logout</span>}
+            {!isCollapsed && <span>Logout</span>}
           </button>
         </div>
       </aside>

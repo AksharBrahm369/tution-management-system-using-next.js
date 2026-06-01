@@ -4,6 +4,7 @@ import { verifyAuth } from "@/lib/auth";
 import { marksEntrySchema } from "@/lib/validations/exam";
 import { calculateGradeFromConfig } from "@/lib/gradeCalculator";
 import { calculateBatchRanks } from "@/lib/rankCalculator";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -46,39 +47,44 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       : (exam.gradeConfig as any || null);
 
     await prisma.$transaction(
-      validated.results.map(r => {
-        let percent = null;
-        let grade = null;
-        let gradePoint = null;
+      async (tx) => {
+        await Promise.all(
+          validated.results.map(async (r) => {
+            let percent = null;
+            let grade = null;
+            let gradePoint = null;
 
-        if (!r.isAbsent && r.marksObtained !== null) {
-          if (r.marksObtained > exam.totalMarks) {
-            throw new Error(`Marks cannot exceed total marks for student ${r.studentId}`);
-          }
-          percent = parseFloat(((r.marksObtained / exam.totalMarks) * 100).toFixed(2));
-          if (exam.gradingSystem === "PERCENTAGE" && gradeConfig) {
-            const g = calculateGradeFromConfig(percent, gradeConfig);
-            grade = g.grade;
-            gradePoint = g.gradePoint;
-          }
-        }
+            if (!r.isAbsent && r.marksObtained !== null) {
+              if (r.marksObtained > exam.totalMarks) {
+                throw new Error(`Marks cannot exceed total marks for student ${r.studentId}`);
+              }
+              percent = parseFloat(((r.marksObtained / exam.totalMarks) * 100).toFixed(2));
+              if (exam.gradingSystem === "PERCENTAGE" && gradeConfig) {
+                const g = calculateGradeFromConfig(percent, gradeConfig);
+                grade = g.grade;
+                gradePoint = g.gradePoint;
+              }
+            }
 
-        return prisma.examResult.update({
-          where: { examId_studentId: { examId: id, studentId: r.studentId } },
-          data: {
-            marksObtained: r.isAbsent ? null : r.marksObtained,
-            percentage: percent,
-            grade,
-            gradePoint,
-            isAbsent: r.isAbsent,
-            teacherRemarks: r.teacherRemarks,
-            weakAreas: r.weakAreas || [],
-            status: "ENTERED",
-            enteredBy: user.id,
-            enteredAt: new Date()
-          }
-        });
-      })
+            await tx.examResult.update({
+              where: { examId_studentId: { examId: id, studentId: r.studentId } },
+              data: {
+                marksObtained: r.isAbsent ? null : r.marksObtained,
+                percentage: percent,
+                grade,
+                gradePoint,
+                isAbsent: r.isAbsent,
+                teacherRemarks: r.teacherRemarks,
+                weakAreas: r.weakAreas || [],
+                status: "ENTERED",
+                enteredBy: user.id,
+                enteredAt: new Date(),
+              },
+            });
+          })
+        );
+      },
+      { timeout: 30000, maxWait: 10000 }
     );
 
     if (validated.calculateRanks) {
@@ -97,8 +103,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     }
 
+    await logActivityFromRequest(req, {
+      userId: user.id,
+      action: "MARKS_ENTERED",
+      category: "EXAM",
+      severity: "INFO",
+      description: `Marks entered for ${validated.results.length} students`,
+      entityType: "Exam",
+      entityId: id,
+      entityName: exam.title,
+      metadata: { count: validated.results.length },
+    });
+
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Failed to submit marks" }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to submit marks";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatDate } from '@/lib/utils';
+import { Sparkles } from 'lucide-react';
 
 interface WelcomeHeaderProps {
   adminName?: string;
@@ -16,22 +17,25 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin User' 
   const formattedDate = formatDate(new Date(), 'EEEE, d MMMM yyyy');
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-blue-50 via-white to-indigo-50 p-5 shadow-sm md:p-6 dark:border-[#1F2937] dark:from-slate-900 dark:via-[#111827] dark:to-slate-900">
-      <div className="flex items-start justify-between gap-4 md:gap-6">
+    <section className="relative overflow-hidden rounded-2xl border border-indigo-200/50 bg-linear-to-r from-indigo-600 via-violet-600 to-indigo-700 p-6 shadow-lg shadow-indigo-500/20 md:p-8 dark:border-indigo-500/30">
+      <div className="blob absolute -right-10 -top-10 h-40 w-40 bg-white/20" />
+      <div className="blob absolute bottom-0 left-1/4 h-32 w-32 bg-cyan-400/20" style={{ animationDelay: '-5s' }} />
+
+      <div className="relative z-10 flex items-start justify-between gap-4 md:gap-6">
         <div className="flex-1">
-          <h2 className="break-words bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-2xl font-bold text-transparent sm:text-3xl dark:from-[#F8FAFC] dark:to-[#CBD5E1]">
+          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-indigo-100 backdrop-blur-sm">
+            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+            Dashboard Overview
+          </div>
+          <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
             {getGreeting()}, {adminName}
           </h2>
-          <p className="mt-2 text-sm font-medium text-slate-600 dark:text-[#94A3B8]">
-            {formattedDate}
-          </p>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Here is what is happening today.
-          </p>
+          <p className="mt-2 text-sm font-medium text-indigo-100">{formattedDate}</p>
+          <p className="mt-1 text-sm text-indigo-200/80">Here is what is happening at your institute today.</p>
         </div>
 
         <div className="hidden items-center md:flex">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#2563EB] text-xl font-bold text-white shadow-lg shadow-blue-900/30">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-bold text-white ring-2 ring-white/30 backdrop-blur-sm">
             A
           </div>
         </div>

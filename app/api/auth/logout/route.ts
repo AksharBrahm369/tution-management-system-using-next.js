@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clearAuthCookie, verifyToken } from "@/lib/auth";
-import { getClientIp } from "@/lib/utils";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,14 +21,12 @@ export async function POST(request: NextRequest) {
         // Delete session from DB
         await prisma.session.deleteMany({ where: { token } });
 
-        // Log activity
-        await prisma.activityLog.create({
-          data: {
-            userId: payload.userId,
-            action: "LOGOUT",
-            details: "User logged out",
-            ipAddress: getClientIp(request),
-          },
+        await logActivityFromRequest(request, {
+          userId: payload.userId,
+          action: "USER_LOGGED_OUT",
+          category: "AUTH",
+          severity: "INFO",
+          description: "User logged out",
         });
       } catch {
         // Token invalid — still clear the cookie

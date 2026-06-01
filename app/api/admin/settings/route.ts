@@ -3,6 +3,7 @@ import { requireSuperAdmin } from "@/lib/adminAuth";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateInstituteSettings, normalizeOptional } from "@/lib/settings";
 import { instituteSettingsSchema } from "@/lib/validations/settings";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const body = await request.json();
     const parsed = instituteSettingsSchema.safeParse(body);
 
@@ -131,6 +132,17 @@ export async function PUT(request: NextRequest) {
         parentPortalEnabled: data.parentPortalEnabled,
         studentPortalEnabled: data.studentPortalEnabled,
       },
+    });
+
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "SETTINGS_UPDATED",
+      category: "SETTINGS",
+      severity: "INFO",
+      description: "Institute settings updated",
+      entityType: "InstituteSettings",
+      entityId: updated.id,
+      entityName: updated.name,
     });
 
     return NextResponse.json({ settings: mapSettings(updated) });

@@ -7,7 +7,7 @@ async function main() {
   console.log("All existing users cleared.");
 
   // Create the requested Super Admin
-  const hashedPassword = await bcrypt.hash("Aksharbrahm@505", 12);
+  const hashedPassword = await bcrypt.hash("Darshan@369", 12);
   const user = await prisma.user.create({
     data: {
       name: "Darshan Zala",

@@ -8,6 +8,7 @@ import {
 } from "@/lib/notificationService";
 import { calculateAttendancePercentage, checkLowAttendance } from "@/lib/attendanceCalculator";
 import { Prisma } from "@prisma/client";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -220,6 +221,18 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+
+    await logActivityFromRequest(req, {
+      userId: payload.userId,
+      action: "ATTENDANCE_MARKED",
+      category: "ATTENDANCE",
+      severity: "INFO",
+      description: `Attendance marked for batch on ${attendanceDate.toISOString().slice(0, 10)}`,
+      entityType: "Batch",
+      entityId: batchId,
+      entityName: batch.name,
+      metadata: { records: createdAttendance.length },
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,5 @@
 /**
  * POST /api/auth/login
- *
- * Authenticates a user, creates a DB session, sets an HTTP-only JWT cookie,
- * updates lastLogin, and logs the activity.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,11 +11,11 @@ import {
 } from "@/lib/auth";
 import { loginApiSchema } from "@/lib/validations/auth";
 import { errorResponse, getClientIp } from "@/lib/utils";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
-// Simple in-memory rate limiter (use Redis in production)
 const failedAttempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 function checkRateLimit(identifier: string): boolean {
   const now = Date.now();
@@ -26,7 +23,7 @@ function checkRateLimit(identifier: string): boolean {
 
   if (record) {
     if (now < record.resetAt && record.count >= MAX_ATTEMPTS) {
-      return false; // Rate limited
+      return false;
     }
     if (now >= record.resetAt) {
       failedAttempts.delete(identifier);
@@ -35,18 +32,20 @@ function checkRateLimit(identifier: string): boolean {
   return true;
 }
 
-function recordFailedAttempt(identifier: string): void {
+function recordFailedAttempt(identifier: string): number {
   const now = Date.now();
   const record = failedAttempts.get(identifier);
 
   if (record && now < record.resetAt) {
     record.count++;
-  } else {
-    failedAttempts.set(identifier, {
-      count: 1,
-      resetAt: now + LOCKOUT_DURATION_MS,
-    });
+    return record.count;
   }
+
+  failedAttempts.set(identifier, {
+    count: 1,
+    resetAt: now + LOCKOUT_DURATION_MS,
+  });
+  return 1;
 }
 
 function clearFailedAttempts(identifier: string): void {
@@ -57,15 +56,22 @@ export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
 
-    // ── 1. Rate limit check ───────────────────────────────────────────────────
     if (!checkRateLimit(ip)) {
+      await logActivityFromRequest(request, {
+        action: "ACCOUNT_LOCKED",
+        category: "AUTH",
+        severity: "CRITICAL",
+        description: "Login blocked — too many failed attempts from this IP",
+        isSuccessful: false,
+        errorMessage: "Rate limited",
+        metadata: { ip },
+      });
       return errorResponse(
         "Too many failed attempts. Please try again in 15 minutes.",
         429
       );
     }
 
-    // ── 2. Parse & validate request body ─────────────────────────────────────
     let body: unknown;
     try {
       body = await request.json();
@@ -75,40 +81,72 @@ export async function POST(request: NextRequest) {
 
     const parsed = loginApiSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.flatten().fieldErrors as Record<
-        string,
-        string[]
-      >;
+      const errors = parsed.error.flatten().fieldErrors as Record<string, string[]>;
       return errorResponse("Validation failed", 422, errors);
     }
 
     const { email, password, rememberMe } = parsed.data;
 
-    // ── 3. Find user ──────────────────────────────────────────────────────────
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      recordFailedAttempt(ip);
+      const attempts = recordFailedAttempt(ip);
+      await logActivityFromRequest(request, {
+        userName: email,
+        action: "LOGIN_FAILED",
+        category: "AUTH",
+        severity: "WARNING",
+        description: `Login failed for unknown email: ${email}`,
+        isSuccessful: false,
+        errorMessage: "Invalid email or password",
+        metadata: { attempts, ip },
+      });
       return errorResponse("Invalid email or password", 401);
     }
 
-    // ── 4. Check account status ───────────────────────────────────────────────
     if (!user.isActive) {
+      await logActivityFromRequest(request, {
+        userId: user.id,
+        action: "LOGIN_FAILED",
+        category: "AUTH",
+        severity: "WARNING",
+        description: `Login attempt on deactivated account: ${email}`,
+        isSuccessful: false,
+        errorMessage: "Account deactivated",
+      });
       return errorResponse("Your account has been deactivated", 403);
     }
 
-    // ── 5. Verify password ────────────────────────────────────────────────────
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
-      recordFailedAttempt(ip);
+      const attempts = recordFailedAttempt(ip);
+      await logActivityFromRequest(request, {
+        userId: user.id,
+        action: "LOGIN_FAILED",
+        category: "AUTH",
+        severity: "WARNING",
+        description: `Login failed — wrong password for ${email}`,
+        isSuccessful: false,
+        errorMessage: "Invalid email or password",
+        metadata: { attempts, ip },
+      });
+      if (attempts >= MAX_ATTEMPTS) {
+        await logActivityFromRequest(request, {
+          userId: user.id,
+          action: "ACCOUNT_LOCKED",
+          category: "AUTH",
+          severity: "CRITICAL",
+          description: `Account temporarily locked after ${attempts} failed attempts`,
+          isSuccessful: false,
+          metadata: { ip },
+        });
+      }
       return errorResponse("Invalid email or password", 401);
     }
 
-    // ── 6. Generate JWT ───────────────────────────────────────────────────────
     clearFailedAttempts(ip);
     const token = await generateToken(user.id, user.role, user.email, rememberMe);
 
-    // ── 7. Persist session in DB ──────────────────────────────────────────────
     const sessionExpiry = new Date(
       Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000
     );
@@ -121,23 +159,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // ── 8. Update last login ──────────────────────────────────────────────────
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
 
-    // ── 9. Log activity ───────────────────────────────────────────────────────
-    await prisma.activityLog.create({
-      data: {
-        userId: user.id,
-        action: "LOGIN",
-        details: `Logged in${rememberMe ? " with Remember Me" : ""}`,
-        ipAddress: ip,
-      },
+    await logActivityFromRequest(request, {
+      userId: user.id,
+      action: "USER_LOGGED_IN",
+      category: "AUTH",
+      severity: "INFO",
+      description: `User logged in${rememberMe ? " (remember me)" : ""}`,
+      metadata: { rememberMe },
     });
 
-    // ── 10. Build response & set cookie ───────────────────────────────────────
     const safeUser = {
       id: user.id,
       name: user.name,

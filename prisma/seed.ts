@@ -55,20 +55,25 @@ const students: SeedStudent[] = [
 ];
 
 async function ensureAdminUser() {
-  const existing = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
-  if (existing) return existing;
+  const password = await bcryptjs.hash("Darshan@369", 12);
+  const adminData = {
+    name: "Darshan Zala",
+    email: "darshanzala369@gmail.com",
+    password,
+    role: "SUPER_ADMIN" as const,
+    isActive: true,
+    isVerified: true,
+  };
 
-  const password = await bcryptjs.hash("Aksharbrahm@505", 12);
-  return prisma.user.create({
-    data: {
-      name: "Darshan Zala",
-      email: "darshanzala369@gmail.com",
-      password,
-      role: "SUPER_ADMIN",
-      isActive: true,
-      isVerified: true,
-    },
-  });
+  const existing = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+  if (existing) {
+    return prisma.user.update({
+      where: { id: existing.id },
+      data: { email: adminData.email, password: adminData.password, name: adminData.name },
+    });
+  }
+
+  return prisma.user.create({ data: adminData });
 }
 
 async function main() {
@@ -1548,6 +1553,16 @@ async function main() {
   }
 
   console.log(`✓ Seeded ${createdEnquiries.length} enquiries, follow-ups, demo classes, and converted leads`);
+
+  const adminForLogs = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+  if (adminForLogs) {
+    const { seedActivityLogs } = await import("./seedActivityLogs");
+    await seedActivityLogs(
+      prisma,
+      { id: adminForLogs.id, name: adminForLogs.name, role: adminForLogs.role },
+      []
+    );
+  }
 }
 
 main()

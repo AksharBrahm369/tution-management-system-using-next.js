@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 import { createExam, listExams } from "@/lib/examService";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,16 @@ export async function POST(request: NextRequest) {
     const auth = await requireAdmin(request);
     const body = await request.json();
     const exam = await createExam(body, auth.userId);
+    await logActivityFromRequest(request, {
+      userId: auth.userId,
+      action: "EXAM_CREATED",
+      category: "EXAM",
+      severity: "INFO",
+      description: `Exam created: ${exam.title ?? exam.id}`,
+      entityType: "Exam",
+      entityId: exam.id,
+      entityName: exam.title,
+    });
     return NextResponse.json({ exam }, { status: 201 });
   } catch (error) {
     const { message, status } = getRouteErrorStatus(error);

@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, clearAuthCookie } from "@/lib/auth";
 import { resetPasswordApiSchema } from "@/lib/validations/auth";
-import { errorResponse, successResponse, getClientIp } from "@/lib/utils";
+import { errorResponse, successResponse } from "@/lib/utils";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,13 +74,15 @@ export async function POST(request: NextRequest) {
     ]);
 
     // ── 5. Log activity ───────────────────────────────────────────────────────
-    await prisma.activityLog.create({
-      data: {
-        userId: user.id,
-        action: "RESET_PASSWORD",
-        details: "Password reset successfully",
-        ipAddress: getClientIp(request),
-      },
+    await logActivityFromRequest(request, {
+      userId: user.id,
+      action: "PASSWORD_CHANGED",
+      category: "AUTH",
+      severity: "INFO",
+      description: "Password reset completed successfully",
+      entityType: "User",
+      entityId: user.id,
+      entityName: user.email,
     });
 
     // ── 6. Clear cookie if user is currently logged in ────────────────────────

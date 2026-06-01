@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { validateJWT } from "@/lib/auth";
 import { validateGenerateQR } from "@/lib/validations/attendance";
 import { generateQRToken } from "@/lib/qrGenerator";
+import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,6 +52,17 @@ export async function POST(req: NextRequest) {
         batchId,
         date: qrDate,
       },
+    });
+
+    await logActivityFromRequest(req, {
+      userId: payload.userId,
+      action: "QR_CODE_GENERATED",
+      category: "ATTENDANCE",
+      severity: "INFO",
+      description: `QR code generated for batch ${batch.name}`,
+      entityType: "Batch",
+      entityId: batchId,
+      entityName: batch.name,
     });
 
     return NextResponse.json({

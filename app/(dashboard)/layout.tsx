@@ -1,15 +1,12 @@
 "use client";
 
-/**
- * TuitionPro - Dashboard Layout (Client Component for logout)
- */
-
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useState } from "react";
 import { LogOut, LayoutDashboard, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -38,24 +35,25 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top Nav */}
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+    <div className="app-mesh-bg min-h-screen">
+      <header className="tp-glass sticky top-0 z-50 border-b border-slate-200/60 dark:border-slate-800/60">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Logo size="sm" />
-            <ChevronRight className="h-4 w-4 text-slate-300" />
-            <div className="flex items-center gap-1.5 text-sm text-slate-500">
-              <LayoutDashboard className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600" />
+            <div className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400">
+              <LayoutDashboard className="h-4 w-4 text-indigo-500" />
               Dashboard
             </div>
           </div>
 
-          <button
+          <Button
             id="logout-button"
+            variant="outline"
+            size="sm"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="border-slate-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-900 dark:hover:bg-red-950/30"
           >
             {isLoggingOut ? (
               <LoadingSpinner size="sm" label="Signing out..." />
@@ -65,12 +63,11 @@ export default function DashboardLayout({
                 Sign Out
               </>
             )}
-          </button>
+          </Button>
         </div>
       </header>
 
-      {/* Page Content */}
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+      <main className="page-enter mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</main>
     </div>
   );
 }

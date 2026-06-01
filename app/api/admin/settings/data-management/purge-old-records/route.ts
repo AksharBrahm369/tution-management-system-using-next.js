@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       prisma.attendanceAlert.deleteMany({ where: { createdAt: { lt: cutoff } } }),
       prisma.attendanceSession.deleteMany({ where: { createdAt: { lt: cutoff } } }),
       prisma.attendance.deleteMany({ where: { createdAt: { lt: cutoff } } }),
-      prisma.activityLog.deleteMany({ where: { createdAt: { lt: cutoff } } }),
       prisma.passwordResetToken.deleteMany({ where: { createdAt: { lt: cutoff } } }),
     ]);
 
