@@ -28,6 +28,7 @@ export default function StudentMarksRow({
       <td className="px-3 py-2">{row.student.firstName} {row.student.lastName}</td>
       <td className="px-3 py-2">
         <input
+          aria-label={`Marks obtained by ${row.student.firstName} ${row.student.lastName}`}
           type="number"
           className="w-24 rounded border px-2 py-1"
           min={0}
@@ -45,6 +46,7 @@ export default function StudentMarksRow({
       </td>
       <td className="px-3 py-2">
         <input
+          aria-label={`Mark ${row.student.firstName} ${row.student.lastName} absent`}
           type="checkbox"
           checked={row.isAbsent}
           onChange={(e) => onChange({
@@ -60,6 +62,7 @@ export default function StudentMarksRow({
       <td className="px-3 py-2">{row.grade ?? "-"}</td>
       <td className="px-3 py-2">
         <input
+          aria-label={`Teacher remarks for ${row.student.firstName} ${row.student.lastName}`}
           className="w-full rounded border px-2 py-1"
           value={row.teacherRemarks ?? ""}
           onChange={(e) => onChange({

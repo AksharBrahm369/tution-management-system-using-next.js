@@ -36,7 +36,7 @@ export default function EnquiryHeader({ enquiry, onAddFollowUp, onScheduleDemo, 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-300">{enquiry.enquiryNumber}</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{enquiry.studentName}</h1>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{enquiry.studentName}</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{enquiry.studentClass || "Class not set"}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${badgeClass(enquiry.status)}`}>{enquiry.status.replace(/_/g, " ")}</span>

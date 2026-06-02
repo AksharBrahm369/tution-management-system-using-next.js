@@ -88,7 +88,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
           <Link href={`/admin/batches/${batchId}`} className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900">
             <ArrowLeft size={16} /> Back to Batch
           </Link>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Edit Batch</h1>
+          <h2 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">Edit Batch</h2>
           <p className="mt-1 text-slate-500 dark:text-slate-400">{data?.batch?.name}</p>
         </div>
       </div>

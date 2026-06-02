@@ -35,7 +35,7 @@ export default function TeacherProfilePage({ teacherId }: { teacherId: string })
         <h3 className="text-xl font-bold text-slate-900 dark:text-white">Teacher Not Found</h3>
         <p className="text-slate-500 mt-2">The teacher profile you are looking for does not exist.</p>
         <Link href="/admin/teachers">
-          <button className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          <button type="button" className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             Back to Teachers
           </button>
         </Link>
@@ -49,15 +49,15 @@ export default function TeacherProfilePage({ teacherId }: { teacherId: string })
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Link href="/admin/teachers">
-            <button className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
+            <button type="button" aria-label="Back to teachers" className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
               <ArrowLeft className="h-5 w-5" />
             </button>
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
                 {teacher.firstName} {teacher.lastName}
-              </h1>
+              </h2>
               <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${
                 teacher.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'

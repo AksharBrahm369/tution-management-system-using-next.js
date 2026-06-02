@@ -48,7 +48,7 @@ export default function BackupRestore({ backups, onChanged }: Props) {
           <div className="flex items-center gap-2"><RotateCcw size={18} className="text-blue-600" /><h4 className="font-semibold text-slate-900 dark:text-white">Restore</h4></div>
           <p className="mt-2 text-sm text-slate-500">Upload a backup file to restore settings and academic years.</p>
           <div className="mt-4 flex flex-col gap-3">
-            <input type="file" accept="application/json" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+            <input aria-label="Upload backup JSON file" type="file" accept="application/json" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
             <button onClick={restore} disabled={!file || uploading} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200 disabled:opacity-60"><Upload size={16} /> {uploading ? "Restoring..." : "Restore from Backup"}</button>
           </div>
         </div>

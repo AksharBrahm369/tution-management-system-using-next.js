@@ -36,7 +36,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ student, onDownloadId, on
 
           <div className="min-w-0">
             <p className="text-sm uppercase tracking-[0.3em] text-blue-200">Student Profile</p>
-            <h1 className="mt-2 wrap-break-word text-2xl font-bold sm:text-3xl">{student.fullName}</h1>
+            <h2 className="mt-2 wrap-break-word text-2xl font-bold sm:text-3xl">{student.fullName}</h2>
             <p className="mt-1 break-all text-slate-300">{student.studentCode}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(student.status)}`}>{student.status}</span>

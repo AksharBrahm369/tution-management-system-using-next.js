@@ -128,9 +128,9 @@ const CreateBatchPage: React.FC = () => {
           >
             <ArrowLeft size={16} /> Back to Batches
           </Link>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">
+          <h2 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">
             Create New Batch
-          </h1>
+          </h2>
           <p className="mt-1 text-slate-500 dark:text-slate-400">
             Step {step} of 4 — {["Batch Details", "Schedule", "Students", "Review"][step - 1]}
           </p>

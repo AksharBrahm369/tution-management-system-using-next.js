@@ -53,7 +53,7 @@ const FeeBarChart: React.FC = () => {
   return (
     <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold bg-linear-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
           Monthly Fee Collection
         </h3>
         <select
@@ -79,10 +79,10 @@ const FeeBarChart: React.FC = () => {
           />
           <XAxis
             dataKey="month"
-            stroke="#94a3b8"
+            stroke="#475569"
             className="dark:stroke-slate-600"
           />
-          <YAxis stroke="#94a3b8" className="dark:stroke-slate-600" />
+          <YAxis stroke="#475569" className="dark:stroke-slate-600" />
           <Tooltip
             contentStyle={{
               backgroundColor: '#1e293b',

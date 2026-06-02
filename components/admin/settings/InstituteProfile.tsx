@@ -69,7 +69,7 @@ export default function InstituteProfile({ settings, onSaved }: Props) {
           <h3 className="text-xl font-semibold text-slate-900 dark:text-white">Institute Profile</h3>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Update branding, contact details, address, and theme colors.</p>
         </div>
-        <button onClick={() => setPreviewTheme((value) => !value)} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">
+        <button type="button" aria-pressed={previewTheme} onClick={() => setPreviewTheme((value) => !value)} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">
           <Eye size={16} /> Preview Theme
         </button>
       </div>
@@ -88,7 +88,7 @@ export default function InstituteProfile({ settings, onSaved }: Props) {
             <p className="mt-1 text-xs text-slate-500">PNG, JPG or SVG</p>
             <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white">
               <Upload size={16} /> Upload Logo
-              <input type="file" accept="image/*" className="hidden" onChange={(event) => event.target.files?.[0] && uploadLogo(event.target.files[0])} />
+              <input aria-label="Upload institute logo" type="file" accept="image/*" className="hidden" onChange={(event) => event.target.files?.[0] && uploadLogo(event.target.files[0])} />
             </label>
             {form.logo ? <button type="button" onClick={() => setValue("logo", null)} className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-rose-600 dark:text-rose-400"><Trash2 size={14} /> Remove logo</button> : null}
           </div>
@@ -113,7 +113,7 @@ export default function InstituteProfile({ settings, onSaved }: Props) {
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Working Days</p>
             <div className="flex flex-wrap gap-2">
               {days.map((day) => (
-                <button key={day} type="button" onClick={() => toggleWorkingDay(day)} className={`rounded-full px-3 py-1.5 text-xs font-medium ${form.workingDays.includes(day) ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+                <button key={day} type="button" aria-label={`Toggle ${day.toLowerCase()} as a working day`} aria-pressed={form.workingDays.includes(day)} onClick={() => toggleWorkingDay(day)} className={`rounded-full px-3 py-1.5 text-xs font-medium ${form.workingDays.includes(day) ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
                   {day.slice(0, 3)}
                 </button>
               ))}
@@ -128,7 +128,7 @@ export default function InstituteProfile({ settings, onSaved }: Props) {
       </div>
 
       <div className="flex justify-end">
-        <button onClick={save} disabled={saving} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60">{saving ? "Saving..." : "Save Profile"}</button>
+        <button type="button" onClick={save} disabled={saving} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60">{saving ? "Saving..." : "Save Profile"}</button>
       </div>
 
       <style jsx>{`

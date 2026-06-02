@@ -46,7 +46,7 @@ export default function ExamHeader({ exam }: { exam: ExamItem }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900/60">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{exam.title}</h1>
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{exam.title}</h2>
           <p className="text-sm text-slate-500">{exam.code}</p>
           <div className="mt-2 flex gap-2 text-xs">
             <span className="rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-800">{exam.type.replaceAll("_", " ")}</span>

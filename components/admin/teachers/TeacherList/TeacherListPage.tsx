@@ -51,7 +51,7 @@ export default function TeacherListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Teachers</h1>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Teachers</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Manage teaching staff and assignments</p>
         </div>
         <Link href="/admin/teachers/add">
@@ -66,7 +66,8 @@ export default function TeacherListPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input 
+          <input
+            aria-label="Search teachers"
             type="text"
             placeholder="Search teachers by name, code or email..." 
             className="w-full pl-9 pr-4 py-2 rounded-md border bg-white text-slate-900 dark:text-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -118,7 +119,7 @@ export default function TeacherListPage() {
                     </p>
                   </div>
                 </div>
-                <button className="h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-all">
+                <button type="button" aria-label={`Open actions for ${teacher.firstName} ${teacher.lastName}`} className="h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-all">
                   <MoreVertical className="h-4 w-4" />
                 </button>
               </div>

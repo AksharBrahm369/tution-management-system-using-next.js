@@ -119,7 +119,7 @@ export default function EnquiryListPage() {
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900/70 dark:to-slate-950/70 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-300">Lead Management</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Enquiries</h1>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Enquiries</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Track enquiries, follow-ups, demo classes, and conversions.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

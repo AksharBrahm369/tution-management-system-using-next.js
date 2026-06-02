@@ -74,7 +74,7 @@ export default function ParentProfilePage({ parentId }: Props) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">{displayName}</h1>
+              <h2 className="text-3xl font-semibold text-slate-900 dark:text-white">{displayName}</h2>
               <span className="rounded-full bg-cyan-100 px-3 py-1 text-xs font-medium text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-200">Primary contact</span>
             </div>
             <p className="mt-2 text-sm text-slate-500">{data.fatherPhone || data.motherPhone || data.guardianPhone || "-"} • {data.user?.email || data.fatherEmail || data.motherEmail || "-"}</p>

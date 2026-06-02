@@ -8,7 +8,7 @@ export default function AllResultsPage({ exams }: { exams: ExamItem[] }) {
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold">All Results</h1>
+        <h2 className="text-2xl font-semibold">All Results</h2>
         <p className="text-sm text-slate-500">Central result view across all exams.</p>
       </div>
 

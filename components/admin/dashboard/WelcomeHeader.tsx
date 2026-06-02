@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useSyncExternalStore } from 'react';
 import { formatDate } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 
@@ -6,15 +8,25 @@ interface WelcomeHeaderProps {
   adminName?: string;
 }
 
-const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin' }) => {
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
+function subscribeToTimeChanges(onStoreChange: () => void) {
+  const timer = window.setInterval(onStoreChange, 60_000);
+  return () => window.clearInterval(timer);
+}
 
-  const formattedDate = formatDate(new Date(), 'EEEE, d MMMM yyyy');
+function getGreetingSnapshot() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 18) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+function getDateSnapshot() {
+  return formatDate(new Date(), 'EEEE, d MMMM yyyy');
+}
+
+const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin' }) => {
+  const greeting = useSyncExternalStore(subscribeToTimeChanges, getGreetingSnapshot, () => 'Welcome');
+  const formattedDate = useSyncExternalStore(subscribeToTimeChanges, getDateSnapshot, () => '');
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-indigo-200/50 bg-linear-to-r from-indigo-600 via-violet-600 to-indigo-700 p-6 shadow-lg shadow-indigo-500/20 md:p-8 dark:border-indigo-500/30">
@@ -28,9 +40,11 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin' }) =>
             Dashboard Overview
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            {getGreeting()}, {adminName}
+            {greeting}, {adminName}
           </h2>
-          <p className="mt-2 text-sm font-medium text-indigo-100">{formattedDate}</p>
+          {formattedDate ? (
+            <p className="mt-2 text-sm font-medium text-indigo-100">{formattedDate}</p>
+          ) : null}
           <p className="mt-1 text-sm text-indigo-200/80">Here is what is happening at your institute today.</p>
         </div>
 

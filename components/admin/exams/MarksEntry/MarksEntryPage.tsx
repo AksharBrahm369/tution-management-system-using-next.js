@@ -77,7 +77,7 @@ export default function MarksEntryPage({ exam }: { exam: ExamItem }) {
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-6">
       <div className="rounded-2xl border p-4 dark:border-slate-700">
-        <h1 className="text-xl font-semibold">Marks Entry</h1>
+        <h2 className="text-xl font-semibold">Marks Entry</h2>
         <p className="mt-1 text-sm text-slate-500">{exam.title} | {new Date(exam.examDate).toLocaleDateString()} | Progress: {progress}</p>
       </div>
 

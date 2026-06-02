@@ -63,7 +63,7 @@ export default function FeeAndGST({ settings, onSaved }: Props) {
           <Field label="Key Secret"><input value={form.razorpayKeySecret ?? ""} onChange={(event) => setValue("razorpayKeySecret", event.target.value)} className="input" /></Field>
           <Field label="Mode"><select value={form.razorpayMode} onChange={(event) => setValue("razorpayMode", event.target.value)} className="input"><option value="TEST">Test</option><option value="LIVE">Live</option></select></Field>
           <div className="flex items-end gap-3">
-            <button onClick={testConnection} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"><Plug size={16} /> Test Connection</button>
+        <button type="button" onClick={testConnection} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200"><Plug size={16} /> Test Connection</button>
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${settings.razorpayKeyId ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>{settings.razorpayKeyId ? "Connected" : "Not Connected"}</span>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function FeeAndGST({ settings, onSaved }: Props) {
       </div>
 
       <div className="flex justify-end">
-        <button onClick={save} disabled={saving} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60">{saving ? "Saving..." : "Save Fee Settings"}</button>
+        <button type="button" onClick={save} disabled={saving} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60">{saving ? "Saving..." : "Save Fee Settings"}</button>
       </div>
 
       <style jsx>{`.input{width:100%;border-radius:0.75rem;border:1px solid rgb(203 213 225);background:transparent;padding:0.75rem 1rem;font-size:0.875rem;}`}</style>
@@ -83,7 +83,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
   return (
     <label className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:text-slate-300">
       <span>{label}</span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <input aria-label={label} type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
     </label>
   );
 }

@@ -130,7 +130,7 @@ const BatchListPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Batches</h1>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Batches</h2>
           <p className="mt-1 text-slate-500 dark:text-slate-400">Manage all tuition batches and schedules</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

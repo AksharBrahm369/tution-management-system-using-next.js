@@ -105,7 +105,7 @@ export default function AddEnquiryPage() {
   return (
     <div className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Add Enquiry</h1>
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Add Enquiry</h2>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Register a walk-in or phone enquiry and optionally schedule a follow-up.</p>
       </div>
 

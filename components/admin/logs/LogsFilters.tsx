@@ -61,46 +61,51 @@ export default function LogsFilters({
     <div className="tp-card animate-scale-in p-5">
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
         <Input
-          placeholder="Search action, user, entity…"
+          aria-label="Search activity logs"
+          placeholder="Search action, user, entity..."
           value={filters.search}
           onChange={(e) => set({ search: e.target.value })}
           className="lg:col-span-2"
         />
         <select
+          aria-label="Filter logs by category"
           className="tp-input h-10 py-0"
           value={filters.category}
           onChange={(e) => set({ category: e.target.value })}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c === "ALL" ? "All categories" : c.replace(/_/g, " ")}
+          {CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {category === "ALL" ? "All categories" : category.replace(/_/g, " ")}
             </option>
           ))}
         </select>
         <select
+          aria-label="Filter logs by severity"
           className="tp-input h-10 py-0"
           value={filters.severity}
           onChange={(e) => set({ severity: e.target.value })}
         >
-          {SEVERITIES.map((s) => (
-            <option key={s} value={s}>
-              {s === "ALL" ? "All severities" : s}
+          {SEVERITIES.map((severity) => (
+            <option key={severity} value={severity}>
+              {severity === "ALL" ? "All severities" : severity}
             </option>
           ))}
         </select>
         <select
+          aria-label="Filter logs by user"
           className="tp-input h-10 py-0"
           value={filters.userId}
           onChange={(e) => set({ userId: e.target.value })}
         >
           <option value="">All users</option>
-          {actors.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name} ({a.role})
+          {actors.map((actor) => (
+            <option key={actor.id} value={actor.id}>
+              {actor.name} ({actor.role})
             </option>
           ))}
         </select>
         <select
+          aria-label="Filter logs by status"
           className="tp-input h-10 py-0"
           value={filters.status}
           onChange={(e) => set({ status: e.target.value })}
@@ -110,11 +115,13 @@ export default function LogsFilters({
           <option value="failed">Failed</option>
         </select>
         <Input
+          aria-label="Filter logs from date"
           type="date"
           value={filters.fromDate}
           onChange={(e) => set({ fromDate: e.target.value })}
         />
         <Input
+          aria-label="Filter logs to date"
           type="date"
           value={filters.toDate}
           onChange={(e) => set({ toDate: e.target.value })}

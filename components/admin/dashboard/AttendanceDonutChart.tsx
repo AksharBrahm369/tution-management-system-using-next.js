@@ -62,7 +62,7 @@ const AttendanceDonutChart: React.FC = () => {
         Attendance Overview
       </h3>
 
-      <div className="flex flex-col items-center">
+      <div className="relative flex flex-col items-center">
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -95,7 +95,7 @@ const AttendanceDonutChart: React.FC = () => {
           <p className="text-3xl font-bold text-slate-900 dark:text-white">
             {presentPercentage}%
           </p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Present</p>
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Present</p>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ const AttendanceDonutChart: React.FC = () => {
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: item.fill }}
               />
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {item.name}
               </span>
             </div>

@@ -77,7 +77,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
       <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/40 blur-2xl dark:bg-white/5" />
 
       <div className="relative z-10 mb-4 flex items-start justify-between gap-3">
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700 dark:text-slate-300">
           {label}
         </h3>
         <div className={`rounded-xl p-3 transition-transform duration-300 group-hover:scale-110 ${colors.icon}`}>
@@ -101,7 +101,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
               {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
               {Math.abs(change)}%
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">{changeLabel}</span>
+            <span className="text-xs text-slate-700 dark:text-slate-300">{changeLabel}</span>
           </div>
         )}
       </div>

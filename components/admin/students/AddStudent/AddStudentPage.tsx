@@ -307,7 +307,7 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
           <Link href="/admin/students" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
             <ArrowLeft size={16} /> Back to Students
           </Link>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">{isEditMode ? "Edit Student" : "Add New Student"}</h1>
+          <h2 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">{isEditMode ? "Edit Student" : "Add New Student"}</h2>
         </div>
         <div className="text-sm text-slate-500 dark:text-slate-400">{generatedCode ? `Student Code: ${generatedCode}` : "Auto generated student code"}</div>
       </div>

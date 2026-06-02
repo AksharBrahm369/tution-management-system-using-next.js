@@ -227,7 +227,7 @@ export default function MaterialsDashboardPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Study Material</p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Manage notes, worksheets, and downloads</h1>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Manage notes, worksheets, and downloads</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
               This page is now live and reachable from the admin sidebar. It is ready for material cataloging, access control, and future upload integration.
             </p>

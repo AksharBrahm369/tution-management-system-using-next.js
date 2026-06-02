@@ -129,7 +129,7 @@ export default function CollectFeePage() {
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Collect Fee</h1>
+        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Collect Fee</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">Collect pending fee records and create payment entries.</p>
       </div>
 

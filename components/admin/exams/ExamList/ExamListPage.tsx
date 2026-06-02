@@ -61,7 +61,7 @@ export default function ExamListPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Exams</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Exam Management</h1>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Exam Management</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">Manage tests, assignments, marks, and published results from one clean dashboard.</p>
           </div>
 

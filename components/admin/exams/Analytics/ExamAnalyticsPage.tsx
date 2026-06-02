@@ -48,7 +48,7 @@ export default function ExamAnalyticsPage({ exams }: { exams: ExamItem[] }) {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6">
-      <h1 className="text-2xl font-semibold">Exam Analytics</h1>
+      <h2 className="text-2xl font-semibold">Exam Analytics</h2>
       <OverallPerformanceCards
         instituteAverage={instituteAverage}
         bestBatch={sortedBatch[0]?.label ?? "-"}

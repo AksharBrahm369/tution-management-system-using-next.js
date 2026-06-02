@@ -332,7 +332,7 @@ export default function CommunicationPage() {
             <div className="mb-2 inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium tracking-wide text-cyan-200">
               Admin Communication
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Announcements</h1>
+            <h2 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Announcements</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               Create, publish, and resend institution-wide updates from a single place.
             </p>

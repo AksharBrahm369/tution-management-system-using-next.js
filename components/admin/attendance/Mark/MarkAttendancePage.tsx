@@ -215,7 +215,7 @@ export default function MarkAttendancePage() {
             <span>/</span>
             <span>Mark</span>
           </div>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">Mark Attendance</h1>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">Mark Attendance</h2>
           <p className="text-slate-600 dark:text-slate-300">Select a batch, mark each student, then submit once.</p>
         </div>
         <div className="flex gap-2">

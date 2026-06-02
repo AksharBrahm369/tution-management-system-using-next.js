@@ -137,7 +137,7 @@ const StudentListPage: React.FC = () => {
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900/60 dark:to-slate-950/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Student Management</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Students</h1>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Students</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Manage all enrolled students</p>
         </div>
 

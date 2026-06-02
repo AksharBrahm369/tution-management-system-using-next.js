@@ -80,13 +80,13 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
 
   return (
     <>
-      <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-200/60 bg-white/95 px-3 md:px-5 xl:px-8 dark:border-slate-800/60 dark:bg-slate-950/95">
+      <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-300 bg-white px-3 md:px-5 xl:px-8 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex min-w-0 items-center gap-3 md:gap-4">
           <button
             type="button"
             onClick={onMobileMenuClick}
             aria-label="Open admin navigation"
-            className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50 lg:hidden"
+            className="rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50 lg:hidden"
           >
             <Menu size={22} />
           </button>
@@ -121,7 +121,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
             type="button"
             onClick={() => setIsSearchOpen(true)}
             aria-label="Open global search"
-            className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
+            className="rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50"
             title="Search"
           >
             <Search size={20} />
@@ -132,7 +132,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
               type="button"
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
               aria-label="Open notifications"
-              className="relative rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
+              className="relative rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50"
               title="Notifications"
             >
               <Bell size={20} />
@@ -147,7 +147,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
             type="button"
             onClick={() => setTheme(isDarkMode ? 'light' : 'dark')}
             aria-label="Toggle theme"
-            className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
+            className="rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50"
             title="Toggle theme"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}

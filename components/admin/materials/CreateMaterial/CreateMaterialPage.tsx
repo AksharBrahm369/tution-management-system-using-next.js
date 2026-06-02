@@ -85,7 +85,7 @@ export default function CreateMaterialPage({ batches, subjects }: Props) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Study Material</p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Create resource</h1>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Create resource</h2>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Save notes, worksheets, links, or uploaded files for batches and subjects.</p>
           </div>
 

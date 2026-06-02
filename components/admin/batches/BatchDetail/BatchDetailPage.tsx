@@ -114,7 +114,7 @@ const BatchDetailPage: React.FC<BatchDetailPageProps> = ({ batchId }) => {
               <ArrowLeft size={16} /> Back to Batches
             </Link>
             <div className="mt-3 flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{batch.name}</h1>
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{batch.name}</h2>
               <span className={`rounded-full px-3 py-1 text-sm font-semibold ${STATUS_BADGE[batch.status] ?? STATUS_BADGE.INACTIVE}`}>
                 {batch.status}
               </span>

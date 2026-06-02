@@ -81,15 +81,15 @@ export default function AddTeacherPage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link href="/admin/teachers">
-          <button type="button" className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
+          <button type="button" aria-label="Back to teachers" className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
             <ArrowLeft className="h-5 w-5" />
           </button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <UserPlus className="h-7 w-7 text-primary" />
             Add New Teacher
-          </h1>
+          </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Complete the profile to onboard a new teaching staff member</p>
         </div>
       </div>
@@ -161,9 +161,12 @@ export default function AddTeacherPage() {
               const isPrimary = currentSubjectIds[0] === subject.id;
               
               return (
-                <div 
+                <button
+                  type="button"
                   key={subject.id}
                   onClick={() => toggleSubject(subject.id)}
+                  aria-pressed={isSelected}
+                  aria-label={`${isSelected ? 'Remove' : 'Select'} ${subject.name} subject`}
                   className={`
                     cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center justify-center text-center gap-2
                     ${isSelected 
@@ -178,7 +181,7 @@ export default function AddTeacherPage() {
                     </p>
                     {isPrimary && <span className="text-[10px] uppercase font-bold text-primary tracking-wider mt-1 block">Primary</span>}
                   </div>
-                </div>
+                </button>
               );
             })}
             {subjects.length === 0 && <p className="text-sm text-slate-500 col-span-full py-4 text-center">Loading subjects...</p>}

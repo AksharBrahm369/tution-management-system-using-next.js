@@ -105,7 +105,7 @@ export default function ParentListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Parents</h1>
+          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white">Parents</h2>
           <p className="mt-2 text-sm text-slate-500">Manage all parent accounts</p>
         </div>
         <div className="flex gap-2">
@@ -127,22 +127,22 @@ export default function ParentListPage() {
         <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.8fr_auto_auto]">
           <div className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
             <Search className="h-4 w-4 text-slate-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} placeholder="Search by parent name / phone / email" className="w-full bg-transparent text-sm outline-none" />
+            <input aria-label="Search parents" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} placeholder="Search by parent name / phone / email" className="w-full bg-transparent text-sm outline-none" />
           </div>
-          <input value={batchId} onChange={(e) => setBatchId(e.target.value)} placeholder="Batch filter" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-          <select value={loginStatus} onChange={(e) => setLoginStatus(e.target.value as any)} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950">
+          <input aria-label="Filter parents by batch" value={batchId} onChange={(e) => setBatchId(e.target.value)} placeholder="Batch filter" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+          <select aria-label="Filter parents by login status" value={loginStatus} onChange={(e) => setLoginStatus(e.target.value as any)} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950">
             <option value="ALL">All</option>
             <option value="ACTIVE">Active</option>
             <option value="NO_LOGIN">No Login</option>
           </select>
-          <button onClick={load} className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-medium text-white">Apply</button>
-          <button onClick={() => { setSearch(""); setBatchId(""); setLoginStatus("ALL"); setTimeout(load, 0); }} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Reset</button>
+          <button type="button" onClick={load} className="rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-medium text-white">Apply</button>
+          <button type="button" onClick={() => { setSearch(""); setBatchId(""); setLoginStatus("ALL"); setTimeout(load, 0); }} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Reset</button>
         </div>
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-slate-500">View toggle</div>
           <div className="flex rounded-2xl border border-slate-200 p-1 dark:border-slate-800">
-            <button onClick={() => setView("grid")} className={`rounded-xl px-3 py-2 text-sm ${view === "grid" ? "bg-cyan-600 text-white" : "text-slate-600 dark:text-slate-300"}`}><Grid2X2 className="mr-2 inline h-4 w-4" />Grid</button>
-            <button onClick={() => setView("table")} className={`rounded-xl px-3 py-2 text-sm ${view === "table" ? "bg-cyan-600 text-white" : "text-slate-600 dark:text-slate-300"}`}><Table2 className="mr-2 inline h-4 w-4" />Table</button>
+            <button type="button" aria-pressed={view === "grid"} onClick={() => setView("grid")} className={`rounded-xl px-3 py-2 text-sm ${view === "grid" ? "bg-cyan-600 text-white" : "text-slate-600 dark:text-slate-300"}`}><Grid2X2 className="mr-2 inline h-4 w-4" />Grid</button>
+            <button type="button" aria-pressed={view === "table"} onClick={() => setView("table")} className={`rounded-xl px-3 py-2 text-sm ${view === "table" ? "bg-cyan-600 text-white" : "text-slate-600 dark:text-slate-300"}`}><Table2 className="mr-2 inline h-4 w-4" />Table</button>
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function ParentListPage() {
                     <div className="text-sm text-slate-500">{parent.primaryContact}</div>
                   </div>
                 </div>
-                <button className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal className="h-4 w-4" /></button>
+                <button type="button" aria-label="Open parent actions" className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><MoreHorizontal className="h-4 w-4" /></button>
               </div>
               <div className="mt-4 space-y-2 border-t border-slate-200 pt-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300">
                 <div className="flex items-center gap-2"><Phone className="h-4 w-4" />{parent.fatherPhone || parent.motherPhone || parent.guardianPhone || "-"}</div>
@@ -170,7 +170,7 @@ export default function ParentListPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link href={`/admin/parents/${parent.id}`} className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-medium text-white dark:bg-white dark:text-slate-900">View</Link>
-                <button className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Message</button>
+                <button type="button" className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Message</button>
                 <Link href="/admin/parents/ptm" className="rounded-xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Schedule PTM</Link>
               </div>
               <div className="mt-4 text-xs text-slate-500">Last Active: {parent.user?.lastLogin ? new Date(parent.user.lastLogin).toLocaleString() : "Never"}</div>
@@ -221,18 +221,18 @@ export default function ParentListPage() {
               {createError && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-200">{createError}</div>}
 
               <div className="grid gap-4 md:grid-cols-2">
-                <input value={createForm.fatherName} onChange={(e) => setCreateForm({ ...createForm, fatherName: e.target.value })} placeholder="Father name" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.fatherPhone} onChange={(e) => setCreateForm({ ...createForm, fatherPhone: e.target.value })} placeholder="Father phone" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.fatherEmail} onChange={(e) => setCreateForm({ ...createForm, fatherEmail: e.target.value })} placeholder="Father email" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.fatherOccup} onChange={(e) => setCreateForm({ ...createForm, fatherOccup: e.target.value })} placeholder="Father occupation" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.motherName} onChange={(e) => setCreateForm({ ...createForm, motherName: e.target.value })} placeholder="Mother name" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.motherPhone} onChange={(e) => setCreateForm({ ...createForm, motherPhone: e.target.value })} placeholder="Mother phone" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.motherEmail} onChange={(e) => setCreateForm({ ...createForm, motherEmail: e.target.value })} placeholder="Mother email" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.motherOccup} onChange={(e) => setCreateForm({ ...createForm, motherOccup: e.target.value })} placeholder="Mother occupation" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.guardianName} onChange={(e) => setCreateForm({ ...createForm, guardianName: e.target.value })} placeholder="Guardian name" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.guardianPhone} onChange={(e) => setCreateForm({ ...createForm, guardianPhone: e.target.value })} placeholder="Guardian phone" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <input value={createForm.guardianRel} onChange={(e) => setCreateForm({ ...createForm, guardianRel: e.target.value })} placeholder="Guardian relation" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
-                <select value={createForm.primaryContact} onChange={(e) => setCreateForm({ ...createForm, primaryContact: e.target.value })} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950">
+                <input aria-label="Father name" value={createForm.fatherName} onChange={(e) => setCreateForm({ ...createForm, fatherName: e.target.value })} placeholder="Father name" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Father phone" value={createForm.fatherPhone} onChange={(e) => setCreateForm({ ...createForm, fatherPhone: e.target.value })} placeholder="Father phone" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Father email" value={createForm.fatherEmail} onChange={(e) => setCreateForm({ ...createForm, fatherEmail: e.target.value })} placeholder="Father email" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Father occupation" value={createForm.fatherOccup} onChange={(e) => setCreateForm({ ...createForm, fatherOccup: e.target.value })} placeholder="Father occupation" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Mother name" value={createForm.motherName} onChange={(e) => setCreateForm({ ...createForm, motherName: e.target.value })} placeholder="Mother name" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Mother phone" value={createForm.motherPhone} onChange={(e) => setCreateForm({ ...createForm, motherPhone: e.target.value })} placeholder="Mother phone" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Mother email" value={createForm.motherEmail} onChange={(e) => setCreateForm({ ...createForm, motherEmail: e.target.value })} placeholder="Mother email" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Mother occupation" value={createForm.motherOccup} onChange={(e) => setCreateForm({ ...createForm, motherOccup: e.target.value })} placeholder="Mother occupation" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Guardian name" value={createForm.guardianName} onChange={(e) => setCreateForm({ ...createForm, guardianName: e.target.value })} placeholder="Guardian name" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Guardian phone" value={createForm.guardianPhone} onChange={(e) => setCreateForm({ ...createForm, guardianPhone: e.target.value })} placeholder="Guardian phone" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <input aria-label="Guardian relation" value={createForm.guardianRel} onChange={(e) => setCreateForm({ ...createForm, guardianRel: e.target.value })} placeholder="Guardian relation" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950" />
+                <select aria-label="Primary contact" value={createForm.primaryContact} onChange={(e) => setCreateForm({ ...createForm, primaryContact: e.target.value })} className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none dark:border-slate-800 dark:bg-slate-950">
                   <option value="FATHER">Father</option>
                   <option value="MOTHER">Mother</option>
                   <option value="GUARDIAN">Guardian</option>
