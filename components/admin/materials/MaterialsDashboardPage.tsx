@@ -314,16 +314,16 @@ export default function MaterialsDashboardPage() {
                           {String(item.access).replaceAll("_", " ")}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-slate-500 dark:text-slate-400 flex items-center gap-3 relative">
+                      <td className="px-4 py-4 text-slate-500 dark:text-slate-400 flex items-start gap-3 relative min-w-[280px]">
                         {(() => {
                           if (!item.resourceUrl) {
-                            return <span className="text-xs sm:text-sm">{item.updatedAt}</span>;
+                            return <span className="text-xs sm:text-sm pt-1.5 inline-block">{item.updatedAt}</span>;
                           }
 
                           if (!item.resourceUrl.startsWith("http")) {
                             // Local file upload
                             return (
-                              <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm animate-fade-in" target="_blank" rel="noreferrer">
+                              <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm pt-1.5 animate-fade-in" target="_blank" rel="noreferrer">
                                 Open File <ExternalLink className="h-3 w-3" />
                               </a>
                             );
@@ -338,52 +338,42 @@ export default function MaterialsDashboardPage() {
                             links.push({ name: match[1], url: match[2] });
                           }
 
-                          // If there are multiple links, render a beautiful floating dropdown list!
+                          // If there are multiple links, render a beautiful inline expanding list!
                           if (links.length > 0) {
                             const isOpen = activeDropdownId === item.id;
-                             return (
-                              <div className="relative inline-block text-left animate-fade-in">
+                            return (
+                              <div className="flex flex-col gap-2 animate-fade-in">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setActiveDropdownId(isOpen ? null : item.id);
                                   }}
-                                  className="whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50/50 hover:bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 transition dark:border-indigo-950/40 dark:bg-indigo-950/20 dark:text-indigo-300 dark:hover:bg-indigo-950/30 active:scale-95 shadow-sm"
+                                  className="whitespace-nowrap inline-flex items-center gap-1.5 rounded-xl border border-indigo-150 bg-indigo-50/40 hover:bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 transition dark:border-indigo-900/30 dark:bg-indigo-950/20 dark:text-indigo-300 dark:hover:bg-indigo-950/30 active:scale-95 shadow-sm w-fit"
                                 >
                                   Open Website ({links.length})
-                                  <span className="text-[9px] opacity-75">▼</span>
+                                  <span className="text-[9px] opacity-75">{isOpen ? "▲" : "▼"}</span>
                                 </button>
 
                                 {isOpen && (
-                                  <>
-                                    {/* Invisible backdrop to dismiss dropdown */}
-                                    <div 
-                                      className="fixed inset-0 z-20" 
-                                      onClick={() => setActiveDropdownId(null)}
-                                    />
-                                    
-                                    {/* Floating Dropdown List Menu */}
-                                    <div className="absolute left-0 top-full mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl dark:border-slate-800 dark:bg-slate-950 z-40 animate-slide-up">
-                                      <div className="px-2 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1.5">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Select Platform Options</p>
-                                      </div>
-                                      <div className="space-y-1 max-h-[220px] overflow-y-auto pr-0.5">
-                                        {links.map((link, idx) => (
-                                          <a
-                                            key={idx}
-                                            href={link.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            onClick={() => setActiveDropdownId(null)}
-                                            className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition dark:text-slate-300 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-400 group"
-                                          >
-                                            <span className="truncate max-w-[180px]">{link.name}</span>
-                                            <ExternalLink className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-                                          </a>
-                                        ))}
-                                      </div>
+                                  <div className="w-72 rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-inner dark:border-slate-800 dark:bg-slate-950/40 space-y-1.5 animate-slide-down">
+                                    <div className="px-2 py-1 border-b border-slate-200/50 dark:border-slate-800/50">
+                                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Select Platform Options</p>
                                     </div>
-                                  </>
+                                    <div className="space-y-1 max-h-[180px] overflow-y-auto pr-0.5">
+                                      {links.map((link, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={link.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-indigo-50 hover:text-indigo-600 transition dark:text-slate-350 dark:bg-slate-900/60 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-450 group border border-slate-100 dark:border-slate-800/40 shadow-sm"
+                                        >
+                                          <span className="truncate max-w-[190px]">{link.name}</span>
+                                          <ExternalLink className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             );
@@ -391,7 +381,7 @@ export default function MaterialsDashboardPage() {
 
                           // Single website link fallback
                           return (
-                            <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm animate-fade-in" target="_blank" rel="noreferrer">
+                            <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm pt-1.5 animate-fade-in" target="_blank" rel="noreferrer">
                               Open Website <ExternalLink className="h-3 w-3" />
                             </a>
                           );
@@ -399,7 +389,7 @@ export default function MaterialsDashboardPage() {
 
                         <button
                           onClick={() => setSelectedMaterial(item)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-700 transition dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 active:scale-95 animate-fade-in"
+                          className="whitespace-nowrap inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 active:scale-95 animate-fade-in"
                           title="View all recommended platforms & directory"
                         >
                           <FolderOpen className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
