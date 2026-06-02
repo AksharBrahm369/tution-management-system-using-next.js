@@ -2,6 +2,7 @@ import { getCurrentSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import StudentExamsPage from "@/components/student/exams/StudentExamsPage";
+import { syncActiveExamStatuses } from "@/lib/examService";
 
 export default async function StudentExamsRoutePage() {
   const session = await getCurrentSession();
@@ -12,6 +13,8 @@ export default async function StudentExamsRoutePage() {
     select: { id: true },
   });
   if (!student) redirect("/student/dashboard");
+
+  await syncActiveExamStatuses();
 
   const [upcomingExams, results] = await Promise.all([
     prisma.exam.findMany({

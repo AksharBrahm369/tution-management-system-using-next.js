@@ -36,6 +36,74 @@ export function getGradeRangesFromExam(exam: { gradeConfig: Prisma.JsonValue | n
     .filter((item) => item.grade);
 }
 
+export function getUpdatedExamStatus(exam: {
+  examDate: Date;
+  startTime: string | null;
+  endTime: string | null;
+  duration: number | null;
+  status: string;
+}): string {
+  if (["CANCELLED", "RESULT_PENDING", "RESULT_PUBLISHED"].includes(exam.status)) {
+    return exam.status;
+  }
+
+  const now = new Date();
+  const examDate = new Date(exam.examDate);
+  const year = examDate.getFullYear();
+  const month = examDate.getMonth();
+  const day = examDate.getDate();
+
+  const parseTime = (timeStr: string | null, defaultHour = 0, defaultMin = 0) => {
+    if (!timeStr) return { hour: defaultHour, min: defaultMin };
+    const parts = timeStr.trim().split(":");
+    const hour = parseInt(parts[0], 10);
+    const min = parseInt(parts[1], 10);
+    return {
+      hour: isNaN(hour) ? defaultHour : hour,
+      min: isNaN(min) ? defaultMin : min
+    };
+  };
+
+  const startParsed = parseTime(exam.startTime, 0, 0);
+  const startDateTime = new Date(year, month, day, startParsed.hour, startParsed.min, 0);
+
+  let endDateTime: Date;
+  if (exam.endTime) {
+    const endParsed = parseTime(exam.endTime, 23, 59);
+    endDateTime = new Date(year, month, day, endParsed.hour, endParsed.min, 0);
+  } else if (exam.duration) {
+    endDateTime = new Date(startDateTime.getTime() + exam.duration * 60 * 1000);
+  } else {
+    endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+  }
+
+  if (now.getTime() < startDateTime.getTime()) {
+    return "UPCOMING";
+  } else if (now.getTime() >= startDateTime.getTime() && now.getTime() < endDateTime.getTime()) {
+    return "ONGOING";
+  } else {
+    return "COMPLETED";
+  }
+}
+
+export async function syncActiveExamStatuses() {
+  const activeExams = await prisma.exam.findMany({
+    where: {
+      status: { in: ["UPCOMING", "ONGOING"] },
+    },
+  });
+
+  for (const exam of activeExams) {
+    const computedStatus = getUpdatedExamStatus(exam);
+    if (computedStatus !== exam.status) {
+      await prisma.exam.update({
+        where: { id: exam.id },
+        data: { status: computedStatus as any },
+      });
+    }
+  }
+}
+
 export function buildExamWhere(filters: ExamFilters): Prisma.ExamWhereInput {
   const where: Prisma.ExamWhereInput = {};
   if (filters.status) where.status = filters.status as Prisma.EnumExamStatusFilter["equals"];
@@ -60,6 +128,7 @@ export function buildExamWhere(filters: ExamFilters): Prisma.ExamWhereInput {
 }
 
 export async function getExamStats(where: Prisma.ExamWhereInput = {}) {
+  await syncActiveExamStatuses();
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -75,10 +144,11 @@ export async function getExamStats(where: Prisma.ExamWhereInput = {}) {
 }
 
 export async function listExams(filters: ExamFilters) {
+  await syncActiveExamStatuses();
   const page = Math.max(1, filters.page ?? 1);
   const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
   const where = buildExamWhere(filters);
-  const [exams, total, stats] = await Promise.all([
+  const [exams, total] = await Promise.all([
     prisma.exam.findMany({
       where,
       include: {
@@ -91,8 +161,21 @@ export async function listExams(filters: ExamFilters) {
       take: limit,
     }),
     prisma.exam.count({ where }),
-    getExamStats(where),
   ]);
+
+  // Check and update exam statuses dynamically based on current time
+  for (const exam of exams) {
+    const computedStatus = getUpdatedExamStatus(exam);
+    if (computedStatus !== exam.status) {
+      await prisma.exam.update({
+        where: { id: exam.id },
+        data: { status: computedStatus as any },
+      });
+      exam.status = computedStatus as any;
+    }
+  }
+
+  const stats = await getExamStats(where);
 
   return {
     exams: exams.map((exam) => ({
@@ -178,6 +261,15 @@ export async function getExamDetail(id: string) {
     },
   });
   if (!exam) return null;
+
+  const computedStatus = getUpdatedExamStatus(exam);
+  if (computedStatus !== exam.status) {
+    await prisma.exam.update({
+      where: { id: exam.id },
+      data: { status: computedStatus as any },
+    });
+    exam.status = computedStatus as any;
+  }
 
   const enteredCount = exam.results.filter((result) => result.status !== "PENDING").length;
   const scored = exam.results.filter((result) => !result.isAbsent && result.marksObtained !== null);

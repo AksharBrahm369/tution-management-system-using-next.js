@@ -142,53 +142,98 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create a self-contained fee record that is immediately marked PAID
-      const adHocRecord = await prisma.feeRecord.create({
-        data: {
-          receiptNumber,
+      // Check if a fee record already exists for this student and batch for the current month and year
+      const existingRecord = await prisma.feeRecord.findFirst({
+        where: {
           studentId: data.studentId,
           batchId,
           month: now.getMonth() + 1,
           year: now.getFullYear(),
-          academicYear: student.academicYear,
-          baseFee: amountToCollect,
-          totalAmount: amountToCollect,
-          paidAmount: amountToCollect,
-          pendingAmount: 0,
-          status: "PAID",
-          dueDate: now,
-          paidDate: now,
         },
       });
 
-      const payment = await prisma.feePayment.create({
-        data: {
-          paymentNumber: `${paymentNumber}-1`,
-          feeRecordId: adHocRecord.id,
-          amount: amountToCollect,
-          paymentMode: data.paymentMode,
-          status: "COMPLETED",
-          collectedBy: data.collectedBy,
-          notes: data.notes ?? "Ad-hoc payment",
-          cashReceivedBy: data.paymentMode === "CASH" ? data.collectedBy : null,
-          paidAt: collectedAt,
-        },
-      });
+      if (existingRecord) {
+        return NextResponse.json(
+          {
+            error: `A fee record already exists for this student for ${now.toLocaleString("en-US", {
+              month: "long",
+            })} ${now.getFullYear()}. Please select it from the list above or wait until next month to record a new fee.`,
+          },
+          { status: 400 }
+        );
+      }
 
-      firstPaymentId = payment.id;
-      updatedRecords.push(adHocRecord);
+      if (data.status === "PENDING") {
+        // Create a pending ad-hoc fee record
+        const adHocRecord = await prisma.feeRecord.create({
+          data: {
+            receiptNumber,
+            studentId: data.studentId,
+            batchId,
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+            academicYear: student.academicYear,
+            baseFee: amountToCollect,
+            totalAmount: amountToCollect,
+            paidAmount: 0,
+            pendingAmount: amountToCollect,
+            status: "PENDING",
+            dueDate: now,
+            paidDate: null,
+          },
+        });
+        updatedRecords.push(adHocRecord);
+      } else {
+        // Create a self-contained fee record that is immediately marked PAID
+        const adHocRecord = await prisma.feeRecord.create({
+          data: {
+            receiptNumber,
+            studentId: data.studentId,
+            batchId,
+            month: now.getMonth() + 1,
+            year: now.getFullYear(),
+            academicYear: student.academicYear,
+            baseFee: amountToCollect,
+            totalAmount: amountToCollect,
+            paidAmount: amountToCollect,
+            pendingAmount: 0,
+            status: "PAID",
+            dueDate: now,
+            paidDate: now,
+          },
+        });
+
+        const payment = await prisma.feePayment.create({
+          data: {
+            paymentNumber: `${paymentNumber}-1`,
+            feeRecordId: adHocRecord.id,
+            amount: amountToCollect,
+            paymentMode: data.paymentMode,
+            status: "COMPLETED",
+            collectedBy: data.collectedBy,
+            notes: data.notes ?? "Ad-hoc payment",
+            cashReceivedBy: data.paymentMode === "CASH" ? data.collectedBy : null,
+            paidAt: collectedAt,
+          },
+        });
+
+        firstPaymentId = payment.id;
+        updatedRecords.push(adHocRecord);
+      }
     }
 
     const receiptBytes = firstPaymentId ? (await generateReceiptPDF(firstPaymentId)).length : 0;
 
     await logActivityFromRequest(request, {
       userId: auth.userId,
-      action: "FEE_COLLECTED",
+      action: data.status === "PENDING" ? "FEE_RECORD_CREATED" : "FEE_COLLECTED",
       category: "FEE",
       severity: "INFO",
-      description: `Collected ₹${amountToCollect} for student ${data.studentId}`,
-      entityType: "FeePayment",
-      entityId: firstPaymentId ?? undefined,
+      description: data.status === "PENDING"
+        ? `Recorded pending fee of ₹${amountToCollect} for student ${data.studentId}`
+        : `Collected ₹${amountToCollect} for student ${data.studentId}`,
+      entityType: data.status === "PENDING" ? "FeeRecord" : "FeePayment",
+      entityId: (data.status === "PENDING" ? updatedRecords[0]?.id : firstPaymentId) ?? undefined,
       entityName: paymentNumber,
       metadata: { amount: amountToCollect, paymentMode: data.paymentMode },
     });

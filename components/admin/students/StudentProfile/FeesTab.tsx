@@ -75,14 +75,18 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
     setAmount(nextPending);
   }
 
-  async function collectPayment() {
+  async function collectPayment(actionStatus: "PAID" | "PENDING" = "PAID") {
     if (amount <= 0) {
       alert("Enter a valid payment amount.");
       return;
     }
 
     if (!collectedBy.trim()) {
-      alert("Enter the name of who collected this payment.");
+      alert(
+        actionStatus === "PENDING" && pendingRecords.length === 0
+          ? "Enter the name of who recorded this pending fee."
+          : "Enter the name of who collected this payment."
+      );
       return;
     }
 
@@ -99,13 +103,18 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
           paymentMode,
           collectedBy: collectedBy.trim(),
           notes: notes.trim() || undefined,
+          status: validSelectedIds.length === 0 ? actionStatus : "PAID",
         }),
       });
 
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || "Failed to collect payment");
 
-      alert(`Collected ${formatCurrency(payload.collected || amount)} successfully.`);
+      if (actionStatus === "PENDING" && pendingRecords.length === 0) {
+        alert(`Recorded pending fee of ${formatCurrency(amount)} successfully.`);
+      } else {
+        alert(`Collected ${formatCurrency(payload.collected || amount)} successfully.`);
+      }
       setSelectedIds([]);
       setAmount(0);
       setNotes("");
@@ -236,7 +245,7 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
               </select>
             </label>
             <label className="block text-sm">
-              <span className="text-slate-500">Collected by</span>
+              <span className="text-slate-500">Collected / Recorded by</span>
               <input
                 className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
                 value={collectedBy}
@@ -258,16 +267,38 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
             )}
             {pendingRecords.length === 0 && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400">
-                No fee records linked — this will be recorded as an advance/ad-hoc payment.
+                No fee records linked — use "Record Pending Fee" to add a new unpaid fee, or "Collect Payment" to add a paid payment.
               </div>
             )}
-            <button
-              className="w-full rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={saving || amount <= 0 || !collectedBy.trim()}
-              onClick={collectPayment}
-            >
-              {saving ? "Saving..." : "Collect Payment"}
-            </button>
+            {pendingRecords.length === 0 ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                  disabled={saving || amount <= 0 || !collectedBy.trim()}
+                  onClick={() => collectPayment("PENDING")}
+                >
+                  {saving ? "Saving..." : "Record Pending Fee"}
+                </button>
+                <button
+                  type="button"
+                  className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                  disabled={saving || amount <= 0 || !collectedBy.trim()}
+                  onClick={() => collectPayment("PAID")}
+                >
+                  {saving ? "Saving..." : "Collect Payment (Paid)"}
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                disabled={saving || amount <= 0 || !collectedBy.trim()}
+                onClick={() => collectPayment("PAID")}
+              >
+                {saving ? "Saving..." : "Collect Payment"}
+              </button>
+            )}
           </div>
         </div>
       </div>

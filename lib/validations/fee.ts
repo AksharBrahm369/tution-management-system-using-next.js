@@ -16,6 +16,7 @@ export const collectFeeSchema = z.object({
   transactionDetails: z.any().optional(),
   collectedBy: z.string(),
   notes: z.string().optional(),
+  status: z.enum(["PAID", "PENDING"]).optional().default("PAID"),
 });
 
 export const createOrderSchema = z.object({

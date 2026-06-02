@@ -26,7 +26,7 @@ export default function ExamFilters({ onSearch, onFilterChange, onRefresh, onRes
             <SelectContent>
               <SelectItem value="ALL">All Status</SelectItem>
               <SelectItem value="UPCOMING">Upcoming</SelectItem>
-              <SelectItem value="ONGOING">Ongoing</SelectItem>
+              <SelectItem value="ONGOING">Live</SelectItem>
               <SelectItem value="RESULT_PENDING">Result Pending</SelectItem>
               <SelectItem value="RESULT_PUBLISHED">Published</SelectItem>
             </SelectContent>

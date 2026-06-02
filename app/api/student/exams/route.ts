@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyAuth } from "@/lib/auth";
+import { syncActiveExamStatuses } from "@/lib/examService";
 
 export async function GET(req: NextRequest) {
   try {
     const user = await verifyAuth(req);
     if (!user || user.role !== "STUDENT") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    await syncActiveExamStatuses();
 
     const student = await prisma.student.findUnique({ where: { userId: user.id } });
     if (!student) return NextResponse.json({ error: "Student profile not found" }, { status: 404 });

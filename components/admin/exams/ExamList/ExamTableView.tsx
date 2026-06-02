@@ -40,12 +40,37 @@ export default function ExamTableView({ exams, onView, onEnterMarks, onCreate, o
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "UPCOMING": return "bg-blue-100 text-blue-800";
-      case "ONGOING": return "bg-green-100 text-green-800";
-      case "RESULT_PENDING": return "bg-orange-100 text-orange-800";
-      case "RESULT_PUBLISHED": return "bg-emerald-100 text-emerald-800";
-      case "CANCELLED": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "UPCOMING":
+        return "bg-blue-100 text-blue-800 border-transparent";
+      case "ONGOING":
+        return "bg-green-100 text-green-800 border-transparent animate-pulse";
+      case "COMPLETED":
+        return "bg-slate-100 text-slate-800 border-transparent";
+      case "RESULT_PENDING":
+        return "bg-amber-100 text-amber-800 border-transparent";
+      case "RESULT_PUBLISHED":
+        return "bg-emerald-100 text-emerald-800 border-transparent";
+      case "CANCELLED":
+        return "bg-rose-100 text-rose-800 border-transparent";
+      default:
+        return "bg-gray-100 text-gray-800 border-transparent";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "UPCOMING":
+        return "UPCOMING";
+      case "ONGOING":
+        return "LIVE";
+      case "COMPLETED":
+        return "ENDED";
+      case "RESULT_PENDING":
+        return "RESULT PENDING";
+      case "RESULT_PUBLISHED":
+        return "PUBLISHED";
+      default:
+        return status.replace("_", " ");
     }
   };
 
@@ -81,8 +106,8 @@ export default function ExamTableView({ exams, onView, onEnterMarks, onCreate, o
                 <Badge variant="outline">{exam.type.replace("_", " ")}</Badge>
               </TableCell>
               <TableCell>
-                <Badge className={getStatusColor(exam.status)} variant="outline">
-                  {exam.status.replace("_", " ")}
+                <Badge className={`${getStatusColor(exam.status)} font-medium`} variant="outline">
+                  {getStatusLabel(exam.status)}
                 </Badge>
               </TableCell>
               <TableCell>
