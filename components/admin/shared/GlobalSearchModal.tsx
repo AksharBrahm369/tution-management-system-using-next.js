@@ -39,6 +39,7 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
             <div className="flex items-center gap-3">
               <Search size={20} className="text-slate-400" />
               <input
+                aria-label="Search students, teachers, and batches"
                 type="text"
                 placeholder="Search students, teachers, batches..."
                 value={query}
@@ -47,6 +48,8 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
                 className="flex-1 bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none text-lg"
               />
               <button
+                type="button"
+                aria-label="Close search"
                 onClick={onClose}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
@@ -65,7 +68,9 @@ const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ onClose }) => {
               <div className="divide-y divide-slate-200 dark:divide-slate-700">
                 {data.results.map((result) => (
                   <button
+                    type="button"
                     key={result.id}
+                    aria-label={`Open ${result.name}`}
                     onClick={() => handleSelectResult(result.link)}
                     className="w-full p-4 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left flex items-center justify-between"
                   >

@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Search, Bell, Moon, Sun, ChevronDown, Menu } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import GlobalSearchModal from '@/components/admin/shared/GlobalSearchModal';
 import NotificationDropdown from '@/components/admin/shared/NotificationDropdown';
 import UserProfileDropdown from '@/components/admin/shared/UserProfileDropdown';
+import type { CurrentAdminUser } from '@/lib/adminAuth';
 
 interface AdminNavbarProps {
+  user: CurrentAdminUser;
   isSidebarCollapsed: boolean;
   onMobileMenuClick: () => void;
 }
@@ -45,19 +47,15 @@ function formatSegmentLabel(segment: string, index: number, allSegments: string[
   return toTitleCase(segment);
 }
 
-const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
+const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMenuClick }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string }>(initialUser);
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
-    setMounted(true);
-
-    // Fetch the logged-in user profile dynamically
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((resJson) => {
@@ -68,7 +66,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
       .catch((err) => console.error('Error fetching user profile:', err));
   }, []);
 
-  const isDarkMode = mounted ? theme === 'dark' : false;
+  const isDarkMode = resolvedTheme === 'dark';
 
   const segments = pathname.split('/').filter(Boolean);
   const breadcrumbItems = segments.map((segment, idx) => {
@@ -78,14 +76,16 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
   });
 
   const pageTitle = breadcrumbItems[breadcrumbItems.length - 1]?.label || 'Dashboard';
+  const userInitial = user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'A';
 
   return (
     <>
-      <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-200/60 px-3 md:px-5 xl:px-8 dark:border-slate-800/60">
+      <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-200/60 bg-white/95 px-3 md:px-5 xl:px-8 dark:border-slate-800/60 dark:bg-slate-950/95">
         <div className="flex min-w-0 items-center gap-3 md:gap-4">
           <button
             type="button"
             onClick={onMobileMenuClick}
+            aria-label="Open admin navigation"
             className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50 lg:hidden"
           >
             <Menu size={22} />
@@ -120,6 +120,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
+            aria-label="Open global search"
             className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
             title="Search"
           >
@@ -130,6 +131,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
             <button
               type="button"
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+              aria-label="Open notifications"
               className="relative rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
               title="Notifications"
             >
@@ -143,7 +145,8 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
 
           <button
             type="button"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onClick={() => setTheme(isDarkMode ? 'light' : 'dark')}
+            aria-label="Toggle theme"
             className="rounded-xl p-2.5 text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-indigo-950/50"
             title="Toggle theme"
           >
@@ -154,10 +157,11 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ onMobileMenuClick }) => {
             <button
               type="button"
               onClick={() => setIsProfileOpen(!isProfileOpen)}
+              aria-label="Open user menu"
               className="flex items-center gap-2 rounded-xl py-1.5 pr-2 pl-1.5 transition-all hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40"
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-md shadow-indigo-500/30">
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'A'}
+                {userInitial}
               </div>
               <ChevronDown size={16} className="hidden text-slate-500 md:block dark:text-slate-400" />
             </button>

@@ -6,7 +6,6 @@ import {
   Pie,
   Cell,
   ResponsiveContainer,
-  Legend,
   Tooltip,
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +19,7 @@ interface ChartData {
 }
 
 const AttendanceDonutChart: React.FC = () => {
-  const { data, isLoading } = useQuery<ChartData>({
+  const { data, isLoading, isError } = useQuery<ChartData>({
     queryKey: ['dashboard-charts'],
     queryFn: async () => {
       const response = await fetch('/api/admin/dashboard/charts');
@@ -29,11 +28,20 @@ const AttendanceDonutChart: React.FC = () => {
     },
   });
 
-  if (isLoading || !data?.attendanceOverview) {
+  if (isLoading) {
     return (
       <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 h-80 flex flex-col items-center justify-center shadow-lg">
         <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-green-500 animate-spin mb-4"></div>
         <div className="text-slate-500 dark:text-slate-400 font-medium">Loading chart...</div>
+      </div>
+    );
+  }
+
+  if (isError || !data?.attendanceOverview) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Attendance Overview</h3>
+        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load attendance chart.</p>
       </div>
     );
   }

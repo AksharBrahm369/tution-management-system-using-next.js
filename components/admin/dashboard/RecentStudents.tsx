@@ -16,7 +16,7 @@ interface Student {
 }
 
 const RecentStudents: React.FC = () => {
-  const { data: students, isLoading } = useQuery<Student[]>({
+  const { data: students, isLoading, isError } = useQuery<Student[]>({
     queryKey: ['recent-students'],
     queryFn: async () => {
       const response = await fetch('/api/admin/dashboard/recent-students');
@@ -47,6 +47,15 @@ const RecentStudents: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6 shadow-lg">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Students</h3>
+        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load recent students.</p>
       </div>
     );
   }

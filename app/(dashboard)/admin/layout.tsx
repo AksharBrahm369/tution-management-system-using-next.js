@@ -1,21 +1,21 @@
-'use client';
-
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import AdminLayoutComponent from '@/components/admin/layout/AdminLayout';
+import { redirect } from 'next/navigation';
+import { getCurrentAdminUser } from '@/lib/adminAuth';
+import AdminProviders from './AdminProviders';
 
-const queryClient = new QueryClient();
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AdminLayoutComponent>{children}</AdminLayoutComponent>
-    </QueryClientProvider>
-  );
-};
+export default async function AdminLayout({ children }: AdminLayoutProps) {
+  const user = await getCurrentAdminUser();
 
-export default AdminLayout;
+  if (!user) {
+    redirect('/auth/login');
+  }
+
+  return <AdminProviders user={user}>{children}</AdminProviders>;
+}

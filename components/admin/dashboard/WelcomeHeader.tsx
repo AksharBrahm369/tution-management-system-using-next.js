@@ -6,7 +6,7 @@ interface WelcomeHeaderProps {
   adminName?: string;
 }
 
-const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin User' }) => {
+const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin' }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';

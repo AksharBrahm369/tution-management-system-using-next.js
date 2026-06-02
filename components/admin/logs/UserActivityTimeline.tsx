@@ -34,6 +34,7 @@ export default function UserActivityTimeline({
     <section className="tp-card animate-fade-up p-6">
       <h2 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">User Activity Timeline</h2>
       <select
+        aria-label="Select user for activity timeline"
         className="mb-4 h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-950"
         value={selectedUserId}
         onChange={(e) => onUserChange(e.target.value)}

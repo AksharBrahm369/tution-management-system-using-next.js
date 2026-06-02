@@ -1,48 +1,67 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useSyncExternalStore, useState } from 'react';
 import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
+import type { CurrentAdminUser } from '@/lib/adminAuth';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
+  user: CurrentAdminUser;
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+const SIDEBAR_STORAGE_KEY = 'admin-sidebar-collapsed';
+const SIDEBAR_CHANGE_EVENT = 'admin-sidebar-collapsed-change';
 
-  useEffect(() => {
-    const saved = localStorage.getItem('admin-sidebar-collapsed');
-    if (saved !== null) {
-      try {
-        setIsSidebarCollapsed(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse admin-sidebar-collapsed from localStorage:', e);
-      }
+function subscribeToLayoutChanges(onStoreChange: () => void) {
+  if (typeof window === 'undefined') return () => {};
+
+  window.addEventListener('resize', onStoreChange);
+  window.addEventListener('storage', onStoreChange);
+  window.addEventListener(SIDEBAR_CHANGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener('resize', onStoreChange);
+    window.removeEventListener('storage', onStoreChange);
+    window.removeEventListener(SIDEBAR_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+function getSidebarCollapsedSnapshot() {
+  if (typeof window === 'undefined') return false;
+
+  const saved = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
+  if (saved !== null) {
+    try {
+      return Boolean(JSON.parse(saved));
+    } catch (e) {
+      console.error('Failed to parse admin-sidebar-collapsed from localStorage:', e);
     }
+  }
 
-    const onResize = () => {
-      const desktop = window.innerWidth >= 1024;
-      setIsDesktop(desktop);
+  return window.innerWidth < 1200;
+}
 
-      if (window.innerWidth < 1200) {
-        setIsSidebarCollapsed(true);
-      }
-      if (desktop) {
-        setIsMobileSidebarOpen(false);
-      }
-    };
+function getIsDesktopSnapshot() {
+  return typeof window === 'undefined' ? false : window.innerWidth >= 1024;
+}
 
-    onResize();
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children, user }) => {
+  const isSidebarCollapsed = useSyncExternalStore(
+    subscribeToLayoutChanges,
+    getSidebarCollapsedSnapshot,
+    () => false
+  );
+  const isDesktop = useSyncExternalStore(
+    subscribeToLayoutChanges,
+    getIsDesktopSnapshot,
+    () => false
+  );
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleSidebarToggle = (collapsed: boolean) => {
-    setIsSidebarCollapsed(collapsed);
-    localStorage.setItem('admin-sidebar-collapsed', JSON.stringify(collapsed));
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(collapsed));
+    window.dispatchEvent(new Event(SIDEBAR_CHANGE_EVENT));
   };
 
   const handleMobileSidebarToggle = (open: boolean) => {
@@ -61,6 +80,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       />
 
       <AdminSidebar
+        user={user}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={handleSidebarToggle}
         isMobileOpen={isMobileSidebarOpen}
@@ -73,6 +93,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         style={{ marginLeft: `${contentMarginLeft}px` }}
       >
         <AdminNavbar
+          user={user}
           isSidebarCollapsed={isSidebarCollapsed}
           onMobileMenuClick={() => handleMobileSidebarToggle(true)}
         />

@@ -120,7 +120,7 @@ export function RegisterForm() {
       }
 
       setSuccessMessage("Admin account created! Redirecting to login...");
-      setTimeout(() => router.push("/login"), 2000);
+      setTimeout(() => router.push("/auth/login"), 2000);
     } catch {
       setServerError("Something went wrong. Please try again.");
     }
@@ -142,7 +142,7 @@ export function RegisterForm() {
             </div>
           </div>
           <Link
-            href="/login"
+            href="/auth/login"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-600/10 transition-all hover:bg-indigo-700 hover:shadow-indigo-600/20"
           >
             Go to Sign In Page
@@ -311,7 +311,7 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
+        <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-700 hover:underline">
           Sign in
         </Link>
       </p>

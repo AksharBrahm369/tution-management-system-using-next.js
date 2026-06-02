@@ -15,7 +15,15 @@ import { useAdminStats } from '@/hooks/useAdminStats';
 
 const StatsGrid: React.FC = () => {
   const router = useRouter();
-  const { data: stats, isLoading } = useAdminStats();
+  const { data: stats, isLoading, isError } = useAdminStats();
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+        Could not load dashboard stats. Please refresh or sign in again.
+      </div>
+    );
+  }
 
   if (isLoading || !stats) {
     return (

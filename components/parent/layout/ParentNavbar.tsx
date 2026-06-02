@@ -11,7 +11,7 @@ export default function ParentNavbar() {
   const handleLogout = async () => {
     setLoggingOut(true);
     await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+    router.push("/auth/login");
     router.refresh();
   };
 

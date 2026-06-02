@@ -5,7 +5,7 @@ import OnlineTestPage from "@/components/student/exams/OnlineTest/OnlineTestPage
 
 export default async function StudentOnlineTestRoutePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getCurrentSession();
-  if (!session || session.role !== "STUDENT") redirect("/login");
+  if (!session || session.role !== "STUDENT") redirect("/auth/login");
 
   const { id } = await params;
 

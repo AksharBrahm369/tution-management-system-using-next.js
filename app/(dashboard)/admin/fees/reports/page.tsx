@@ -160,7 +160,7 @@ export default function AdminFeeReportsPage() {
 
 	return (
 		<div className="space-y-6">
-			<WelcomeHeader adminName="Admin User" />
+			<WelcomeHeader />
 
 			<section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
 				<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

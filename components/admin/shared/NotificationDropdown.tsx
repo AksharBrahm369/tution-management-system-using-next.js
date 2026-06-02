@@ -35,6 +35,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) 
         <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
         {unreadCount > 0 && (
           <button
+            type="button"
+            aria-label="Mark all notifications as read"
             onClick={() => markAllRead()}
             className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
           >

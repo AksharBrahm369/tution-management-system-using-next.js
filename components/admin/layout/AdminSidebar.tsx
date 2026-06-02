@@ -17,12 +17,12 @@ import {
   HelpCircle,
   BarChart3,
   Settings,
-  Shield,
   ActivitySquare,
   LogOut,
   ChevronRight,
   Sparkles,
 } from 'lucide-react';
+import type { CurrentAdminUser } from '@/lib/adminAuth';
 
 interface NavItem {
   label: string;
@@ -37,6 +37,7 @@ interface NavSection {
 }
 
 interface AdminSidebarProps {
+  user: CurrentAdminUser;
   isCollapsed: boolean;
   onToggleCollapse: (collapsed: boolean) => void;
   isMobileOpen: boolean;
@@ -45,6 +46,7 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  user,
   isCollapsed,
   onToggleCollapse,
   isMobileOpen,
@@ -81,7 +83,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       title: 'System',
       items: [
         { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} /> },
-        { label: 'User Management', href: '/admin/users', icon: <Shield size={20} /> },
         { label: 'Activity Logs', href: '/admin/logs', icon: <ActivitySquare size={20} /> },
       ],
     },
@@ -93,7 +94,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     try {
       const res = await fetch('/api/auth/logout', { method: 'POST' });
       if (res.ok) {
-        router.push('/login');
+        router.push('/auth/login');
         router.refresh();
       }
     } catch (error) {
@@ -103,6 +104,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const sidebarWidth = isCollapsed ? 76 : 268;
   const sidebarTransform = isDesktop || isMobileOpen ? 'translateX(0)' : 'translateX(-100%)';
+  const initials = user.name
+    .split(' ')
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('') || user.email[0]?.toUpperCase() || 'A';
 
   return (
     <>
@@ -143,6 +149,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <button
               type="button"
               onClick={() => onToggleCollapse(true)}
+              aria-label="Collapse sidebar"
               className="rounded-xl p-2 text-slate-400 transition-all hover:bg-white/10 hover:text-white"
             >
               <ChevronRight size={18} />
@@ -153,6 +160,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <button
               type="button"
               onClick={() => onToggleCollapse(false)}
+              aria-label="Expand sidebar"
               className="absolute -right-3 top-7 hidden rounded-full border border-white/20 bg-slate-800 p-1.5 text-slate-300 shadow-lg transition-all hover:bg-indigo-600 hover:text-white lg:flex"
             >
               <ChevronRight size={14} className="rotate-180" />
@@ -177,6 +185,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       href={item.href}
                       onClick={() => onMobileToggle(false)}
                       title={isCollapsed ? item.label : undefined}
+                      aria-label={item.label}
                       className={`
                         group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
                         transition-all duration-200 ease-out
@@ -218,12 +227,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             className={`mb-2 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-2.5 backdrop-blur-sm ${isCollapsed ? 'justify-center' : ''}`}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-400 to-violet-500 text-sm font-bold text-white ring-2 ring-white/20">
-              A
+              {initials}
             </div>
             {!isCollapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">Admin User</p>
-                <p className="truncate text-xs text-indigo-300/70">Super Admin</p>
+                <p className="truncate text-sm font-semibold text-white">{user.name}</p>
+                <p className="truncate text-xs text-indigo-300/70">{user.email}</p>
               </div>
             )}
           </div>
@@ -231,6 +240,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <button
             type="button"
             onClick={handleLogout}
+            aria-label="Logout"
             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-red-500/15 hover:text-red-300 ${isCollapsed ? 'justify-center' : ''}`}
             title={isCollapsed ? 'Logout' : undefined}
           >

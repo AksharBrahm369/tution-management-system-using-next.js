@@ -5,7 +5,7 @@ import ParentResultsPage from "@/components/parent/exams/ParentResultsPage";
 
 export default async function ParentExamsRoutePage() {
   const session = await getCurrentSession();
-  if (!session || session.role !== "PARENT") redirect("/login");
+  if (!session || session.role !== "PARENT") redirect("/auth/login");
 
   const parent = await prisma.parent.findFirst({
     where: { userId: session.userId },

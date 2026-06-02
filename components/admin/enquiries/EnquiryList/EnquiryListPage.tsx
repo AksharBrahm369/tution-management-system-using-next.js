@@ -136,12 +136,13 @@ export default function EnquiryListPage() {
 
       <div className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 lg:grid-cols-6">
         <input
+          aria-label="Search enquiries"
           value={filters.search}
           onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
           placeholder="Search enquiries"
           className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 dark:border-slate-700 dark:text-white"
         />
-        <select value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white">
+        <select aria-label="Filter enquiries by status" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))} className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white">
           <option value="ALL">All Status</option>
           <option value="NEW">New</option>
           <option value="CONTACTED">Contacted</option>
@@ -152,7 +153,7 @@ export default function EnquiryListPage() {
           <option value="LOST">Lost</option>
           <option value="ON_HOLD">On Hold</option>
         </select>
-        <select value={filters.source} onChange={(event) => setFilters((current) => ({ ...current, source: event.target.value }))} className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white">
+        <select aria-label="Filter enquiries by source" value={filters.source} onChange={(event) => setFilters((current) => ({ ...current, source: event.target.value }))} className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white">
           <option value="ALL">All Sources</option>
           <option value="WALK_IN">Walk In</option>
           <option value="PHONE_CALL">Phone Call</option>
@@ -164,9 +165,9 @@ export default function EnquiryListPage() {
           <option value="PAMPHLET">Pamphlet</option>
           <option value="OTHER">Other</option>
         </select>
-        <input value={filters.assignedTo} onChange={(event) => setFilters((current) => ({ ...current, assignedTo: event.target.value }))} placeholder="Assigned to" className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 dark:border-slate-700 dark:text-white" />
-        <input value={filters.from} onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value }))} type="date" className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white" />
-        <input value={filters.to} onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value }))} type="date" className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white" />
+        <input aria-label="Filter enquiries by assignee" value={filters.assignedTo} onChange={(event) => setFilters((current) => ({ ...current, assignedTo: event.target.value }))} placeholder="Assigned to" className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 dark:border-slate-700 dark:text-white" />
+        <input aria-label="Filter enquiries from date" value={filters.from} onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value }))} type="date" className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white" />
+        <input aria-label="Filter enquiries to date" value={filters.to} onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value }))} type="date" className="rounded-xl border border-slate-300 bg-transparent px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:text-white" />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">

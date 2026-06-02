@@ -112,7 +112,7 @@ export function ResetPasswordForm() {
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/login"), 2500);
+      setTimeout(() => router.push("/auth/login"), 2500);
     } catch {
       setServerError("Something went wrong. Please try again.");
     }

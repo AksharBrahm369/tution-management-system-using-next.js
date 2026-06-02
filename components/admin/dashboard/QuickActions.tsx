@@ -36,13 +36,13 @@ const QuickActions: React.FC = () => {
     {
       label: 'Add Student',
       icon: <UserPlus size={24} />,
-      href: '/admin/students/new',
+      href: '/admin/students/add',
       color: 'blue',
     },
     {
       label: 'Add Teacher',
       icon: <BookPlus size={24} />,
-      href: '/admin/teachers/new',
+      href: '/admin/teachers/add',
       color: 'purple',
     },
     {
@@ -54,13 +54,13 @@ const QuickActions: React.FC = () => {
     {
       label: 'Collect Fee',
       icon: <Banknote size={24} />,
-      href: '/admin/fees',
+      href: '/admin/fees/collect',
       color: 'orange',
     },
     {
       label: 'Create Exam',
       icon: <FileText size={24} />,
-      href: '/admin/exams/new',
+      href: '/admin/exams/create',
       color: 'indigo',
     },
     {

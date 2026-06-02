@@ -1,6 +1,5 @@
-'use client';
-
 import React, { Suspense } from 'react';
+import { getCurrentAdminUser } from '@/lib/adminAuth';
 import WelcomeHeader from '@/components/admin/dashboard/WelcomeHeader';
 import StatsGrid from '@/components/admin/dashboard/StatsGrid';
 import FeeBarChart from '@/components/admin/dashboard/FeeBarChart';
@@ -12,18 +11,20 @@ import RecentStudents from '@/components/admin/dashboard/RecentStudents';
 import QuickActions from '@/components/admin/dashboard/QuickActions';
 import FollowUpReminderWidget from '@/components/admin/enquiries/FollowUpReminderWidget';
 
-const DashboardPage: React.FC = () => {
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
+export default async function DashboardPage() {
+  const user = await getCurrentAdminUser();
+
   return (
     <div className="w-full space-y-6">
-      {/* Welcome Header */}
-      <WelcomeHeader adminName="Admin User" />
+      <WelcomeHeader adminName={user?.name ?? 'Admin'} />
 
-      {/* Stats Grid */}
       <Suspense fallback={<div className="text-slate-500">Loading stats...</div>}>
         <StatsGrid />
       </Suspense>
 
-      {/* Charts Section */}
       <section className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-5">
         <div className="min-w-0 xl:col-span-3">
           <FeeBarChart />
@@ -33,7 +34,6 @@ const DashboardPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Middle Panels */}
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 xl:grid-cols-3">
         <div className="min-w-0">
           <TodaysClasses />
@@ -50,19 +50,13 @@ const DashboardPage: React.FC = () => {
         <FollowUpReminderWidget />
       </section>
 
-      {/* Quick Actions */}
       <div className="w-full">
-          <QuickActions />
+        <QuickActions />
       </div>
 
-      {/* Recent Students Table */}
       <div className="w-full">
         <RecentStudents />
       </div>
     </div>
   );
-};
-
-export default DashboardPage;
- 
- 
+}

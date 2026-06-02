@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const NO_STORE_HEADERS = {
+  "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+};
 
 function startOfToday(): Date {
   const d = new Date();
@@ -66,7 +71,7 @@ export async function GET(request: NextRequest) {
       monthlyCollection: feePaymentsThisMonth._sum.amount ?? 0,
     };
 
-    return NextResponse.json(stats, { status: 200 });
+    return NextResponse.json(stats, { status: 200, headers: NO_STORE_HEADERS });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.startsWith("Forbidden")
@@ -75,6 +80,6 @@ export async function GET(request: NextRequest) {
         ? 401
         : 500;
     console.error("Dashboard stats error:", error);
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status, headers: NO_STORE_HEADERS });
   }
 }

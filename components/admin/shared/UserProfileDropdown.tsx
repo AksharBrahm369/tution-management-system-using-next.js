@@ -14,19 +14,21 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ onClose, user
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    router.push('/auth/login');
     onClose();
   };
 
   return (
     <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50 animate-fade-in">
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-        <p className="font-semibold text-slate-900 dark:text-white truncate">{user?.name || 'Admin User'}</p>
-        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email || 'admin@tuitionpro.com'}</p>
+        <p className="font-semibold text-slate-900 dark:text-white truncate">{user?.name}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
       </div>
 
       <div className="divide-y divide-slate-200 dark:divide-slate-700">
         <button
+          type="button"
+          aria-label="Open profile settings"
           onClick={() => {
             router.push('/admin/settings');
             onClose();
@@ -38,6 +40,8 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ onClose, user
         </button>
 
         <button
+          type="button"
+          aria-label="Open settings"
           onClick={() => {
             router.push('/admin/settings');
             onClose();
@@ -49,6 +53,8 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ onClose, user
         </button>
 
         <button
+          type="button"
+          aria-label="Logout"
           onClick={handleLogout}
           className="w-full px-4 py-3 flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-sm text-left"
         >

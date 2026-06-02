@@ -23,7 +23,7 @@ interface DueFollowUp {
 }
 
 export default function FollowUpReminderWidget() {
-  const { data, isLoading } = useQuery<{ followUps: DueFollowUp[] }>({
+  const { data, isLoading, isError } = useQuery<{ followUps: DueFollowUp[] }>({
     queryKey: ["enquiry-follow-ups-due"],
     queryFn: async () => {
       const response = await fetch("/api/admin/enquiries/follow-ups/due?limit=5", { credentials: "same-origin" });
@@ -49,6 +49,10 @@ export default function FollowUpReminderWidget() {
         {isLoading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((index) => <div key={index} className="h-16 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />)}
+          </div>
+        ) : isError ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            Could not load follow-up reminders.
           </div>
         ) : (data?.followUps.length ?? 0) > 0 ? (
           data?.followUps.map((item) => (

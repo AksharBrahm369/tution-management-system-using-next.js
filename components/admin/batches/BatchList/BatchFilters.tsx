@@ -51,6 +51,7 @@ const BatchFilters: React.FC<BatchFiltersProps> = ({
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
+            aria-label="Search batches"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search batches, subject, teacher..."
@@ -58,21 +59,21 @@ const BatchFilters: React.FC<BatchFiltersProps> = ({
           />
         </div>
 
-        <select value={status} onChange={(e) => onStatusChange(e.target.value)} className={selectClass}>
+        <select aria-label="Filter batches by status" value={status} onChange={(e) => onStatusChange(e.target.value)} className={selectClass}>
           <option value="">All Statuses</option>
           {["ACTIVE", "UPCOMING", "INACTIVE", "COMPLETED", "CANCELLED"].map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
 
-        <select value={subjectId} onChange={(e) => onSubjectChange(e.target.value)} className={selectClass}>
+        <select aria-label="Filter batches by subject" value={subjectId} onChange={(e) => onSubjectChange(e.target.value)} className={selectClass}>
           <option value="">All Subjects</option>
           {subjects.map((s) => (
             <option key={s.id} value={s.id}>{s.name}</option>
           ))}
         </select>
 
-        <select value={teacherId} onChange={(e) => onTeacherChange(e.target.value)} className={selectClass}>
+        <select aria-label="Filter batches by teacher" value={teacherId} onChange={(e) => onTeacherChange(e.target.value)} className={selectClass}>
           <option value="">All Teachers</option>
           {teachers.map((t) => (
             <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
@@ -89,6 +90,7 @@ const BatchFilters: React.FC<BatchFiltersProps> = ({
               <button
                 key={value}
                 type="button"
+                aria-pressed={active}
                 onClick={() => onDayToggle(value)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                   active
@@ -102,7 +104,7 @@ const BatchFilters: React.FC<BatchFiltersProps> = ({
           })}
         </div>
 
-        <select value={timeRange} onChange={(e) => onTimeRangeChange(e.target.value)} className={selectClass}>
+        <select aria-label="Filter batches by time range" value={timeRange} onChange={(e) => onTimeRangeChange(e.target.value)} className={selectClass}>
           <option value="">Any Time</option>
           <option value="morning">Morning (6am–12pm)</option>
           <option value="afternoon">Afternoon (12pm–5pm)</option>

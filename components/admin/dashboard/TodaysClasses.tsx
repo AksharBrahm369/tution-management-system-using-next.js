@@ -14,7 +14,7 @@ interface Class {
 }
 
 const TodaysClasses: React.FC = () => {
-  const { data: classes, isLoading } = useQuery<Class[]>({
+  const { data: classes, isLoading, isError } = useQuery<Class[]>({
     queryKey: ['todays-classes'],
     queryFn: async () => {
       const response = await fetch('/api/admin/dashboard/todays-classes');
@@ -36,7 +36,7 @@ const TodaysClasses: React.FC = () => {
     return (
       <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-          Today's Classes
+          Today&apos;s Classes
         </h3>
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -47,10 +47,19 @@ const TodaysClasses: React.FC = () => {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg h-full">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Today&apos;s Classes</h3>
+        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load today&apos;s classes.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm h-full">
       <h3 className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-4">
-        Today's Classes
+        Today&apos;s Classes
       </h3>
 
       {classes && classes.length > 0 ? (

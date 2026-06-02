@@ -20,6 +20,7 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onRe
         <div className="relative max-w-2xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
+            aria-label="Search students"
             value={filters.search}
             onChange={(event) => onChange({ ...filters, search: event.target.value })}
             placeholder="Search by name, email, student code, phone..."
@@ -29,7 +30,7 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onRe
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <select value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value })} className={baseSelect}>
+        <select aria-label="Filter students by status" value={filters.status} onChange={(event) => onChange({ ...filters, status: event.target.value })} className={baseSelect}>
           <option value="ALL">All Status</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
@@ -39,7 +40,7 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onRe
           <option value="ON_LEAVE">On Leave</option>
         </select>
 
-        <select value={filters.category} onChange={(event) => onChange({ ...filters, category: event.target.value })} className={baseSelect}>
+        <select aria-label="Filter students by category" value={filters.category} onChange={(event) => onChange({ ...filters, category: event.target.value })} className={baseSelect}>
           <option value="ALL">All Categories</option>
           <option value="WEAK">Weak</option>
           <option value="AVERAGE">Average</option>
@@ -47,14 +48,14 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onRe
           <option value="TOPPER">Topper</option>
         </select>
 
-        <select value={filters.batchId} onChange={(event) => onChange({ ...filters, batchId: event.target.value })} className={baseSelect}>
+        <select aria-label="Filter students by batch" value={filters.batchId} onChange={(event) => onChange({ ...filters, batchId: event.target.value })} className={baseSelect}>
           <option value="ALL">All Batches</option>
           {batchOptions.map((batch) => (
             <option key={batch.id} value={batch.id}>{batch.name}</option>
           ))}
         </select>
 
-        <select value={filters.academicYear} onChange={(event) => onChange({ ...filters, academicYear: event.target.value })} className={baseSelect}>
+        <select aria-label="Filter students by academic year" value={filters.academicYear} onChange={(event) => onChange({ ...filters, academicYear: event.target.value })} className={baseSelect}>
           <option value="ALL">All Years</option>
           <option value="2024-25">2024-25</option>
           <option value="2025-26">2025-26</option>

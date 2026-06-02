@@ -14,7 +14,7 @@ interface Payment {
 }
 
 const RecentPayments: React.FC = () => {
-  const { data: payments, isLoading } = useQuery<Payment[]>({
+  const { data: payments, isLoading, isError } = useQuery<Payment[]>({
     queryKey: ['recent-payments'],
     queryFn: async () => {
       const response = await fetch('/api/admin/dashboard/recent-payments');
@@ -43,6 +43,15 @@ const RecentPayments: React.FC = () => {
             <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg h-full">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recent Payments</h3>
+        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load recent payments.</p>
       </div>
     );
   }

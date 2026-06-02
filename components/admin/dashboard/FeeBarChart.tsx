@@ -23,7 +23,7 @@ interface ChartData {
 
 const FeeBarChart: React.FC = () => {
   const [period, setPeriod] = useState<'6' | '12'>('6');
-  const { data, isLoading } = useQuery<ChartData>({
+  const { data, isLoading, isError } = useQuery<ChartData>({
     queryKey: ['dashboard-charts'],
     queryFn: async () => {
       const response = await fetch('/api/admin/dashboard/charts');
@@ -41,6 +41,15 @@ const FeeBarChart: React.FC = () => {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Monthly Fee Collection</h3>
+        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load chart data.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm">
       <div className="flex items-center justify-between mb-6">
@@ -48,6 +57,7 @@ const FeeBarChart: React.FC = () => {
           Monthly Fee Collection
         </h3>
         <select
+          aria-label="Fee collection period"
           value={period}
           onChange={(e) => setPeriod(e.target.value as '6' | '12')}
           className="text-sm px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"

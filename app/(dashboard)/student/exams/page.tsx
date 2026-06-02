@@ -6,7 +6,7 @@ import { syncActiveExamStatuses } from "@/lib/examService";
 
 export default async function StudentExamsRoutePage() {
   const session = await getCurrentSession();
-  if (!session || session.role !== "STUDENT") redirect("/login");
+  if (!session || session.role !== "STUDENT") redirect("/auth/login");
 
   const student = await prisma.student.findFirst({
     where: { userId: session.userId },

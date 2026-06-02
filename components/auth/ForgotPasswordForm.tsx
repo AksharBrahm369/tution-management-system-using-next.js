@@ -65,7 +65,7 @@ export function ForgotPasswordForm() {
           The reset link will expire in <strong>1 hour</strong>. Check your spam folder if you don&apos;t see it.
         </div>
         <Link
-          href="/login"
+          href="/auth/login"
           className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -136,7 +136,7 @@ export function ForgotPasswordForm() {
 
       <div className="text-center">
         <Link
-          href="/login"
+          href="/auth/login"
           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-blue-600 hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />

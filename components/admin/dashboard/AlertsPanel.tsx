@@ -20,7 +20,7 @@ interface Alert {
 }
 
 const AlertsPanel: React.FC = () => {
-  const { data: alerts, isLoading } = useQuery<Alert[]>({
+  const { data: alerts, isLoading, isError } = useQuery<Alert[]>({
     queryKey: ['dashboard-alerts'],
     queryFn: async () => {
       const response = await fetch('/api/admin/dashboard/alerts');
@@ -61,6 +61,15 @@ const AlertsPanel: React.FC = () => {
             <div key={i} className="h-16 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg animate-pulse"></div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg h-full">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Alerts</h3>
+        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load alerts.</p>
       </div>
     );
   }

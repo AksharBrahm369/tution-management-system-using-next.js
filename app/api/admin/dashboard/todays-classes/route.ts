@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { requireSuperAdmin } from '@/lib/adminAuth';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate',
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -70,7 +75,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(formatted, { status: 200 });
+    return NextResponse.json(formatted, { status: 200, headers: NO_STORE_HEADERS });
   } catch (error) {
     console.error('Today classes error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
@@ -79,6 +84,6 @@ export async function GET(request: NextRequest) {
       : message.startsWith('Unauthorized')
         ? 401
         : 500;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status, headers: NO_STORE_HEADERS });
   }
 }

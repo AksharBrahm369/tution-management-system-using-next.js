@@ -26,7 +26,7 @@ export default function DashboardLayout({
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
+      router.push("/auth/login");
       router.refresh();
     } catch {
       setIsLoggingOut(false);
