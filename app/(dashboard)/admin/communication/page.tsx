@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { Clipboard, Mail, MessageCircle, Send, Smartphone } from "lucide-react";
 
 type NotificationItem = {
   id: string;
@@ -16,9 +17,36 @@ type AnnouncementItem = {
   title: string;
   message: string;
   audience?: string;
+  channels?: string | null;
   status?: string;
   createdAt: string;
 };
+
+type AnnouncementChannel = "IN_APP" | "WHATSAPP" | "SMS" | "EMAIL";
+
+type BatchOption = {
+  id: string;
+  name: string;
+  code: string;
+  currentStrength?: number;
+};
+
+type ContactsResponse = {
+  phones: string[];
+  emails: string[];
+  summary: {
+    students: number;
+    phones: number;
+    emails: number;
+  };
+};
+
+const channelOptions: Array<{ value: AnnouncementChannel; label: string; hint: string }> = [
+  { value: "IN_APP", label: "In-app", hint: "Portal notification" },
+  { value: "WHATSAPP", label: "WhatsApp", hint: "Student phones" },
+  { value: "EMAIL", label: "Email", hint: "Student emails" },
+  { value: "SMS", label: "SMS", hint: "Student phones" },
+];
 
 function statusTone(status?: string) {
   switch ((status || "").toUpperCase()) {
@@ -33,38 +61,61 @@ function statusTone(status?: string) {
   }
 }
 
-function audienceLabel(audience?: string) {
-  switch ((audience || "ALL").toUpperCase()) {
+function audienceLabel(audience?: string, batchesById?: Map<string, BatchOption>) {
+  const value = audience || "STUDENT";
+  if (value.toUpperCase().startsWith("BATCH:")) {
+    const batchId = value.slice("BATCH:".length);
+    const batch = batchesById?.get(batchId);
+    return batch ? `${batch.name} class` : "Selected class";
+  }
+
+  switch (value.toUpperCase()) {
     case "SUPER_ADMIN":
       return "Admins";
     case "TEACHER":
       return "Teachers";
     case "STUDENT":
-      return "Students";
+      return "All students";
     case "PARENT":
       return "Parents";
     default:
-      return "All";
+      return "All students";
   }
+}
+
+function parseChannels(channels?: string | null) {
+  return (channels || "IN_APP")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function announcementText(item: AnnouncementItem) {
+  return `${item.title}\n\n${item.message}\n\n- TuitionPro`;
 }
 
 export default function CommunicationPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [batches, setBatches] = useState<BatchOption[]>([]);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [audience, setAudience] = useState("ALL");
+  const [targetMode, setTargetMode] = useState<"ALL_STUDENTS" | "BATCH">("ALL_STUDENTS");
+  const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [selectedChannels, setSelectedChannels] = useState<AnnouncementChannel[]>(["IN_APP"]);
   const [loading, setLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [externalActionId, setExternalActionId] = useState<string | null>(null);
 
   async function load() {
     setError(null);
-    const [notificationRes, announcementRes] = await Promise.all([
+    const [notificationRes, announcementRes, batchRes] = await Promise.all([
       fetch("/api/admin/notifications", { credentials: "same-origin" }),
       fetch("/api/admin/announcements", { credentials: "same-origin" }),
+      fetch("/api/admin/batches?status=ACTIVE&limit=100&sortBy=name&sortOrder=asc", { credentials: "same-origin" }),
     ]);
 
     if (notificationRes.ok) {
@@ -73,6 +124,11 @@ export default function CommunicationPage() {
 
     if (announcementRes.ok) {
       setAnnouncements(await announcementRes.json());
+    }
+
+    if (batchRes.ok) {
+      const payload = await batchRes.json();
+      setBatches(Array.isArray(payload.batches) ? payload.batches : []);
     }
   }
 
@@ -92,11 +148,99 @@ export default function CommunicationPage() {
     [announcements.length, notifications]
   );
 
+  const batchesById = useMemo(() => new Map(batches.map((batch) => [batch.id, batch])), [batches]);
+
+  function toggleChannel(channel: AnnouncementChannel) {
+    setSelectedChannels((current) => {
+      if (current.includes(channel)) {
+        const next = current.filter((item) => item !== channel);
+        return next.length > 0 ? next : ["IN_APP"];
+      }
+      return [...current, channel];
+    });
+  }
+
+  async function fetchContacts(item: AnnouncementItem) {
+    const res = await fetch(`/api/admin/announcements/${item.id}/contacts`, { credentials: "same-origin" });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "No response body");
+      throw new Error(`Contacts failed (${res.status}): ${text}`);
+    }
+    return (await res.json()) as ContactsResponse;
+  }
+
+  async function openStudentWhatsApp(item: AnnouncementItem) {
+    setExternalActionId(`${item.id}:whatsapp`);
+    setError(null);
+    setActionMessage(null);
+
+    try {
+      const contacts = await fetchContacts(item);
+      const firstPhone = contacts.phones[0];
+      if (!firstPhone) throw new Error("No student phone numbers found for this announcement.");
+
+      window.open(`https://wa.me/${firstPhone}?text=${encodeURIComponent(announcementText(item))}`, "_blank", "noopener,noreferrer");
+      setActionMessage(
+        contacts.summary.phones > 1
+          ? `Opened WhatsApp for 1 of ${contacts.summary.phones} student phone numbers. Use the class group button for bulk sharing.`
+          : "Opened WhatsApp for the student phone number."
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to open WhatsApp.");
+    } finally {
+      setExternalActionId(null);
+    }
+  }
+
+  function openClassWhatsApp(item: AnnouncementItem) {
+    window.open(`https://wa.me/?text=${encodeURIComponent(announcementText(item))}`, "_blank", "noopener,noreferrer");
+  }
+
+  async function openEmailCompose(item: AnnouncementItem) {
+    setExternalActionId(`${item.id}:email`);
+    setError(null);
+    setActionMessage(null);
+
+    try {
+      const contacts = await fetchContacts(item);
+      if (contacts.emails.length === 0) throw new Error("No student email addresses found for this announcement.");
+
+      const subject = encodeURIComponent(item.title);
+      const body = encodeURIComponent(announcementText(item));
+      const bcc = encodeURIComponent(contacts.emails.join(","));
+      window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+      setActionMessage(`Opened email composer for ${contacts.summary.emails} student email addresses.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to open email.");
+    } finally {
+      setExternalActionId(null);
+    }
+  }
+
+  async function copySmsText(item: AnnouncementItem) {
+    setExternalActionId(`${item.id}:sms`);
+    setError(null);
+    setActionMessage(null);
+
+    try {
+      const contacts = await fetchContacts(item);
+      if (contacts.phones.length === 0) throw new Error("No student phone numbers found for this announcement.");
+
+      await navigator.clipboard.writeText(announcementText(item));
+      setActionMessage(`Copied SMS text. ${contacts.summary.phones} student phone numbers are available for this announcement.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to prepare SMS text.");
+    } finally {
+      setExternalActionId(null);
+    }
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setActionMessage(null);
     setError(null);
-    console.log("[communication] handleCreate clicked", { title, message, audience });
+    const audience = targetMode === "BATCH" && selectedBatchId ? `BATCH:${selectedBatchId}` : "STUDENT";
+    console.log("[communication] handleCreate clicked", { title, message, audience, channels: selectedChannels });
     setLoading(true);
 
     try {
@@ -104,13 +248,15 @@ export default function CommunicationPage() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, message, audience, link: "/admin/communication" }),
+        body: JSON.stringify({ title, message, audience, channels: selectedChannels, link: "/admin/communication" }),
       });
 
       if (res.ok) {
         setTitle("");
         setMessage("");
-        setAudience("ALL");
+        setTargetMode("ALL_STUDENTS");
+        setSelectedBatchId("");
+        setSelectedChannels(["IN_APP"]);
         setActionMessage("Announcement created successfully.");
         await load();
         return;
@@ -241,27 +387,88 @@ export default function CommunicationPage() {
                 />
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">Audience</label>
-                  <select
-                    value={audience}
-                    onChange={(e) => setAudience(e.target.value)}
-                    className="min-w-45 rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
-                  >
-                    <option value="ALL">All</option>
-                    <option value="SUPER_ADMIN">Admins</option>
-                    <option value="TEACHER">Teachers</option>
-                    <option value="STUDENT">Students</option>
-                    <option value="PARENT">Parents</option>
-                  </select>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Send to</label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setTargetMode("ALL_STUDENTS")}
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                        targetMode === "ALL_STUDENTS"
+                          ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-100"
+                          : "border-white/10 bg-slate-950/70 text-slate-300 hover:border-white/20"
+                      }`}
+                    >
+                      All students
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTargetMode("BATCH")}
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                        targetMode === "BATCH"
+                          ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-100"
+                          : "border-white/10 bg-slate-950/70 text-slate-300 hover:border-white/20"
+                      }`}
+                    >
+                      Class / batch
+                    </button>
+                  </div>
+
+                  {targetMode === "BATCH" ? (
+                    <select
+                      value={selectedBatchId}
+                      onChange={(e) => setSelectedBatchId(e.target.value)}
+                      className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
+                    >
+                      <option value="">Select class / batch</option>
+                      {batches.map((batch) => (
+                        <option key={batch.id} value={batch.id}>
+                          {batch.name} ({batch.code}) - {batch.currentStrength ?? 0} students
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
                 </div>
 
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-300">Channels</label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {channelOptions.map((option) => {
+                      const checked = selectedChannels.includes(option.value);
+                      return (
+                        <label
+                          key={option.value}
+                          className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 transition ${
+                            checked
+                              ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-100"
+                              : "border-white/10 bg-slate-950/70 text-slate-300 hover:border-white/20"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleChannel(option.value)}
+                            className="mt-1 h-4 w-4 accent-emerald-500"
+                          />
+                          <span>
+                            <span className="block text-sm font-medium">{option.label}</span>
+                            <span className="block text-xs text-slate-400">{option.hint}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={loading || (targetMode === "BATCH" && !selectedBatchId)}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 >
+                  <Send className="h-4 w-4" />
                   {loading ? "Publishing..." : "Create & Publish"}
                 </button>
               </div>
@@ -324,6 +531,7 @@ export default function CommunicationPage() {
                   announcements.map((item) => {
                     const isPublishing = publishingId === item.id;
                     const isResending = resendingId === item.id;
+                    const channels = parseChannels(item.channels);
                     return (
                       <article key={item.id} className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 transition hover:border-cyan-400/25 hover:bg-slate-950">
                         <div className="flex flex-col gap-4">
@@ -335,16 +543,58 @@ export default function CommunicationPage() {
                                   {(item.status || "draft").toLowerCase()}
                                 </span>
                                 <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-300">
-                                  {audienceLabel(item.audience)}
+                                  {audienceLabel(item.audience, batchesById)}
                                 </span>
                               </div>
                               <p className="mt-2 text-sm leading-6 text-slate-300">{item.message}</p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {channels.map((channel) => (
+                                  <span key={channel} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+                                    {channel.replace("_", "-").toLowerCase()}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex flex-col gap-3">
                             <div className="text-xs text-slate-500">{new Date(item.createdAt).toLocaleString()}</div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openClassWhatsApp(item)}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/15"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                Class group
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openStudentWhatsApp(item)}
+                                disabled={externalActionId === `${item.id}:whatsapp`}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-sm font-medium text-cyan-100 transition hover:bg-cyan-400/15 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Smartphone className="h-4 w-4" />
+                                Student phone
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openEmailCompose(item)}
+                                disabled={externalActionId === `${item.id}:email`}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-sm font-medium text-sky-100 transition hover:bg-sky-400/15 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Mail className="h-4 w-4" />
+                                Email
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => copySmsText(item)}
+                                disabled={externalActionId === `${item.id}:sms`}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-violet-400/30 bg-violet-400/10 px-3 py-2 text-sm font-medium text-violet-100 transition hover:bg-violet-400/15 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Clipboard className="h-4 w-4" />
+                                SMS text
+                              </button>
                               <button
                                 onClick={() => publishAnnouncement(item.id)}
                                 disabled={isPublishing || isResending}

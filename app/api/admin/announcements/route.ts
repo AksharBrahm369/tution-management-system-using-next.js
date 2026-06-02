@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
+import {
+  createAnnouncementNotifications,
+  deliverAnnouncementToContacts,
+  parseAnnouncementChannels,
+  resolveAnnouncementRecipients,
+  serializeAnnouncementChannels,
+} from '@/lib/announcementDelivery';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
@@ -40,14 +47,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     console.log('[announcements] body:', body);
-    const { title, message, audience = 'ALL', channels = null, scheduleAt = null } = body;
+    const { title, message, audience = 'STUDENT', channels = null, scheduleAt = null } = body;
+    const serializedChannels = serializeAnnouncementChannels(channels);
+
+    if (!title?.trim() || !message?.trim()) {
+      return NextResponse.json({ error: 'Title and message are required' }, { status: 400 });
+    }
 
     // Use raw SQL insert to avoid Prisma client input mismatches
     const now = new Date();
     const id = crypto.randomUUID();
     const inserted: any = await prisma.$queryRaw`
       INSERT INTO announcements (id, "userId", title, message, audience, channels, "scheduleAt", status, "createdAt", "updatedAt")
-      VALUES (${id}, ${userId}, ${title}, ${message}, ${audience}, ${channels}, ${scheduleAt ? new Date(scheduleAt) : null}, ${scheduleAt ? 'SCHEDULED' : 'PUBLISHED'}, ${now}, ${now})
+      VALUES (${id}, ${userId}, ${title.trim()}, ${message.trim()}, ${audience}, ${serializedChannels}, ${scheduleAt ? new Date(scheduleAt) : null}, ${scheduleAt ? 'SCHEDULED' : 'PUBLISHED'}, ${now}, ${now})
       RETURNING *
     `;
     const created = Array.isArray(inserted) ? inserted[0] : inserted;
@@ -69,33 +81,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function publishAnnouncement(announcementId: string) {
+export async function publishAnnouncement(announcementId: string) {
   const rows: any = await prisma.$queryRaw`SELECT * FROM announcements WHERE id = ${announcementId}`;
   const ann = Array.isArray(rows) ? rows[0] : rows;
   if (!ann) throw new Error('Announcement not found');
 
-  // Resolve audience to userIds
-  let users = [] as any[];
-  if (ann.audience === 'ALL') {
-    users = await prisma.user.findMany({ select: { id: true } });
-  } else {
-    // treat audience as Role name
-    users = await prisma.user.findMany({ where: { role: ann.audience as any }, select: { id: true } });
-  }
-
-  if (users.length === 0) return;
-
-  const now = new Date();
-  const notifications = users.map((u) => ({ id: undefined as any, userId: u.id, title: ann.title, message: ann.message, type: 'ANNOUNCEMENT', isRead: false, link: null, createdAt: now, updatedAt: now }));
-
-  // Insert notifications via raw SQL to avoid Prisma client/DB mismatches
-  for (const n of notifications) {
-    const nid = crypto.randomUUID();
-    await prisma.$queryRaw`
-      INSERT INTO notifications (id, "userId", title, message, type, "isRead", link, "createdAt", "updatedAt", "studentId")
-      VALUES (${nid}, ${n.userId}, ${n.title}, ${n.message}, ${n.type}, ${n.isRead}, ${n.link ?? null}, ${n.createdAt}, ${n.updatedAt}, ${null})
-    `;
-  }
+  const channels = parseAnnouncementChannels(ann.channels);
+  const recipients = await resolveAnnouncementRecipients(ann);
+  await createAnnouncementNotifications(ann, recipients.userIds);
+  await deliverAnnouncementToContacts(ann, channels, recipients.contacts);
 
   // mark announcement as published via raw SQL
   await prisma.$queryRaw`UPDATE announcements SET status = 'PUBLISHED', "updatedAt" = ${new Date()} WHERE id = ${announcementId}`;
