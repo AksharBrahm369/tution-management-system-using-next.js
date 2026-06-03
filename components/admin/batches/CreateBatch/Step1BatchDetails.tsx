@@ -73,8 +73,11 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
     },
   });
 
-  const handleQuickAddSubject = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleQuickAddSubject = (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!subjectName.trim()) return alert("Subject Name is required");
     if (!subjectCode.trim()) return alert("Subject Code is required");
     addSubjectMutation.mutate({
@@ -255,7 +258,14 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
               </button>
             </div>
 
-            <form onSubmit={handleQuickAddSubject} className="mt-4 space-y-3.5">
+            <div 
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleQuickAddSubject(e);
+                }
+              }} 
+              className="mt-4 space-y-3.5"
+            >
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Subject Name *</label>
                 <input
@@ -300,7 +310,8 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleQuickAddSubject()}
                   disabled={addSubjectMutation.isPending}
                   className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-75 transition"
                 >
@@ -314,7 +325,7 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
                   )}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

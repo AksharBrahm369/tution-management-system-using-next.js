@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, AlertTriangle } from "lucide-react";
+import { Search, X, AlertTriangle, Loader2 } from "lucide-react";
 import type { BatchCreateInput } from "@/lib/validations/batch";
 
 interface Student {
@@ -24,7 +24,7 @@ const Step3Students: React.FC = () => {
 
   const [search, setSearch] = useState("");
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["students-select", search],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: "50" });
@@ -103,7 +103,7 @@ const Step3Students: React.FC = () => {
         <>
           {/* Search Students */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-            <div className="relative mb-4">
+            <div className="relative mb-3">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 value={search}
@@ -113,48 +113,85 @@ const Step3Students: React.FC = () => {
               />
             </div>
 
-            <div className="max-h-72 overflow-y-auto space-y-2">
-              {students.length === 0 && (
-                <p className="py-8 text-center text-sm text-slate-400">No students found</p>
+            <div className="flex items-center justify-between mb-4 px-1">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                {isLoading ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="animate-spin text-blue-500" size={13} />
+                    Loading student directory...
+                  </span>
+                ) : (
+                  `${students.length} student${students.length === 1 ? "" : "s"} found`
+                )}
+              </span>
+              {!isLoading && students.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const availableIds = students.map((s) => s.id);
+                    const merged = Array.from(new Set([...selectedIds, ...availableIds]));
+                    if (merged.length > maxStrength) {
+                      setValue("studentIds", merged.slice(0, maxStrength));
+                      alert(`Enrolled students up to the batch maximum strength (${maxStrength}).`);
+                    } else {
+                      setValue("studentIds", merged);
+                    }
+                  }}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition"
+                >
+                  + Add All to Batch
+                </button>
               )}
-              {students.map((student) => {
-                const isSelected = selectedIds.includes(student.id);
-                const hasSameSubject = student.batchEnrollments?.some(
-                  (e) => e.batch?.subject?.name && subjectId
-                );
+            </div>
 
-                return (
-                  <label
-                    key={student.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all ${
-                      isSelected
-                        ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
-                        : "border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggle(student.id)}
-                      className="h-4 w-4 rounded border-slate-300 accent-blue-600"
-                    />
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                      {student.firstName[0]}{student.lastName[0]}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">
-                        {student.firstName} {student.lastName}
-                      </p>
-                      <p className="text-xs text-slate-500">{student.studentCode}</p>
-                    </div>
-                    {hasSameSubject && (
-                      <span className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
-                        <AlertTriangle size={12} /> Same subject
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
+            <div className="max-h-72 overflow-y-auto space-y-2">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400 dark:text-slate-500">
+                  <Loader2 className="animate-spin text-blue-500" size={24} />
+                  <p className="text-sm">Loading students...</p>
+                </div>
+              ) : students.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-400">No students found</p>
+              ) : (
+                students.map((student) => {
+                  const isSelected = selectedIds.includes(student.id);
+                  const hasSameSubject = student.batchEnrollments?.some(
+                    (e) => e.batch?.subject?.name && subjectId
+                  );
+
+                  return (
+                    <label
+                      key={student.id}
+                      className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all ${
+                        isSelected
+                          ? "border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
+                          : "border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggle(student.id)}
+                        className="h-4 w-4 rounded border-slate-300 accent-blue-600"
+                      />
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                        {student.firstName[0]}{student.lastName[0]}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900 dark:text-white">
+                          {student.firstName} {student.lastName}
+                        </p>
+                        <p className="text-xs text-slate-500">{student.studentCode}</p>
+                      </div>
+                      {hasSameSubject && (
+                        <span className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                          <AlertTriangle size={12} /> Same subject
+                        </span>
+                      )}
+                    </label>
+                  );
+                })
+              )}
             </div>
           </div>
 

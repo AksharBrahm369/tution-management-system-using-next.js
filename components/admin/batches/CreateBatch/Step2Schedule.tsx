@@ -142,8 +142,11 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
     },
   });
 
-  const handleQuickAddRoom = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleQuickAddRoom = (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!roomName.trim()) return alert("Room Name is required");
     if (!roomCode.trim()) return alert("Room Code is required");
     if (roomCapacity <= 0) return alert("Capacity must be greater than 0");
@@ -345,7 +348,14 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
               </button>
             </div>
 
-            <form onSubmit={handleQuickAddRoom} className="mt-4 space-y-3.5">
+            <div 
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleQuickAddRoom(e);
+                }
+              }} 
+              className="mt-4 space-y-3.5"
+            >
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Room Name *</label>
                 <input
@@ -392,7 +402,8 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleQuickAddRoom()}
                   disabled={addRoomMutation.isPending}
                   className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-75 transition"
                 >
@@ -406,7 +417,7 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
                   )}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
