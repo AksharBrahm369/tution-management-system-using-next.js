@@ -120,30 +120,7 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
           />
         </div>
 
-        {/* Color Picker */}
-        <div>
-          <label className={labelClass}>Batch Color</label>
-          <div className="flex flex-wrap gap-3">
-            {COLORS.map((color) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setValue("color", color)}
-                className={`h-9 w-9 rounded-full transition-all ${
-                  selectedColor === color
-                    ? "scale-110 ring-2 ring-offset-2 ring-blue-500"
-                    : "hover:scale-105"
-                }`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-          {selectedColor && (
-            <p className="mt-2 text-xs text-slate-500">
-              Selected: <span style={{ color: selectedColor }}>{selectedColor}</span>
-            </p>
-          )}
-        </div>
+
 
         {/* Row: Fee + Max Strength */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -189,14 +166,12 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
           <button
             type="button"
             onClick={() => setValue("isOnline", !isOnline)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              isOnline ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
-            }`}
+            className={`relative h-6 w-11 rounded-full transition-colors ${isOnline ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-600"
+              }`}
           >
             <div
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                isOnline ? "translate-x-5" : "translate-x-0.5"
-              }`}
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isOnline ? "translate-x-5" : "translate-x-0.5"
+                }`}
             />
           </button>
           <div>
