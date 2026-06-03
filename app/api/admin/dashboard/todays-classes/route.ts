@@ -14,10 +14,28 @@ export async function GET(request: NextRequest) {
     await requireSuperAdmin(request);
 
     const now = new Date();
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date(now);
-    todayEnd.setHours(23, 59, 59, 999);
+    const settings = await prisma.instituteSettings.findFirst({
+      select: { timezone: true },
+    });
+    const tz = settings?.timezone || 'Asia/Kolkata';
+
+    // Format local date components in the target timezone
+    const yearFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric' });
+    const monthFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'numeric' });
+    const dayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, day: 'numeric' });
+    const weekdayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' });
+    const timeFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const localYear = parseInt(yearFormatter.format(now));
+    const localMonth = parseInt(monthFormatter.format(now)) - 1; // 0-indexed month
+    const localDay = parseInt(dayFormatter.format(now));
+
+    // Calculate todayStart and todayEnd represented as UTC midnight dates
+    const todayStart = new Date(Date.UTC(localYear, localMonth, localDay, 0, 0, 0, 0));
+    const todayEnd = new Date(Date.UTC(localYear, localMonth, localDay, 23, 59, 59, 999));
+
+    const todayDayName = weekdayFormatter.format(now).toUpperCase(); // e.g., 'WEDNESDAY'
+    const currentHHMM = timeFormatter.format(now); // e.g., '13:36'
 
     // Fetch real class sessions from the database for today
     const sessions = await prisma.classSession.findMany({
@@ -81,21 +99,26 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-    const todayDayName = dayNames[now.getDay()];
-
     const batchesRunningToday = activeBatches.filter((b) =>
       b.days.includes(todayDayName as any)
     );
 
     const formattedRealSessions = sessions.map((s) => {
-      const rawStatus = s.status.toLowerCase();
-      const mappedStatus =
-        rawStatus === 'scheduled'
-          ? 'upcoming'
-          : rawStatus === 'ongoing'
-          ? 'ongoing'
-          : 'completed';
+      let status: 'upcoming' | 'ongoing' | 'completed' = 'upcoming';
+      if (s.status === 'ONGOING') {
+        status = 'ongoing';
+      } else if (s.status === 'COMPLETED') {
+        status = 'completed';
+      } else {
+        // Dynamically compute 'SCHEDULED' class sessions based on current time
+        if (currentHHMM >= s.startTime && currentHHMM <= s.endTime) {
+          status = 'ongoing';
+        } else if (currentHHMM > s.endTime) {
+          status = 'completed';
+        } else {
+          status = 'upcoming';
+        }
+      }
 
       return {
         id: s.id,
@@ -103,7 +126,7 @@ export async function GET(request: NextRequest) {
         teacher: s.batch.teacher?.user?.name ?? 'TBA',
         time: `${s.startTime} - ${s.endTime}`,
         room: s.room?.name ?? 'Online',
-        status: mappedStatus as 'upcoming' | 'ongoing' | 'completed',
+        status,
         startTimeRaw: s.startTime,
         batchId: s.batchId,
       };
@@ -114,7 +137,6 @@ export async function GET(request: NextRequest) {
     const virtualSessions = batchesRunningToday
       .filter((b) => !realSessionBatchIds.has(b.id))
       .map((b) => {
-        const currentHHMM = now.toTimeString().slice(0, 5);
         let status: 'upcoming' | 'ongoing' | 'completed' = 'upcoming';
         if (currentHHMM >= b.startTime && currentHHMM <= b.endTime) {
           status = 'ongoing';
