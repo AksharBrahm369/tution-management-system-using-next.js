@@ -1,20 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, X, Loader2 } from "lucide-react";
 import type { BatchCreateInput } from "@/lib/validations/batch";
-
-const COLORS = [
-  "#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444",
-  "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16",
-];
 
 interface Step1Props {
   generatedCode: string;
 }
 
 const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
+  const queryClient = useQueryClient();
   const {
     register,
     formState: { errors },
@@ -29,8 +26,13 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
   }, [generatedCode, setValue]);
 
   const isOnline = watch("isOnline");
-  const selectedColor = watch("color");
   const currentYear = new Date().getFullYear();
+
+  // Quick Add Subject Modal state
+  const [showQuickAddSubject, setShowQuickAddSubject] = useState(false);
+  const [subjectName, setSubjectName] = useState("");
+  const [subjectCode, setSubjectCode] = useState("");
+  const [subjectDesc, setSubjectDesc] = useState("");
 
   const { data: subjectsData } = useQuery({
     queryKey: ["subjects"],
@@ -42,6 +44,45 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
   });
 
   const subjects = subjectsData?.subjects ?? [];
+
+  // Subject quick add mutation
+  const addSubjectMutation = useMutation({
+    mutationFn: async (data: { name: string; code: string; description?: string }) => {
+      const res = await fetch("/api/admin/subjects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to create subject");
+      }
+      return res.json() as Promise<{ subject: { id: string; name: string; code: string } }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      // Automatically select the new subject
+      setValue("subjectId", data.subject.id, { shouldValidate: true });
+      setShowQuickAddSubject(false);
+      setSubjectName("");
+      setSubjectCode("");
+      setSubjectDesc("");
+    },
+    onError: (err: Error) => {
+      alert(err.message);
+    },
+  });
+
+  const handleQuickAddSubject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subjectName.trim()) return alert("Subject Name is required");
+    if (!subjectCode.trim()) return alert("Subject Code is required");
+    addSubjectMutation.mutate({
+      name: subjectName,
+      code: subjectCode.toUpperCase(),
+      description: subjectDesc,
+    });
+  };
 
   const inputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:focus:border-blue-400";
@@ -72,9 +113,18 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
         {/* Row 2: Subject + Academic Year */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className={labelClass}>
-              Subject <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Subject <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddSubject(true)}
+                className="inline-flex items-center gap-0.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition"
+              >
+                <Plus size={12} /> Quick Add
+              </button>
+            </div>
             <select {...register("subjectId")} className={inputClass}>
               <option value="">Select subject...</option>
               {subjects.map((s) => (
@@ -114,8 +164,6 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
             className={inputClass}
           />
         </div>
-
-
 
         {/* Row: Fee + Max Strength */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -191,6 +239,85 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
           </div>
         )}
       </div>
+
+      {/* Quick Add Subject Dialog */}
+      {showQuickAddSubject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs transition">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Quick Add Subject</h3>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddSubject(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickAddSubject} className="mt-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Subject Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. History"
+                  value={subjectName}
+                  onChange={(e) => setSubjectName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Subject Code *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. HIST"
+                  value={subjectCode}
+                  onChange={(e) => setSubjectCode(e.target.value.toUpperCase())}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Description (optional)</label>
+                <textarea
+                  placeholder="Short description..."
+                  value={subjectDesc}
+                  onChange={(e) => setSubjectDesc(e.target.value)}
+                  rows={2}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddSubject(false)}
+                  className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addSubjectMutation.isPending}
+                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-75 transition"
+                >
+                  {addSubjectMutation.isPending ? (
+                    <>
+                      <Loader2 className="animate-spin" size={13} />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Subject"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

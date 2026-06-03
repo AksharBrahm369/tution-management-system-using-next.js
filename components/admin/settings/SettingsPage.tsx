@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import SettingsLayout from "./SettingsLayout";
 import SettingsSidebar from "./SettingsSidebar";
 import InstituteProfile from "./InstituteProfile";
+import AcademicsSection from "./AcademicsSection";
 import AcademicYears from "./AcademicYears";
 import FeeAndGST from "./FeeAndGST";
 import Integrations from "./Integrations";
@@ -13,7 +14,7 @@ import BackupRestore from "./BackupRestore";
 import DataManagement from "./DataManagement";
 import type { SettingsApiResponse, SettingsSection } from "./types";
 
-const sectionOrder: SettingsSection[] = ["profile", "academic-years", "gst", "notifications", "integrations", "security", "backup", "data", "about"];
+const sectionOrder: SettingsSection[] = ["profile", "academics", "academic-years", "gst", "notifications", "integrations", "security", "backup", "data", "about"];
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
@@ -30,6 +31,7 @@ export default function SettingsPage() {
     if (!data) return null;
     switch (activeSection) {
       case "profile": return <InstituteProfile settings={data.settings} onSaved={() => refetch()} />;
+      case "academics": return <AcademicsSection />;
       case "academic-years": return <AcademicYears currentAcademicYear={data.settings.currentAcademicYear} academicYears={data.academicYears} onChanged={() => refetch()} />;
       case "gst": return <FeeAndGST settings={data.settings} onSaved={() => refetch()} />;
       case "notifications": return <NotificationsSection />;

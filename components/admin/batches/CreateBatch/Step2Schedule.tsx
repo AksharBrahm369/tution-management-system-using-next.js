@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AlertTriangle, Plus, X, Loader2 } from "lucide-react";
 import type { BatchCreateInput } from "@/lib/validations/batch";
 
 const DAYS = [
@@ -27,6 +27,7 @@ interface Step2Props {
 }
 
 const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
+  const queryClient = useQueryClient();
   const {
     register,
     formState: { errors },
@@ -42,6 +43,12 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
 
   const [conflicts, setConflicts] = useState<ConflictResult | null>(null);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
+
+  // Quick Add Room Modal state
+  const [showQuickAddRoom, setShowQuickAddRoom] = useState(false);
+  const [roomName, setRoomName] = useState("");
+  const [roomCode, setRoomCode] = useState("");
+  const [roomCapacity, setRoomCapacity] = useState(30);
 
   // Duration display
   const duration = React.useMemo(() => {
@@ -106,6 +113,46 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
     const debounce = setTimeout(check, 600);
     return () => clearTimeout(debounce);
   }, [teacherId, roomId, days, startTime, endTime, editBatchId]);
+
+  // Room quick add mutation
+  const addRoomMutation = useMutation({
+    mutationFn: async (data: { name: string; code: string; capacity: number }) => {
+      const res = await fetch("/api/admin/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? "Failed to create classroom");
+      }
+      return res.json() as Promise<{ room: { id: string; name: string; code: string; capacity: number } }>;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+      // Automatically select the new room
+      setValue("roomId", data.room.id, { shouldValidate: true });
+      setShowQuickAddRoom(false);
+      setRoomName("");
+      setRoomCode("");
+      setRoomCapacity(30);
+    },
+    onError: (err: Error) => {
+      alert(err.message);
+    },
+  });
+
+  const handleQuickAddRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!roomName.trim()) return alert("Room Name is required");
+    if (!roomCode.trim()) return alert("Room Code is required");
+    if (roomCapacity <= 0) return alert("Capacity must be greater than 0");
+    addRoomMutation.mutate({
+      name: roomName,
+      code: roomCode.toUpperCase(),
+      capacity: roomCapacity,
+    });
+  };
 
   const toggleDay = (day: string) => {
     const current = days as string[];
@@ -221,7 +268,16 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
         </h2>
 
         <div>
-          <label className={labelClass}>Select Room (optional)</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Select Room (optional)</label>
+            <button
+              type="button"
+              onClick={() => setShowQuickAddRoom(true)}
+              className="inline-flex items-center gap-0.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition"
+            >
+              <Plus size={12} /> Quick Add
+            </button>
+          </div>
           <select {...register("roomId")} className={inputClass}>
             <option value="">No room assigned (or online)</option>
             {rooms.map((r) => (
@@ -271,6 +327,87 @@ const Step2Schedule: React.FC<Step2Props> = ({ editBatchId }) => {
           <p className="text-sm text-emerald-700 dark:text-emerald-300">
             ✅ No schedule conflicts detected
           </p>
+        </div>
+      )}
+
+      {/* Quick Add Room Dialog */}
+      {showQuickAddRoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-xs transition">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Quick Add Classroom</h3>
+              <button
+                type="button"
+                onClick={() => setShowQuickAddRoom(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-white transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickAddRoom} className="mt-4 space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Room Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Room 104"
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Room Code *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. R104"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Student Capacity *</label>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="30"
+                  value={roomCapacity}
+                  onChange={(e) => setRoomCapacity(parseInt(e.target.value) || 0)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAddRoom(false)}
+                  className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addRoomMutation.isPending}
+                  className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-75 transition"
+                >
+                  {addRoomMutation.isPending ? (
+                    <>
+                      <Loader2 className="animate-spin" size={13} />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Room"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

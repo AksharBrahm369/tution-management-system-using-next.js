@@ -1,4 +1,5 @@
 export type SettingsSection =
+  | "academics"
   | "profile"
   | "academic-years"
   | "gst"
