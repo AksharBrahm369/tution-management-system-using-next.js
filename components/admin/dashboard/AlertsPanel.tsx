@@ -27,6 +27,7 @@ const AlertsPanel: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch alerts');
       return response.json();
     },
+    refetchInterval: 5000,
   });
 
   const getAlertIcon = (type: string) => {

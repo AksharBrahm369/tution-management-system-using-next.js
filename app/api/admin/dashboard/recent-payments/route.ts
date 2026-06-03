@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
           select: {
             student: {
               select: {
+                firstName: true,
+                lastName: true,
                 user: {
                   select: {
                     name: true,
@@ -41,7 +43,15 @@ export async function GET(request: NextRequest) {
     });
 
     const formatted = payments.map((p) => {
-      const name = p.feeRecord?.student?.user?.name ?? 'Unknown Student';
+      const student = p.feeRecord?.student;
+      let name = 'Unknown Student';
+      if (student) {
+        if (student.firstName || student.lastName) {
+          name = `${student.firstName} ${student.lastName}`.trim();
+        } else if (student.user?.name) {
+          name = student.user.name;
+        }
+      }
       const initials = name
         .split(' ')
         .slice(0, 2)

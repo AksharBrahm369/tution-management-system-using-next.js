@@ -23,6 +23,7 @@ const RecentStudents: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch students');
       return response.json();
     },
+    refetchInterval: 5000,
   });
 
   const getFeeStatusColor = (status: string) => {

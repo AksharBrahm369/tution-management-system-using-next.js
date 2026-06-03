@@ -184,6 +184,7 @@ export default function CollectFeePage() {
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
+                          className="cursor-pointer disabled:cursor-not-allowed h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           checked={selectedIds.includes(record.id)}
                           onChange={(e) => {
                             setSelectedIds((current) =>

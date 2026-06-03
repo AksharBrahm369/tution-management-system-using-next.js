@@ -19,7 +19,7 @@ export function useAdminStats() {
       if (!response.ok) throw new Error('Failed to fetch stats');
       return response.json();
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    staleTime: 5000,
+    refetchInterval: 5000,
   });
 }

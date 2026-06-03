@@ -30,6 +30,7 @@ const FeeBarChart: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch charts');
       return response.json();
     },
+    refetchInterval: 5000,
   });
 
   if (isLoading) {

@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ChevronDown, Download, Edit3, MessageSquare, BadgeAlert } from "lucide-react";
+import { toast } from "sonner";
 import { StudentProfileData } from "../types";
 
 interface ProfileHeaderProps {
@@ -82,7 +83,19 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ student, onDownloadId, on
           <button onClick={onChangeStatus} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20">
             <BadgeAlert size={16} /> Change Status
           </button>
-          <button className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20">
+          <button 
+            onClick={() => {
+              const phone = student.phone || student.parent?.fatherPhone || student.parent?.motherPhone;
+              if (phone) {
+                const cleanPhone = phone.replace(/[^0-9]/g, "");
+                const finalPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+                window.open(`https://wa.me/${finalPhone}`, "_blank");
+              } else {
+                toast.error("This student does not have a registered phone number.");
+              }
+            }}
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+          >
             <MessageSquare size={16} /> Send Message
           </button>
           <button className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20">

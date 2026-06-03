@@ -21,6 +21,7 @@ const RecentPayments: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch payments');
       return response.json();
     },
+    refetchInterval: 5000,
   });
 
   const getMethodColor = (method: string) => {

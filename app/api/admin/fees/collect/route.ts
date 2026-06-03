@@ -44,8 +44,11 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data;
     const amountToCollect = Number(data.amount);
-    if (amountToCollect <= 0) {
-      return NextResponse.json({ error: "Amount must be greater than zero" }, { status: 400 });
+    if (amountToCollect < 0) {
+      return NextResponse.json({ error: "Amount cannot be negative" }, { status: 400 });
+    }
+    if (data.feeRecordIds.length === 0 && amountToCollect <= 0) {
+      return NextResponse.json({ error: "Amount must be greater than zero for ad-hoc records" }, { status: 400 });
     }
 
     const collectedAt = new Date();
@@ -70,9 +73,10 @@ export async function POST(request: NextRequest) {
 
       let remaining = toCollect;
       for (let index = 0; index < feeRecords.length; index += 1) {
-        if (remaining <= 0) break;
-
         const record = feeRecords[index];
+        if (remaining <= 0 && record.pendingAmount > 0) {
+          continue;
+        }
         const payable = Math.min(record.pendingAmount, remaining);
         const nextPending = parseFloat((record.pendingAmount - payable).toFixed(2));
         const nextPaid = parseFloat((record.paidAmount + payable).toFixed(2));

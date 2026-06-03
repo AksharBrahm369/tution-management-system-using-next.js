@@ -22,7 +22,17 @@ function formatPeriod(month: number, year: number) {
 
 const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
   const pendingRecords = useMemo(
-    () => student.feeRecords.filter((record) => record.pendingAmount > 0 && record.status !== "WAIVED"),
+    () =>
+      student.feeRecords.filter(
+        (record) =>
+          (record.pendingAmount > 0 ||
+            record.status === "PENDING" ||
+            record.status === "PARTIAL" ||
+            record.status === "OVERDUE") &&
+          record.status !== "WAIVED" &&
+          record.status !== "PAID" &&
+          record.status !== "REFUNDED"
+      ),
     [student.feeRecords]
   );
 
@@ -46,6 +56,33 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
   const [collectedBy, setCollectedBy] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState<number>(0);
+
+  async function saveRecordAmount(recordId: string) {
+    if (editAmount < 0) {
+      alert("Amount cannot be negative.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/admin/fees/records/${recordId}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: editAmount }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.error || "Failed to update record amount");
+      
+      setEditingRecordId(null);
+      onChanged?.();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to update record amount");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const selectedRecords = useMemo(
     () => pendingRecords.filter((record) => selectedIds.includes(record.id)),
@@ -76,7 +113,12 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
   }
 
   async function collectPayment(actionStatus: "PAID" | "PENDING" = "PAID") {
-    if (amount <= 0) {
+    if (amount < 0) {
+      alert("Enter a valid payment amount.");
+      return;
+    }
+
+    if (validSelectedIds.length === 0 && amount <= 0) {
       alert("Enter a valid payment amount.");
       return;
     }
@@ -185,13 +227,14 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
               </thead>
               <tbody>
                 {student.feeRecords.map((record) => {
-                  const isPending = record.pendingAmount > 0 && record.status !== "WAIVED";
+                  const isPending = pendingRecords.some((r) => r.id === record.id);
                   return (
                     <tr key={record.id} className="border-t border-slate-200 dark:border-slate-800">
                       <td className="py-3 pr-4">
                         <input
                           aria-label={`Select ${record.receiptNumber}`}
                           type="checkbox"
+                          className="cursor-pointer disabled:cursor-not-allowed h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           disabled={!isPending || saving}
                           checked={selectedIds.includes(record.id)}
                           onChange={(event) => toggleRecord(record.id, event.target.checked)}
@@ -201,7 +244,49 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
                       <td className="py-3 pr-4">{record.batch?.name ?? "-"}</td>
                       <td className="py-3 pr-4">{formatPeriod(record.month, record.year)}</td>
                       <td className="py-3 pr-4">{formatDate(record.dueDate)}</td>
-                      <td className="py-3 pr-4">{formatCurrency(record.totalAmount)}</td>
+                      <td className="py-3 pr-4">
+                        {editingRecordId === record.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              className="w-20 rounded border border-slate-350 px-1.5 py-0.5 text-xs dark:bg-slate-800 dark:border-slate-700"
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(Number(e.target.value))}
+                              min={record.paidAmount}
+                            />
+                            <button
+                              onClick={() => saveRecordAmount(record.id)}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                              title="Save amount"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingRecordId(null)}
+                              className="text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span>{formatCurrency(record.totalAmount)}</span>
+                            {record.status !== "WAIVED" && record.status !== "REFUNDED" && (
+                              <button
+                                onClick={() => {
+                                  setEditingRecordId(record.id);
+                                  setEditAmount(record.totalAmount);
+                                }}
+                                className="text-slate-400 hover:text-blue-600 cursor-pointer text-xs transition-colors animate-pulse"
+                                title="Edit Fee Amount"
+                              >
+                                ✏️
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-3 pr-4">{formatCurrency(record.paidAmount)}</td>
                       <td className="py-3 pr-4">{formatCurrency(record.pendingAmount)}</td>
                       <td className="py-3 pr-4">
@@ -274,7 +359,7 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
               <div className="space-y-2">
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                  className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 px-4 py-2 font-semibold text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                   disabled={saving || amount <= 0 || !collectedBy.trim()}
                   onClick={() => collectPayment("PENDING")}
                 >
@@ -282,7 +367,7 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
                 </button>
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                  className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 font-semibold text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                   disabled={saving || amount <= 0 || !collectedBy.trim()}
                   onClick={() => collectPayment("PAID")}
                 >
@@ -292,8 +377,8 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
             ) : (
               <button
                 type="button"
-                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-                disabled={saving || amount <= 0 || !collectedBy.trim()}
+                className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 font-semibold text-white cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                disabled={saving || (validSelectedIds.length === 0 && amount <= 0) || amount < 0 || !collectedBy.trim()}
                 onClick={() => collectPayment("PAID")}
               >
                 {saving ? "Saving..." : "Collect Payment"}
