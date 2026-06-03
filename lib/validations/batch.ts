@@ -179,7 +179,7 @@ export const calendarEventUpdateSchema = calendarEventCreateSchema.partial();
  */
 export const batchStep1Schema = z.object({
   name: z.string().min(3, "Batch name must be at least 3 characters long"),
-  code: z.string().min(2, "Batch code must be at least 2 characters long"),
+  code: z.string().optional().or(z.literal("")),
   subjectId: z.string().min(1, "Please select a valid subject"),
   academicYear: academicYearSchema,
   description: z.string().optional().or(z.literal("")),

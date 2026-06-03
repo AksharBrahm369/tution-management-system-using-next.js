@@ -22,6 +22,12 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
     watch,
   } = useFormContext<BatchCreateInput>();
 
+  React.useEffect(() => {
+    if (generatedCode) {
+      setValue("code", generatedCode);
+    }
+  }, [generatedCode, setValue]);
+
   const isOnline = watch("isOnline");
   const selectedColor = watch("color");
   const currentYear = new Date().getFullYear();
@@ -38,7 +44,7 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
   const subjects = subjectsData?.subjects ?? [];
 
   const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-blue-400";
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:focus:border-blue-400";
   const labelClass = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5";
   const errorClass = "mt-1 text-xs text-red-500";
 
@@ -49,30 +55,19 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
       </h2>
 
       <div className="space-y-5">
-        {/* Row 1: Name + Code */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label className={labelClass}>
-              Batch Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              {...register("name")}
-              placeholder="e.g. Class 10 - Mathematics Morning"
-              className={inputClass}
-            />
-            {errors.name && <p className={errorClass}>{errors.name.message}</p>}
-          </div>
-          <div>
-            <label className={labelClass}>Batch Code</label>
-            <input
-              {...register("code")}
-              defaultValue={generatedCode}
-              placeholder="BCH-2025-001"
-              className={inputClass}
-            />
-            <p className="mt-1 text-xs text-slate-500">Auto-generated, editable</p>
-          </div>
+        {/* Row 1: Name */}
+        <div>
+          <label className={labelClass}>
+            Batch Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            {...register("name")}
+            placeholder="e.g. Class 10 - Mathematics Morning"
+            className={inputClass}
+          />
+          {errors.name && <p className={errorClass}>{errors.name.message}</p>}
         </div>
+        <input type="hidden" {...register("code")} />
 
         {/* Row 2: Subject + Academic Year */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
