@@ -204,7 +204,7 @@ export default function CreateMaterialPage({ batches, subjects }: Props) {
                 />
               </div>
               <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Selected file will be stored in the app and linked to this resource.
+                Selected file will be uploaded and linked to this resource. On live deployments, configure Cloudinary for file uploads.
               </p>
             </div>
           </label>

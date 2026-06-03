@@ -2,11 +2,46 @@ import { NextRequest, NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import path from "path";
+import { Readable } from "stream";
+import { v2 as cloudinary } from "cloudinary";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
+
+function hasCloudinaryCredentials() {
+  return Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+}
+
+function isReadOnlyFilesystemError(error: unknown) {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "EROFS";
+}
+
+async function uploadMaterialToCloudinary(buffer: Buffer, filename: string): Promise<{ url: string }> {
+  return new Promise((resolve, reject) => {
+    const publicId = `${Date.now()}-${path.parse(filename).name.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "tuitionpro/materials", public_id: publicId, resource_type: "auto" },
+      (error, result) => {
+        if (error || !result) {
+          reject(error ?? new Error("Upload failed"));
+          return;
+        }
+        resolve({ url: result.secure_url });
+      }
+    );
+
+    Readable.from(buffer).pipe(uploadStream);
+  });
+}
 
 function normalizeAccessLevel(value: string | null) {
   switch (value) {
@@ -85,19 +120,34 @@ export async function POST(request: NextRequest) {
     let storedFileSize: string | null = null;
 
     if (file instanceof File && file.size > 0) {
-      const uploadsDir = path.join(process.cwd(), "public", "uploads", "materials");
-      await mkdir(uploadsDir, { recursive: true });
-
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const uniqueName = `${Date.now()}-${safeName}`;
-      const filePath = path.join(uploadsDir, uniqueName);
       const buffer = Buffer.from(await file.arrayBuffer());
-
-      await writeFile(filePath, buffer);
-
       storedFileName = file.name;
-      storedFilePath = `/uploads/materials/${uniqueName}`;
       storedFileSize = `${Math.max(1, Math.round(file.size / 1024))} KB`;
+
+      if (hasCloudinaryCredentials()) {
+        const uploaded = await uploadMaterialToCloudinary(buffer, file.name);
+        storedFilePath = uploaded.url;
+      } else {
+        try {
+          const uploadsDir = path.join(process.cwd(), "public", "uploads", "materials");
+          await mkdir(uploadsDir, { recursive: true });
+
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const uniqueName = `${Date.now()}-${safeName}`;
+          const filePath = path.join(uploadsDir, uniqueName);
+
+          await writeFile(filePath, buffer);
+          storedFilePath = `/uploads/materials/${uniqueName}`;
+        } catch (storageError) {
+          if (isReadOnlyFilesystemError(storageError)) {
+            return NextResponse.json(
+              { error: "File uploads need Cloudinary storage on this live deployment. Add a Resource URL or configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET." },
+              { status: 400 }
+            );
+          }
+          throw storageError;
+        }
+      }
     }
 
     const id = randomUUID();

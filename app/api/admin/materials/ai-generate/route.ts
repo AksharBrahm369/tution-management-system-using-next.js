@@ -3,12 +3,17 @@ import { mkdir, writeFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import PDFDocument from "pdfkit";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 
 export const runtime = "nodejs";
+
+function getMaterialBackupDir() {
+  return process.env.MATERIAL_BACKUP_DIR || path.join(os.tmpdir(), "tuitionpro", "materials");
+}
 
 // Premium local AI simulation engine in case real AI credentials are not provided
 function compileLocalAIResource(title: string, subjectName: string, batchName: string, type: string, topic: string) {
@@ -579,32 +584,35 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
       }
     }
 
-    // Save generated markdown to a physical .md file in uploads directory (for backup/reference)
+    // Keep filesystem backups optional. Serverless deployments expose app code under
+    // read-only paths such as /var/task, so generation must not depend on public/uploads.
     const id = randomUUID();
-    const uploadsDir = path.join(process.cwd(), "public", "uploads", "materials");
-    await mkdir(uploadsDir, { recursive: true });
 
-    const safeTitle = title.replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
-    const uniqueFileNameMd = `${Date.now()}-ai-${safeTitle}.md`;
-    const filePathMd = path.join(uploadsDir, uniqueFileNameMd);
-    const fileBufferMd = Buffer.from(markdownSummary, "utf-8");
-
-    await writeFile(filePathMd, fileBufferMd);
-
-    // Compile and save the beautifully styled .pdf file using pdfkit as a catalog backup
-    const uniqueFileNamePdf = `${Date.now()}-ai-${safeTitle}.pdf`;
-    const filePathPdf = path.join(uploadsDir, uniqueFileNamePdf);
-    
     try {
-      await convertMarkdownToPDF(markdownSummary, filePathPdf);
-    } catch (pdfCompileError) {
-      console.error("Failed to compile PDF backup, falling back to writing text on PDF:", pdfCompileError);
-      // Fallback simple PDF writer in case conversion fails to keep execution extremely robust
-      const fontRegular = path.join(process.cwd(), "public", "fonts", "Roboto-Regular.ttf");
-      const doc = new PDFDocument({ font: fontRegular });
-      doc.pipe(fs.createWriteStream(filePathPdf));
-      doc.text(markdownSummary);
-      doc.end();
+      const backupDir = getMaterialBackupDir();
+      await mkdir(backupDir, { recursive: true });
+
+      const safeTitle = title.replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
+      const uniqueFileNameMd = `${Date.now()}-ai-${safeTitle}.md`;
+      const filePathMd = path.join(backupDir, uniqueFileNameMd);
+
+      await writeFile(filePathMd, Buffer.from(markdownSummary, "utf-8"));
+
+      const uniqueFileNamePdf = `${Date.now()}-ai-${safeTitle}.pdf`;
+      const filePathPdf = path.join(backupDir, uniqueFileNamePdf);
+
+      try {
+        await convertMarkdownToPDF(markdownSummary, filePathPdf);
+      } catch (pdfCompileError) {
+        console.error("Failed to compile PDF backup, falling back to writing text on PDF:", pdfCompileError);
+        const fontRegular = path.join(process.cwd(), "public", "fonts", "Roboto-Regular.ttf");
+        const doc = new PDFDocument({ font: fontRegular });
+        doc.pipe(fs.createWriteStream(filePathPdf));
+        doc.text(markdownSummary);
+        doc.end();
+      }
+    } catch (backupError) {
+      console.warn("Skipping local material backup; generated resource will still be saved:", backupError);
     }
 
     const storedFileName = `${primaryUrlTitle}`;
