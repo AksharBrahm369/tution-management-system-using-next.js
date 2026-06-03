@@ -70,10 +70,12 @@ export default function TeacherProfilePage({ teacherId }: { teacherId: string })
         </div>
         
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm">
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </button>
+          <Link href={`/admin/teachers/${teacherId}/edit`}>
+            <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm">
+              <Edit className="h-4 w-4" />
+              Edit Profile
+            </button>
+          </Link>
         </div>
       </div>
 

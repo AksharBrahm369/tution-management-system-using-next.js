@@ -76,3 +76,32 @@ export async function PUT(
     return NextResponse.json({ error: message }, { status });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; sessionId: string }> }
+) {
+  try {
+    await requireSuperAdmin(request);
+    const { id, sessionId } = await params;
+
+    const session = await prisma.classSession.findFirst({
+      where: { id: sessionId, batchId: id },
+    });
+
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+
+    await prisma.classSession.delete({
+      where: { id: sessionId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+

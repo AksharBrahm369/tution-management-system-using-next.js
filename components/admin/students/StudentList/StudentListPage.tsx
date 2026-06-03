@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Download, LayoutGrid, List, Plus, RefreshCcw } from "lucide-react";
+import { Download, LayoutGrid, List, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { StudentFiltersState, StudentListItem, StudentListResponse } from "../types";
 import StudentFilters from "./StudentFilters";
@@ -83,15 +83,20 @@ const StudentListPage: React.FC = () => {
     },
   });
 
-  const batchOptions = useMemo(() => {
-    const unique = new Map<string, { id: string; name: string }>();
-    data?.students.forEach((student) => {
-      if (student.batch && !unique.has(student.batch.id)) {
-        unique.set(student.batch.id, { id: student.batch.id, name: student.batch.name });
+  const { data: batchesData } = useQuery<{ batches: Array<{ id: string; name: string }> }>({
+    queryKey: ["admin-batches-list-options"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/batches?limit=1000");
+      if (!response.ok) {
+        throw new Error("Failed to load batches");
       }
-    });
-    return Array.from(unique.values());
-  }, [data?.students]);
+      return response.json();
+    },
+  });
+
+  const batchOptions = useMemo(() => {
+    return batchesData?.batches ?? [];
+  }, [batchesData]);
 
   const students = data?.students ?? [];
   const hasStudents = students.length > 0;
@@ -171,17 +176,11 @@ const StudentListPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => refetch()} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            <RefreshCcw size={16} /> Refresh
-          </button>
           {selectedIds.length > 0 && viewMode === "table" && (
             <div className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
               {selectedIds.length} selected
             </div>
           )}
-          <button className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            <ChevronDown size={16} /> Bulk Actions
-          </button>
         </div>
       </div>
 

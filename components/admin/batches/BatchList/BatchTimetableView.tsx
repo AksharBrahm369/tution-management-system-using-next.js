@@ -28,11 +28,9 @@ function toMinutes(t: string): number {
 }
 
 const BatchTimetableView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
-  const activeDays = DAYS_ORDER.filter((day) =>
-    batches.some((b) => b.days.includes(day))
-  );
+  const activeDays = DAYS_ORDER;
 
-  if (activeDays.length === 0) {
+  if (batches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-20 dark:border-slate-700 dark:bg-slate-900/30">
         <p className="text-lg font-semibold text-slate-500 dark:text-slate-400">

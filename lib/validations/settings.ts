@@ -27,7 +27,7 @@ export const instituteSettingsSchema = z.object({
   currentAcademicYear: z.string().min(4, "Current academic year is required"),
   academicYears: z.array(z.string().min(1)).default([]),
   workingDays: z.array(z.enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"])).default([]),
-  workingHours: z.record(z.any()).optional().nullable(),
+  workingHours: z.record(z.string(), z.any()).optional().nullable(),
   gstEnabled: z.boolean().default(false),
   gstNumber: nullableString,
   gstPercentage: z.coerce.number().min(0).max(100).default(18),

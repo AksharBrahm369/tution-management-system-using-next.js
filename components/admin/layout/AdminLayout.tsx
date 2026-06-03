@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useSyncExternalStore, useState } from 'react';
+import React, { useSyncExternalStore } from 'react';
 import AdminSidebar from './AdminSidebar';
 import AdminNavbar from './AdminNavbar';
 import type { CurrentAdminUser } from '@/lib/adminAuth';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -42,68 +43,48 @@ function getSidebarCollapsedSnapshot() {
   return window.innerWidth < 1200;
 }
 
-function getIsDesktopSnapshot() {
-  return typeof window === 'undefined' ? false : window.innerWidth >= 1024;
-}
-
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, user }) => {
   const isSidebarCollapsed = useSyncExternalStore(
     subscribeToLayoutChanges,
     getSidebarCollapsedSnapshot,
     () => false
   );
-  const isDesktop = useSyncExternalStore(
-    subscribeToLayoutChanges,
-    getIsDesktopSnapshot,
-    () => false
-  );
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const handleSidebarToggle = (collapsed: boolean) => {
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(collapsed));
     window.dispatchEvent(new Event(SIDEBAR_CHANGE_EVENT));
   };
 
-  const handleMobileSidebarToggle = (open: boolean) => {
-    setIsMobileSidebarOpen(open);
-  };
-
-  const desktopSidebarWidth = isSidebarCollapsed ? 76 : 268;
-  const contentMarginLeft = isDesktop ? desktopSidebarWidth : 0;
-
   return (
-    <div className="app-mesh-bg relative h-screen w-full overflow-hidden">
-      <div className="blob -left-32 top-0 h-72 w-72 bg-indigo-400/20 dark:bg-indigo-600/15" />
-      <div
-        className="blob right-0 top-1/4 h-96 w-96 bg-cyan-400/15 dark:bg-cyan-500/10"
-        style={{ animationDelay: '-6s' }}
-      />
-
-      <AdminSidebar
-        user={user}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleSidebarToggle}
-        isMobileOpen={isMobileSidebarOpen}
-        onMobileToggle={handleMobileSidebarToggle}
-        isDesktop={isDesktop}
-      />
-
-      <div
-        className="relative flex h-full flex-col overflow-hidden transition-[margin] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
-        style={{ marginLeft: `${contentMarginLeft}px` }}
-      >
-        <AdminNavbar
-          user={user}
-          isSidebarCollapsed={isSidebarCollapsed}
-          onMobileMenuClick={() => handleMobileSidebarToggle(true)}
+    <SidebarProvider
+      defaultOpen={!isSidebarCollapsed}
+      open={!isSidebarCollapsed}
+      onOpenChange={(open) => handleSidebarToggle(!open)}
+    >
+      <div className="app-mesh-bg relative flex h-screen w-full overflow-hidden">
+        <div className="blob -left-32 top-0 h-72 w-72 bg-indigo-400/20 dark:bg-indigo-600/15 pointer-events-none" />
+        <div
+          className="blob right-0 top-1/4 h-96 w-96 bg-cyan-400/15 dark:bg-cyan-500/10 pointer-events-none"
+          style={{ animationDelay: '-6s' }}
         />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 md:px-5 md:py-5 xl:px-8 xl:py-6">
-          <div className="page-enter mx-auto w-full max-w-[1600px]">{children}</div>
-        </main>
+        <AdminSidebar user={user} />
+
+        <SidebarInset className="relative flex h-full flex-col overflow-hidden bg-transparent dark:bg-transparent">
+          <AdminNavbar
+            user={user}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onMobileMenuClick={() => {}}
+          />
+
+          <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 md:px-5 md:py-5 xl:px-8 xl:py-6">
+            <div className="page-enter mx-auto w-full max-w-[1600px]">{children}</div>
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
 export default AdminLayout;
+

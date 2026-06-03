@@ -9,11 +9,13 @@ import {
   X, Loader2, UserPlus
 } from "lucide-react";
 import CancelSessionModal from "../Modals/CancelSessionModal";
+import MonthlyTimetable from "./MonthlyTimetable";
 
 const DAY_SHORT: Record<string, string> = {
   MONDAY: "Mon", TUESDAY: "Tue", WEDNESDAY: "Wed",
   THURSDAY: "Thu", FRIDAY: "Fri", SATURDAY: "Sat", SUNDAY: "Sun",
 };
+
 
 const STATUS_BADGE: Record<string, string> = {
   ACTIVE: "bg-emerald-100 text-emerald-700",
@@ -44,7 +46,7 @@ interface BatchDetailPageProps {
 
 const BatchDetailPage: React.FC<BatchDetailPageProps> = ({ batchId }) => {
   const qc = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"overview" | "sessions" | "students">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "sessions" | "students" | "timetable">("overview");
   const [cancelSession, setCancelSession] = useState<{ id: string; date: string } | null>(null);
   const [sessionMonth, setSessionMonth] = useState(new Date().getMonth() + 1);
   const [sessionYear, setSessionYear] = useState(new Date().getFullYear());
@@ -162,7 +164,7 @@ const BatchDetailPage: React.FC<BatchDetailPageProps> = ({ batchId }) => {
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 w-fit">
-        {(["overview", "sessions", "students"] as const).map((tab) => (
+        {(["overview", "sessions", "students", "timetable"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -170,7 +172,7 @@ const BatchDetailPage: React.FC<BatchDetailPageProps> = ({ batchId }) => {
               activeTab === tab ? "bg-blue-600 text-white" : "text-slate-600 hover:text-slate-900 dark:text-slate-400"
             }`}
           >
-            {tab}
+            {tab === "timetable" ? "Monthly Timetable" : tab}
           </button>
         ))}
       </div>
@@ -376,6 +378,11 @@ const BatchDetailPage: React.FC<BatchDetailPageProps> = ({ batchId }) => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Timetable Tab */}
+      {activeTab === "timetable" && (
+        <MonthlyTimetable batchId={batchId} batch={batch as any} />
       )}
 
       {/* Cancel Session Modal */}

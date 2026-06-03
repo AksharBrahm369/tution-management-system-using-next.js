@@ -8,6 +8,8 @@ import GlobalSearchModal from '@/components/admin/shared/GlobalSearchModal';
 import NotificationDropdown from '@/components/admin/shared/NotificationDropdown';
 import UserProfileDropdown from '@/components/admin/shared/UserProfileDropdown';
 import type { CurrentAdminUser } from '@/lib/adminAuth';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+
 
 interface AdminNavbarProps {
   user: CurrentAdminUser;
@@ -82,14 +84,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
     <>
       <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-300 bg-white px-3 md:px-5 xl:px-8 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex min-w-0 items-center gap-3 md:gap-4">
-          <button
-            type="button"
-            onClick={onMobileMenuClick}
-            aria-label="Open admin navigation"
-            className="rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50 lg:hidden"
-          >
-            <Menu size={22} />
-          </button>
+          <SidebarTrigger className="md:hidden rounded-xl p-2.5 h-11 w-11 text-slate-850 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50" />
 
           <div className="min-w-0">
             <h1 className="truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">

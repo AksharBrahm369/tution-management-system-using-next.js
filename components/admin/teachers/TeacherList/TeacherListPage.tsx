@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, Mail, Phone, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Mail, Phone, Edit, Trash2 } from 'lucide-react';
 
 interface Teacher {
   id: string;
@@ -119,9 +119,6 @@ export default function TeacherListPage() {
                     </p>
                   </div>
                 </div>
-                <button type="button" aria-label={`Open actions for ${teacher.firstName} ${teacher.lastName}`} className="h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-all">
-                  <MoreVertical className="h-4 w-4" />
-                </button>
               </div>
 
               <div className="space-y-3 flex-1">

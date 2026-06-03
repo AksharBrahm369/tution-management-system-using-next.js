@@ -54,10 +54,12 @@ export const examCreateSchema = z.object({
   batchId: z.string().trim().min(1, "Please select a batch"),
   subjectId: z.string().trim().min(1, "Please select a subject"),
   academicYear: z.string().trim().min(1, "Academic year is required"),
-  examDate: z.coerce.date({
-    required_error: "Please select a valid exam date",
-    invalid_type_error: "Please select a valid exam date",
-  }),
+  examDate: z.preprocess(
+    (val) => (val ? new Date(val as any) : val),
+    z.date({
+      message: "Please select a valid exam date",
+    })
+  ),
   startTime: z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), z.string().nullable().optional()),
   endTime: z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), z.string().nullable().optional()),
   duration: z.number().int().min(0).nullable().optional(),
@@ -72,10 +74,12 @@ export const examCreateSchema = z.object({
 });
 
 export const examUpdateSchema = examCreateSchema.partial().extend({
-  examDate: z.coerce.date({
-    required_error: "Please select a valid exam date",
-    invalid_type_error: "Please select a valid exam date",
-  }).optional(),
+  examDate: z.preprocess(
+    (val) => (val ? new Date(val as any) : val),
+    z.date({
+      message: "Please select a valid exam date",
+    })
+  ).optional(),
 });
 
 export const marksSubmitSchema = z.object({

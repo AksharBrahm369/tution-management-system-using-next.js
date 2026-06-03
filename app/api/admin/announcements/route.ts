@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function publishAnnouncement(announcementId: string) {
+async function publishAnnouncement(announcementId: string) {
   const rows: any = await prisma.$queryRaw`SELECT * FROM announcements WHERE id = ${announcementId}`;
   const ann = Array.isArray(rows) ? rows[0] : rows;
   if (!ann) throw new Error('Announcement not found');

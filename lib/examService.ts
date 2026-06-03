@@ -5,9 +5,11 @@ import { calculateGrade, defaultGradeRanges, GradeRangeInput } from "@/lib/grade
 import { calculateBatchRanks, calculateOverallRanks } from "@/lib/rankCalculator";
 import { examCreateSchema, examUpdateSchema, marksSubmitSchema } from "@/lib/validations/exam";
 
-export type ExamCreateInput = Parameters<typeof examCreateSchema.parse>[0];
-export type ExamUpdateInput = Parameters<typeof examUpdateSchema.parse>[0];
-export type MarksSubmitInput = Parameters<typeof marksSubmitSchema.parse>[0];
+import { z } from "zod";
+
+export type ExamCreateInput = z.infer<typeof examCreateSchema>;
+export type ExamUpdateInput = z.infer<typeof examUpdateSchema>;
+export type MarksSubmitInput = z.infer<typeof marksSubmitSchema>;
 
 export interface ExamFilters {
   search?: string;
@@ -290,7 +292,7 @@ export async function getExamDetail(id: string) {
 }
 
 export async function updateExam(id: string, rawInput: ExamUpdateInput) {
-  const input = examUpdateSchema.parse(rawInput);
+  const { questions, ...input } = examUpdateSchema.parse(rawInput);
   return prisma.exam.update({
     where: { id },
     data: {

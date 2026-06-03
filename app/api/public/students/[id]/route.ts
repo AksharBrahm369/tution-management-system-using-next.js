@@ -54,7 +54,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const attendanceTotal = student.attendance.length;
     const attendancePresent = student.attendance.filter((item) => item.status === "PRESENT").length;
     const attendanceAbsent = student.attendance.filter((item) => item.status === "ABSENT").length;
-    const attendanceLeave = student.attendance.filter((item) => item.status === "LEAVE" || item.status === "ON_LEAVE").length;
+    const attendanceLeave = student.attendance.filter((item) => item.status === "ON_LEAVE").length;
 
     const feePaid = student.feeRecords.reduce((sum, record) => sum + record.paidAmount, 0);
     const feePending = student.feeRecords.reduce((sum, record) => sum + record.pendingAmount, 0);
