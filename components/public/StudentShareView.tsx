@@ -1,0 +1,649 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { 
+  CalendarDays, 
+  CreditCard, 
+  TrendingUp, 
+  Award, 
+  Phone, 
+  Mail, 
+  User, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  AlertCircle, 
+  Calendar,
+  Loader2,
+  BookOpen
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as ChartTooltip
+} from "recharts";
+
+type StudentData = {
+  id: string;
+  fullName: string;
+  studentCode: string;
+  profilePhoto: string | null;
+  email: string | null;
+  phone: string | null;
+  joiningDate: string;
+  academicYear: string;
+  currentBatch: { name: string; subject?: string | null } | null;
+  parent: {
+    fatherName: string | null;
+    fatherPhone: string | null;
+    fatherEmail: string | null;
+    motherName: string | null;
+    motherPhone: string | null;
+    guardianName: string | null;
+    guardianPhone: string | null;
+    primaryContact: string;
+  } | null;
+  stats: {
+    attendancePercent: number;
+    attendanceTotal: number;
+    attendancePresent: number;
+    attendanceAbsent: number;
+    attendanceLeave: number;
+    feesPaid: number;
+    pendingFees: number;
+  };
+  attendance: Array<{
+    id: string;
+    date: string;
+    status: string;
+    lateMinutes: number | null;
+  }>;
+  feeRecords: Array<{
+    id: string;
+    month: number;
+    year: number;
+    baseFee: number;
+    discountAmount: number;
+    scholarshipAmount: number;
+    lateFee: number;
+    otherCharges: number;
+    totalAmount: number;
+    paidAmount: number;
+    pendingAmount: number;
+    status: string;
+    dueDate: string;
+    batchName: string;
+  }>;
+  examResults: Array<{
+    id: string;
+    examName: string;
+    subject: string;
+    score: number;
+    totalMarks: number;
+    percentage: number;
+    examDate: string;
+  }>;
+};
+
+interface StudentShareViewProps {
+  studentId: string;
+}
+
+function money(amount: number) {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount || 0);
+}
+
+const getMonthName = (month: number) => {
+  const date = new Date(2000, month - 1, 1);
+  return date.toLocaleString("default", { month: "long" });
+};
+
+export default function StudentShareView({ studentId }: StudentShareViewProps) {
+  const [data, setData] = useState<StudentData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [debugState, setDebugState] = useState<string>("Initializing...");
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    const fetchStudentData = async () => {
+      try {
+        if (isMounted) {
+          setLoading(true);
+          setDebugState(`Fetching student ID: ${studentId}`);
+        }
+        
+        const res = await fetch(`/api/public/students/${studentId}?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache"
+          },
+          signal: controller.signal
+        });
+        
+        if (!isMounted) return;
+        setDebugState(`Response received. Status: ${res.status}`);
+
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error("Student profile not found.");
+          }
+          throw new Error(`Failed to load student dashboard. Status: ${res.status}`);
+        }
+        
+        setDebugState("Parsing JSON data...");
+        const jsonData = await res.json();
+        
+        if (isMounted) {
+          setDebugState("Data loaded successfully.");
+          setData(jsonData);
+        }
+      } catch (err: any) {
+        if (!isMounted) return;
+        let errorMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
+        if (err.name === 'AbortError') {
+          errorMessage = "Network request timed out after 10 seconds. Please check your connection.";
+        }
+        setDebugState(`Error occurred: ${errorMessage}`);
+        setError(errorMessage);
+      } finally {
+        clearTimeout(timeoutId);
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchStudentData();
+    
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [studentId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
+        <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
+        <p className="text-slate-500 text-sm font-medium">Fetching secure student dashboard...</p>
+        <p className="text-slate-400 text-xs font-mono mt-4 max-w-sm text-center bg-slate-100 dark:bg-slate-900 p-2 rounded-lg">{debugState}</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 bg-red-100 dark:bg-red-950/30 rounded-full flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Access Denied</h1>
+        <p className="text-slate-500 max-w-md mb-6">{error || "Could not retrieve student details."}</p>
+        <div className="text-xs text-slate-400">Please make sure the QR code or link is correct and matches a valid student.</div>
+      </div>
+    );
+  }
+
+  // Formatting date
+  const formattedJoinDate = new Date(data.joiningDate).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  // Calculate Academic Growth Index
+  const totalExams = data.examResults.length;
+  const avgPercentage = totalExams > 0 
+    ? Math.round(data.examResults.reduce((sum, exam) => sum + exam.percentage, 0) / totalExams)
+    : null;
+
+  const getAcademicStatus = (pct: number) => {
+    if (pct >= 85) return { text: "Outstanding", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" };
+    if (pct >= 70) return { text: "Above Average", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" };
+    if (pct >= 50) return { text: "Satisfactory", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" };
+    return { text: "Requires Attention", color: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" };
+  };
+
+  const academicStatus = avgPercentage !== null ? getAcademicStatus(avgPercentage) : null;
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-16 font-sans">
+      {/* Decorative Top Mesh Background */}
+      <div className="absolute top-0 left-0 right-0 h-80 bg-linear-to-b from-indigo-500/10 via-sky-500/5 to-transparent pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-4 pt-8 relative z-10">
+        {/* Header Ribbon / Navigation */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold tracking-wider text-sm shadow-md">
+              TP
+            </div>
+            <span className="font-bold text-slate-800 dark:text-white tracking-wide text-lg">TuitionPro Parent Portal</span>
+          </div>
+          <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
+            Secure Student Report
+          </span>
+        </div>
+
+        {/* Profile Card Header */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-100/50 dark:shadow-none mb-8">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 text-center md:text-left">
+            {/* Student Photo */}
+            <div className="h-28 w-28 shrink-0 rounded-3xl border-4 border-indigo-600 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-lg flex items-center justify-center">
+              {data.profilePhoto ? (
+                <img src={data.profilePhoto} alt={data.fullName} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-4xl font-extrabold text-indigo-600">
+                  {data.fullName.slice(0, 2).toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                Active Student
+              </span>
+              <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1 leading-tight">
+                {data.fullName}
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
+                Student ID: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs text-slate-700 dark:text-slate-300 font-mono font-bold">{data.studentCode}</code>
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-6 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80 text-sm">
+                <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
+                  <BookOpen className="h-4 w-4 text-indigo-500" />
+                  <div>
+                    <span className="text-slate-400 text-xs block">Current Batch</span>
+                    <span className="font-semibold text-slate-800 dark:text-white">{data.currentBatch?.name || "No assigned batch"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
+                  <Calendar className="h-4 w-4 text-indigo-500" />
+                  <div>
+                    <span className="text-slate-400 text-xs block">Enrolled Date</span>
+                    <span className="font-semibold text-slate-800 dark:text-white">{formattedJoinDate}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
+                  <Award className="h-4 w-4 text-indigo-500" />
+                  <div>
+                    <span className="text-slate-400 text-xs block">Academic Year</span>
+                    <span className="font-semibold text-slate-800 dark:text-white">{data.academicYear}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Attendance Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Attendance Rate</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-slate-950 dark:text-white leading-none">{data.stats.attendancePercent}%</span>
+              </div>
+              <span className="text-[11px] font-medium text-slate-500 block pt-1.5">
+                Attended <span className="font-bold text-indigo-600 dark:text-indigo-400">{data.stats.attendancePresent}</span> of <span className="font-bold">{data.stats.attendanceTotal}</span> classes
+              </span>
+            </div>
+            
+            {/* Circular Progress Display */}
+            <div className="relative h-20 w-20 flex items-center justify-center shrink-0">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="40" cy="40" r="34" className="stroke-slate-100 dark:stroke-slate-800 fill-none" strokeWidth="6" />
+                <circle cx="40" cy="40" r="34" 
+                  className="stroke-indigo-600 dark:stroke-indigo-500 fill-none transition-all duration-500" 
+                  strokeWidth="6" 
+                  strokeDasharray={`${2 * Math.PI * 34}`}
+                  strokeDashoffset={`${2 * Math.PI * 34 * (1 - data.stats.attendancePercent / 100)}`}
+                  strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
+                <CalendarDays className="h-3.5 w-3.5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pending Fees Card */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Pending Fee Balance</span>
+              <div className="flex items-baseline gap-1">
+                <span className={`text-4xl font-extrabold leading-none ${data.stats.pendingFees > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                  {money(data.stats.pendingFees)}
+                </span>
+              </div>
+              <span className="text-[11px] font-medium text-slate-500 block pt-1.5">
+                Total paid: <span className="font-bold text-emerald-600">{money(data.stats.feesPaid)}</span>
+              </span>
+            </div>
+
+            <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 ${data.stats.pendingFees > 0 ? "bg-rose-50 dark:bg-rose-950/20 text-rose-500" : "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500"}`}>
+              <CreditCard className="h-7 w-7" />
+            </div>
+          </div>
+
+          {/* Academic Growth Index */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg flex items-center justify-between">
+            <div className="space-y-1">
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Academic Progress</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold text-slate-950 dark:text-white leading-none">
+                  {avgPercentage !== null ? `${avgPercentage}%` : "N/A"}
+                </span>
+              </div>
+              {academicStatus ? (
+                <div className="pt-2">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${academicStatus.color}`}>
+                    {academicStatus.text}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[11px] text-slate-400 block pt-1.5">No exams recorded yet</span>
+              )}
+            </div>
+
+            <div className="h-16 w-16 bg-amber-50 dark:bg-amber-950/20 text-amber-500 rounded-2xl flex items-center justify-center shrink-0">
+              <TrendingUp className="h-7 w-7" />
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Sections Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8">
+          {/* Left Column: Academic Growth and Attendance Log */}
+          <div className="space-y-8">
+            {/* Academic Growth Chart */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-indigo-500" />
+                    Academic Growth Track
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">Percentage trends across examinations completed</p>
+                </div>
+              </div>
+
+              {data.examResults.length > 0 ? (
+                <div className="h-64 w-full mt-4 pr-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data.examResults}>
+                      <defs>
+                        <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.01}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" className="dark:stroke-slate-800" />
+                      <XAxis 
+                        dataKey="examName" 
+                        tickLine={false} 
+                        axisLine={false}
+                        tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 500 }}
+                      />
+                      <YAxis 
+                        domain={[0, 100]} 
+                        tickLine={false} 
+                        axisLine={false}
+                        tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 500 }}
+                        unit="%"
+                      />
+                      <ChartTooltip 
+                        contentStyle={{ 
+                          backgroundColor: "#1e293b", 
+                          border: "none", 
+                          borderRadius: "12px",
+                          color: "#ffffff",
+                          fontSize: "12px",
+                          fontWeight: "500",
+                          boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                        }}
+                        labelStyle={{ color: "#94a3b8", fontWeight: "600", fontSize: "10px" }}
+                        formatter={(value) => [`${value}%`, "Score"]}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="percentage" 
+                        stroke="#4f46e5" 
+                        strokeWidth={2.5}
+                        fillOpacity={1} 
+                        fill="url(#growthGrad)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex flex-col items-center justify-center text-center text-slate-400">
+                  <Award className="h-10 w-10 text-slate-300 mb-2" />
+                  <p className="text-sm font-medium">No growth logs recorded yet.</p>
+                  <p className="text-xs text-slate-400 mt-1">Academic tracking activates as exams are uploaded.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Attendance Log */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                <CalendarDays className="h-5 w-5 text-indigo-500" />
+                Lecture Attendance Log
+              </h3>
+
+              {data.attendance.length > 0 ? (
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {data.attendance.map((att) => {
+                    const isPresent = att.status === "PRESENT";
+                    const isLeave = att.status === "LEAVE" || att.status === "ON_LEAVE" || att.status === "LATE";
+                    
+                    let statusColor = "bg-rose-50 dark:bg-rose-950/20 text-rose-600 border-rose-200/30";
+                    let Icon = XCircle;
+                    
+                    if (isPresent) {
+                      statusColor = "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-200/30";
+                      Icon = CheckCircle2;
+                    } else if (isLeave) {
+                      statusColor = "bg-amber-50 dark:bg-amber-950/20 text-amber-600 border-amber-200/30";
+                      Icon = Clock;
+                    }
+
+                    return (
+                      <div 
+                        key={att.id} 
+                        className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-xl border ${statusColor} shrink-0`}>
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-slate-800 dark:text-white text-sm">
+                              {new Date(att.date).toLocaleDateString(undefined, {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </span>
+                            {att.lateMinutes && (
+                              <span className="text-[10px] font-medium text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded ml-2">
+                                Late: {att.lateMinutes} min
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${statusColor}`}>
+                          {att.status}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
+                  <Calendar className="h-10 w-10 text-slate-300 mb-2" />
+                  <p className="text-sm font-medium">No attendance entries available.</p>
+                  <p className="text-xs text-slate-400 mt-1">Attendance records will show up here once marked by tutors.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Fees and Exam Results List */}
+          <div className="space-y-8">
+            {/* Fee Ledger */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                <CreditCard className="h-5 w-5 text-indigo-500" />
+                Fee Payment Ledger
+              </h3>
+
+              {data.feeRecords.length > 0 ? (
+                <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+                  {data.feeRecords.map((fee) => {
+                    const isPaid = fee.status === "PAID";
+                    const isPending = fee.status === "PENDING";
+                    const isOverdue = fee.status === "OVERDUE" || (isPending && new Date(fee.dueDate) < new Date());
+
+                    let badgeColor = "bg-rose-50 dark:bg-rose-950/20 text-rose-600 border-rose-200/30";
+                    let statusLabel = fee.status;
+
+                    if (isPaid) {
+                      badgeColor = "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 border-emerald-200/30";
+                    } else if (isPending && !isOverdue) {
+                      badgeColor = "bg-amber-50 dark:bg-amber-950/20 text-amber-600 border-amber-200/30";
+                    } else if (isOverdue) {
+                      badgeColor = "bg-red-50 dark:bg-red-950/20 text-red-600 border-red-200/30";
+                      statusLabel = "OVERDUE";
+                    }
+
+                    return (
+                      <div 
+                        key={fee.id}
+                        className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 hover:shadow-sm transition"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="font-bold text-slate-900 dark:text-white text-sm">
+                              {getMonthName(fee.month)} {fee.year} Fee
+                            </span>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              Due by: {new Date(fee.dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+
+                          <span className={`text-[9px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full border ${badgeColor}`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-50 dark:border-slate-800/50 text-xs">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Total</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{money(fee.totalAmount)}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Paid</span>
+                            <span className="font-semibold text-emerald-600">{money(fee.paidAmount)}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Pending</span>
+                            <span className={`font-semibold ${fee.pendingAmount > 0 ? "text-rose-600" : "text-slate-500"}`}>{money(fee.pendingAmount)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
+                  <CreditCard className="h-10 w-10 text-slate-300 mb-2" />
+                  <p className="text-sm font-medium">No payment records found.</p>
+                  <p className="text-xs text-slate-400 mt-1">Fee details will display as monthly bills generate.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Exam Results List */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-lg">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
+                <Award className="h-5 w-5 text-indigo-500" />
+                Examination Records
+              </h3>
+
+              {data.examResults.length > 0 ? (
+                <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+                  {[...data.examResults].reverse().map((exam) => {
+                    const scoreColor = exam.percentage >= 85 
+                      ? "text-emerald-600" 
+                      : exam.percentage >= 70 
+                        ? "text-indigo-600" 
+                        : exam.percentage >= 50 
+                          ? "text-amber-600" 
+                          : "text-rose-600";
+
+                    return (
+                      <div 
+                        key={exam.id}
+                        className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-900 dark:text-white text-sm truncate block">
+                              {exam.examName}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              Subject: <span className="font-semibold text-slate-600 dark:text-slate-300">{exam.subject}</span>
+                            </span>
+                            <span className="text-[9px] text-slate-400 block mt-0.5">
+                              Date: {new Date(exam.examDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className={`text-lg font-extrabold block leading-none ${scoreColor}`}>
+                              {exam.percentage}%
+                            </span>
+                            <span className="text-[10px] text-slate-400 block mt-1 font-medium">
+                              {exam.score} / {exam.totalMarks}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400">
+                  <Award className="h-10 w-10 text-slate-300 mb-2" />
+                  <p className="text-sm font-medium">No exam results recorded.</p>
+                  <p className="text-xs text-slate-400 mt-1">Academic exam scores will show up here once graded.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="text-center text-slate-400 text-xs mt-16 pt-6 border-t border-slate-200/40 dark:border-slate-800/60">
+          <p>© {new Date().getFullYear()} TuitionPro Management System. All rights reserved.</p>
+          <p className="mt-1">This report is dynamically compiled and securely transmitted. Please keep this URL confidential.</p>
+        </div>
+      </div>
+    </div>
+  );
+}

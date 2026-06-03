@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Allow mobile devices on the local network to fetch JS chunks
+  allowedDevOrigins: ['192.168.1.9', '0.0.0.0', 'localhost', '127.0.0.1'],
   async headers() {
     const isDev = process.env.NODE_ENV === "development";
     const csp = [

@@ -53,6 +53,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     return NextResponse.json(
       {
         ...student,
+        fullName: `${student.firstName} ${student.lastName}`,
         attendancePercent: attendanceTotal > 0 ? Math.round((attendancePresent / attendanceTotal) * 100) : 0,
         feesPaid: feePaid,
         pendingFees: feePending,
