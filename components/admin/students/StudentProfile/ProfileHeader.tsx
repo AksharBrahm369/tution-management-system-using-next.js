@@ -98,9 +98,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ student, onDownloadId, on
           >
             <MessageSquare size={16} /> Send Message
           </button>
-          <button className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20">
-            <ChevronDown size={16} /> More
-          </button>
         </div>
       </div>
     </div>
