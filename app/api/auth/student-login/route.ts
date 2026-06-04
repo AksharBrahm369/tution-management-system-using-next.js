@@ -3,6 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { comparePassword, generateToken, setAuthCookie } from "@/lib/auth";
 import { errorResponse } from "@/lib/utils";
 
+function normalizeStudentCode(value: string): string {
+  return value
+    .trim()
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s+/g, "")
+    .toUpperCase();
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { studentCode, password, rememberMe } = await request.json();
@@ -11,8 +19,15 @@ export async function POST(request: NextRequest) {
       return errorResponse("Student Code and Password are required", 400);
     }
 
-    const student = await prisma.student.findUnique({
-      where: { studentCode },
+    const normalizedStudentCode = normalizeStudentCode(String(studentCode));
+
+    const student = await prisma.student.findFirst({
+      where: {
+        studentCode: {
+          equals: normalizedStudentCode,
+          mode: "insensitive",
+        },
+      },
       include: { user: true },
     });
 

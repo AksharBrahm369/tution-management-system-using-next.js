@@ -61,7 +61,7 @@ const BatchFilters: React.FC<BatchFiltersProps> = ({
 
         <select aria-label="Filter batches by status" value={status} onChange={(e) => onStatusChange(e.target.value)} className={selectClass}>
           <option value="">All Statuses</option>
-          {["ACTIVE", "UPCOMING", "INACTIVE", "COMPLETED", "CANCELLED"].map((s) => (
+          {["ONGOING", "UPCOMING", "COMPLETED", "INACTIVE", "CANCELLED"].map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
         </select>

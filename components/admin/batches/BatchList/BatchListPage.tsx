@@ -21,7 +21,7 @@ interface BatchesResponse {
   totalPages: number;
   stats: {
     total: number;
-    active: number;
+    ongoing: number;
     upcoming: number;
     completed: number;
     totalEnrolled: number;
@@ -123,7 +123,7 @@ const BatchListPage: React.FC = () => {
   };
 
   const batches = data?.batches ?? [];
-  const stats = data?.stats ?? { total: 0, active: 0, upcoming: 0, completed: 0, totalEnrolled: 0 };
+  const stats = data?.stats ?? { total: 0, ongoing: 0, upcoming: 0, completed: 0, totalEnrolled: 0 };
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function StudentAttendanceScanPage() {
+export default function StudentFeesPage() {
   redirect("/student/dashboard");
 }

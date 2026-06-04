@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 import { listParents } from "@/lib/parentManagement";
+import { generateNextParentCode } from "@/lib/parentCode";
 
 export const runtime = "nodejs";
 
@@ -34,8 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Enter at least one parent or guardian name" }, { status: 400 });
     }
 
+    const parentCode = await generateNextParentCode();
+
     const parent = await prisma.parent.create({
       data: {
+        parentCode,
         fatherName: fatherName || null,
         fatherPhone: typeof body.fatherPhone === "string" && body.fatherPhone.trim() ? body.fatherPhone.trim() : null,
         fatherEmail: typeof body.fatherEmail === "string" && body.fatherEmail.trim() ? body.fatherEmail.trim() : null,

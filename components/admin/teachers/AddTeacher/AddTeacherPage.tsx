@@ -18,9 +18,12 @@ export default function AddTeacherPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
+  const [subjectsError, setSubjectsError] = useState("");
+  const [subjectsRetryKey, setSubjectsRetryKey] = useState(0);
 
   const form = useForm<TeacherFormValues>({
-    resolver: zodResolver(teacherSchema) as any,
+    resolver: zodResolver(teacherSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -34,11 +37,36 @@ export default function AddTeacherPage() {
   });
 
   useEffect(() => {
-    fetch('/api/admin/subjects')
-      .then(res => res.json())
-      .then(data => setSubjects(data?.subjects || []))
-      .catch(err => console.error("Failed to load subjects", err));
-  }, []);
+    const loadSubjects = async () => {
+      setSubjectsLoading(true);
+      setSubjectsError("");
+      try {
+        const response = await fetch('/api/admin/subjects?active=true', {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}));
+          if (response.status === 401) {
+            router.push('/auth/login');
+            return;
+          }
+          throw new Error(payload.error || 'Failed to load subjects');
+        }
+
+        const data = await response.json();
+        setSubjects(Array.isArray(data?.subjects) ? data.subjects : []);
+      } catch (err: unknown) {
+        console.error("Failed to load subjects", err);
+        setSubjects([]);
+        setSubjectsError(err instanceof Error ? err.message : "Failed to load subjects");
+      } finally {
+        setSubjectsLoading(false);
+      }
+    };
+
+    loadSubjects();
+  }, [router, subjectsRetryKey]);
 
   const onSubmit = async (data: TeacherFormValues) => {
     setIsSubmitting(true);
@@ -184,7 +212,22 @@ export default function AddTeacherPage() {
                 </button>
               );
             })}
-            {subjects.length === 0 && <p className="text-sm text-slate-500 col-span-full py-4 text-center">Loading subjects...</p>}
+            {subjectsLoading && <p className="text-sm text-slate-500 col-span-full py-4 text-center">Loading subjects...</p>}
+            {!subjectsLoading && subjectsError && (
+              <div className="col-span-full flex flex-col items-center gap-3 py-4 text-center">
+                <p className="text-sm text-red-500">{subjectsError}</p>
+                <button
+                  type="button"
+                  onClick={() => setSubjectsRetryKey((value) => value + 1)}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  Retry Loading Subjects
+                </button>
+              </div>
+            )}
+            {!subjectsLoading && !subjectsError && subjects.length === 0 && (
+              <p className="text-sm text-slate-500 col-span-full py-4 text-center">No active subjects found. Please create a subject first.</p>
+            )}
           </div>
         </div>
 

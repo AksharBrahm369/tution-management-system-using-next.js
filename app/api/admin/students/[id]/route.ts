@@ -1,9 +1,13 @@
+// File reloaded to clear Turbopack cache
 import { NextRequest, NextResponse } from "next/server";
 import type { BloodGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { studentUpdateSchema } from "@/lib/validations/student";
 import { generateNextStudentCode } from "@/lib/studentCode";
+import { hashPassword } from "@/lib/auth";
+import { logActivityFromRequest } from "@/lib/activityLogger";
+import { generateNextParentCode } from "@/lib/parentCode";
 
 export const runtime = "nodejs";
 
@@ -22,6 +26,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       where: { id },
       include: {
         parent: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            isActive: true,
+          },
+        },
         batchEnrollments: { include: { batch: true } },
         attendance: { orderBy: { date: "desc" }, take: 100 },
         feeRecords: {
@@ -145,9 +156,12 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       data.guardianPhone !== undefined ||
       data.primaryContact !== undefined
     ) {
+      const parentCode = existing.parent?.parentCode ?? (await generateNextParentCode());
+
       await prisma.parent.upsert({
         where: { id: existing.parent?.id ?? "" },
         create: {
+          parentCode,
           fatherName: data.fatherName || null,
           fatherPhone: data.fatherPhone || null,
           fatherEmail: data.fatherEmail || null,
@@ -244,9 +258,38 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       });
     }
 
+    if (data.createStudentLogin && !existing.userId) {
+      const hashedPassword = await hashPassword("temporary-student-login");
+      const studentUser = await prisma.user.create({
+        data: {
+          name: `${data.firstName ?? existing.firstName} ${data.lastName ?? existing.lastName}`,
+          email: `${data.studentCode ?? existing.studentCode}@tuitionpro.local`,
+          password: hashedPassword,
+          role: "STUDENT",
+          isActive: true,
+        },
+      });
+
+      await prisma.student.update({ where: { id }, data: { userId: studentUser.id } });
+    }
+
+    if (data.createParentLogin && existing.parent && !existing.parent.userId) {
+      const hashedPassword = await hashPassword("temporary-parent-login");
+      const parentUser = await prisma.user.create({
+        data: {
+          name: data.fatherName || data.motherName || data.guardianName || existing.parent.fatherName || existing.parent.motherName || existing.parent.guardianName || `Parent of ${existing.firstName}`,
+          email: `${existing.parent.parentCode}@tuitionpro.local`,
+          password: hashedPassword,
+          role: "PARENT",
+          isActive: true,
+        },
+      });
+
+      await prisma.parent.update({ where: { id: existing.parent.id }, data: { userId: parentUser.id } });
+    }
+
     await createTimeline(id, "Student Updated", `Student profile updated by admin.`, auth.userId);
 
-    const { logActivityFromRequest } = await import("@/lib/activityLogger");
     await logActivityFromRequest(request, {
       userId: auth.userId,
       action: "STUDENT_EDITED",
@@ -261,6 +304,13 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       where: { id },
       include: {
         parent: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            isActive: true,
+          },
+        },
         batchEnrollments: { include: { batch: true } },
         emergencyContacts: true,
         medicalInfo: true,
@@ -287,7 +337,6 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     await prisma.student.update({ where: { id }, data: { status: "INACTIVE" } });
     await createTimeline(id, "Student Deactivated", "Student was marked inactive by admin.", auth.userId);
 
-    const { logActivityFromRequest } = await import("@/lib/activityLogger");
     await logActivityFromRequest(request, {
       userId: auth.userId,
       action: "STUDENT_DELETED",

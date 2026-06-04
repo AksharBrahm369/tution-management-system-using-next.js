@@ -1,21 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import { 
   CalendarDays, 
   CreditCard, 
   TrendingUp, 
   Award, 
-  Phone, 
-  Mail, 
-  User, 
   Clock, 
   CheckCircle2, 
   XCircle, 
   AlertCircle, 
   Calendar,
-  Loader2,
-  BookOpen
+  Loader2
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -146,10 +143,10 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
           setDebugState("Data loaded successfully.");
           setData(jsonData);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!isMounted) return;
         let errorMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
-        if (err.name === 'AbortError') {
+        if (err instanceof Error && err.name === "AbortError") {
           errorMessage = "Network request timed out after 10 seconds. Please check your connection.";
         }
         setDebugState(`Error occurred: ${errorMessage}`);
@@ -238,13 +235,21 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-100/50 dark:shadow-none mb-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 text-center md:text-left">
             {/* Student Photo */}
-            <div className="h-28 w-28 shrink-0 rounded-3xl border-4 border-indigo-600 overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-lg flex items-center justify-center">
+            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-3xl border-4 border-indigo-600 bg-slate-100 shadow-lg dark:bg-slate-800">
               {data.profilePhoto ? (
-                <img src={data.profilePhoto} alt={data.fullName} className="h-full w-full object-cover" />
+                <Image
+                  src={data.profilePhoto}
+                  alt={data.fullName}
+                  fill
+                  className="object-cover"
+                  sizes="112px"
+                />
               ) : (
-                <span className="text-4xl font-extrabold text-indigo-600">
-                  {data.fullName.slice(0, 2).toUpperCase()}
-                </span>
+                <div className="flex h-full w-full items-center justify-center">
+                  <span className="text-4xl font-extrabold text-indigo-600">
+                    {data.fullName.slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
               )}
             </div>
 
@@ -259,14 +264,7 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
                 Student ID: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs text-slate-700 dark:text-slate-300 font-mono font-bold">{data.studentCode}</code>
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-6 mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80 text-sm">
-                <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
-                  <BookOpen className="h-4 w-4 text-indigo-500" />
-                  <div>
-                    <span className="text-slate-400 text-xs block">Current Batch</span>
-                    <span className="font-semibold text-slate-800 dark:text-white">{data.currentBatch?.name || "No assigned batch"}</span>
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 gap-y-3 gap-x-6 pt-6 mt-6 text-sm border-t border-slate-100 sm:grid-cols-2 dark:border-slate-800/80">
                 <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
                   <Calendar className="h-4 w-4 text-indigo-500" />
                   <div>

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { StudentProfileData } from "../types";
 import ProfileHeader from "./ProfileHeader";
 import QuickStatsBar from "./QuickStatsBar";
@@ -24,6 +25,8 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
   const [showIdCard, setShowIdCard] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isCreatingLogin, setIsCreatingLogin] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const { data, isLoading, refetch } = useQuery<StudentProfileData>({
     queryKey: ["student-profile", studentId, refreshKey],
@@ -73,9 +76,91 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
     );
   }
 
+  const handleCreateLogin = async () => {
+    setIsCreatingLogin(true);
+    try {
+      const response = await fetch(`/api/admin/students/${studentId}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to create student login");
+      }
+
+      const credentialText = [
+        `Student Code: ${data.studentCode}`,
+        `Login Email: ${payload.email}`,
+        `Temporary Password: ${payload.password}`,
+      ].join("\n");
+
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(credentialText);
+        toast.success("Student login created. Credentials copied to clipboard.");
+      } else {
+        toast.success("Student login created.");
+      }
+
+      window.alert(`Student login created successfully.\n\n${credentialText}`);
+      setRefreshKey((value) => value + 1);
+      await refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to create student login");
+    } finally {
+      setIsCreatingLogin(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setIsResettingPassword(true);
+    try {
+      const response = await fetch(`/api/admin/students/${studentId}/login`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to reset student password");
+      }
+
+      const credentialText = [
+        `Student Code: ${data.studentCode}`,
+        `Login Email: ${payload.email}`,
+        `New Temporary Password: ${payload.password}`,
+      ].join("\n");
+
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(credentialText);
+        toast.success("Student password reset. New credentials copied to clipboard.");
+      } else {
+        toast.success("Student password reset.");
+      }
+
+      window.alert(`Student password reset successfully.\n\n${credentialText}`);
+      setRefreshKey((value) => value + 1);
+      await refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reset student password");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <ProfileHeader student={data} onDownloadId={() => setShowIdCard(true)} onChangeStatus={() => setShowStatusModal(true)} />
+      <ProfileHeader
+        student={data}
+        onDownloadId={() => setShowIdCard(true)}
+        onChangeStatus={() => setShowStatusModal(true)}
+        onCreateStudentLogin={handleCreateLogin}
+        isCreatingStudentLogin={isCreatingLogin}
+        onResetStudentPassword={handleResetPassword}
+        isResettingStudentPassword={isResettingPassword}
+      />
       <QuickStatsBar attendancePercent={data.attendancePercent} feesPaid={data.feesPaid} pendingFees={data.pendingFees} examsTaken={data.examResults.length} />
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {tabsContent}

@@ -8,6 +8,101 @@ import { checkConflicts } from "@/lib/conflictDetector";
 
 export const runtime = "nodejs";
 
+const INDIA_TIMEZONE = "Asia/Kolkata";
+
+type BatchWithRelations = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  color: string | null;
+  subjectId: string;
+  teacherId: string;
+  days: string[];
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  roomId: string | null;
+  maxStrength: number;
+  currentStrength: number;
+  academicYear: string;
+  startDate: Date;
+  endDate: Date | null;
+  fees: number;
+  status: string;
+  isOnline: boolean;
+  meetingLink: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  subject: { id: string; name: string; code: string };
+  teacher: { id: string; firstName: string; lastName: string; profilePhoto: string | null };
+  room: { id: string; name: string; code: string } | null;
+  enrollments: Array<{ id: string }>;
+  _count: { sessions: number };
+};
+
+function getTimezoneParts(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+
+  const month = get("month");
+  const day = get("day");
+  const year = get("year");
+  const hour = get("hour");
+  const minute = get("minute");
+  const weekday = get("weekday").toUpperCase();
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hour}:${minute}`,
+    weekday,
+  };
+}
+
+function computeLiveBatchStatus(batch: BatchWithRelations) {
+  if (batch.status === "CANCELLED" || batch.status === "INACTIVE") {
+    return batch.status;
+  }
+
+  const now = getTimezoneParts(new Date(), INDIA_TIMEZONE);
+  const batchStart = getTimezoneParts(batch.startDate, INDIA_TIMEZONE).date;
+  const batchEnd = batch.endDate ? getTimezoneParts(batch.endDate, INDIA_TIMEZONE).date : null;
+
+  if (batch.startDate && batchStart > now.date) {
+    return "UPCOMING";
+  }
+
+  if (batchEnd && batchEnd < now.date) {
+    return "COMPLETED";
+  }
+
+  const runsToday = batch.days.includes(now.weekday);
+  if (!runsToday) {
+    return "UPCOMING";
+  }
+
+  if (now.time < batch.startTime) {
+    return "UPCOMING";
+  }
+
+  if (now.time >= batch.endTime) {
+    return "COMPLETED";
+  }
+
+  return "ONGOING";
+}
+
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin(request);
@@ -41,7 +136,6 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    if (status) where.status = status;
     if (subjectId) where.subjectId = subjectId;
     if (teacherId) where.teacherId = teacherId;
 
@@ -69,42 +163,46 @@ export async function GET(request: NextRequest) {
       orderBy.createdAt = "desc";
     }
 
-    const [batches, total, totalCount, activeCount, upcomingCount, completedCount, totalEnrolled] =
-      await Promise.all([
-        prisma.batch.findMany({
-          where,
-          orderBy,
-          skip: (page - 1) * limit,
-          take: limit,
-          include: {
-            subject: true,
-            teacher: { select: { id: true, firstName: true, lastName: true, profilePhoto: true } },
-            room: { select: { id: true, name: true, code: true } },
-            enrollments: { where: { isActive: true }, select: { id: true } },
-            _count: { select: { sessions: true } },
-          },
-        }),
-        prisma.batch.count({ where }),
-        prisma.batch.count(),
-        prisma.batch.count({ where: { status: "ACTIVE" } }),
-        prisma.batch.count({ where: { status: "UPCOMING" } }),
-        prisma.batch.count({ where: { status: "COMPLETED" } }),
-        prisma.batchEnrollment.count({ where: { isActive: true } }),
-      ]);
+    const [allBatches, totalCount, totalEnrolled] = await Promise.all([
+      prisma.batch.findMany({
+        where,
+        orderBy,
+        include: {
+          subject: true,
+          teacher: { select: { id: true, firstName: true, lastName: true, profilePhoto: true } },
+          room: { select: { id: true, name: true, code: true } },
+          enrollments: { where: { isActive: true }, select: { id: true } },
+          _count: { select: { sessions: true } },
+        },
+      }),
+      prisma.batch.count(),
+      prisma.batchEnrollment.count({ where: { isActive: true } }),
+    ]);
 
-    const batchesWithStrength = batches.map((b) => ({
-      ...b,
-      currentStrength: b.enrollments.length,
+    const computedBatches = allBatches.map((batch) => ({
+      ...batch,
+      status: computeLiveBatchStatus(batch as BatchWithRelations),
+      currentStrength: batch.enrollments.length,
     }));
 
+    const filteredBatches = status
+      ? computedBatches.filter((batch) => batch.status === status)
+      : computedBatches;
+
+    const total = filteredBatches.length;
+    const paginatedBatches = filteredBatches.slice((page - 1) * limit, page * limit);
+    const ongoingCount = computedBatches.filter((batch) => batch.status === "ONGOING").length;
+    const upcomingCount = computedBatches.filter((batch) => batch.status === "UPCOMING").length;
+    const completedCount = computedBatches.filter((batch) => batch.status === "COMPLETED").length;
+
     return NextResponse.json({
-      batches: batchesWithStrength,
+      batches: paginatedBatches,
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),
       stats: {
         total: totalCount,
-        active: activeCount,
+        ongoing: ongoingCount,
         upcoming: upcomingCount,
         completed: completedCount,
         totalEnrolled,

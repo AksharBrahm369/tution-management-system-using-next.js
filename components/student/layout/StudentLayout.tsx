@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, LayoutDashboard, QrCode } from "lucide-react";
+import { User, LayoutDashboard } from "lucide-react";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -10,7 +10,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const navItems = [
     { name: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
     { name: "Profile", href: "/student/profile", icon: User },
-    { name: "Scan QR", href: "/student/attendance/scan", icon: QrCode },
   ];
 
   return (

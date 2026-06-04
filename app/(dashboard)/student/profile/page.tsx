@@ -3,19 +3,30 @@
 import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 
+type StudentProfile = {
+  firstName: string;
+  lastName: string;
+  studentCode: string;
+  academicYear: string;
+  email: string | null;
+  phone: string | null;
+  gender: string;
+  status: string;
+};
+
 export default function StudentProfilePage() {
-  const [student, setStudent] = useState<any>(null);
+  const [student, setStudent] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/student/me");
+        const res = await fetch("/api/student/me", { cache: "no-store" });
         if (res.ok) {
           const json = await res.json();
           setStudent(json.student);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(err);
       } finally {
         setLoading(false);

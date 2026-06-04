@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ChevronDown, Download, Edit3, MessageSquare, BadgeAlert } from "lucide-react";
+import { Download, Edit3, MessageSquare, BadgeAlert, KeyRound, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { StudentProfileData } from "../types";
 
@@ -8,6 +8,10 @@ interface ProfileHeaderProps {
   student: StudentProfileData;
   onDownloadId: () => void;
   onChangeStatus: () => void;
+  onCreateStudentLogin: () => void;
+  isCreatingStudentLogin: boolean;
+  onResetStudentPassword: () => void;
+  isResettingStudentPassword: boolean;
 }
 
 function badgeClass(value: string): string {
@@ -22,10 +26,18 @@ function valueOrFallback(value?: string | null, fallback = "N/A"): string {
   return value && value.trim().length > 0 ? value : fallback;
 }
 
-const ProfileHeader: React.FC<ProfileHeaderProps> = ({ student, onDownloadId, onChangeStatus }) => {
-  const age = student.dateOfBirth ? Math.floor((Date.now() - new Date(student.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+const ProfileHeader: React.FC<ProfileHeaderProps> = ({
+  student,
+  onDownloadId,
+  onChangeStatus,
+  onCreateStudentLogin,
+  isCreatingStudentLogin,
+  onResetStudentPassword,
+  isResettingStudentPassword,
+}) => {
   const initials = student.fullName?.trim().slice(0, 2).toUpperCase() ?? "ST";
   const fullAddress = [student.addressLine1, student.addressLine2, student.city, student.state, student.pincode].filter(Boolean).join(", ");
+  const hasStudentLogin = Boolean(student.userId);
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 p-4 text-white shadow-xl dark:border-slate-800 sm:p-6">
@@ -57,7 +69,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ student, onDownloadId, on
           </div>
           <div className="rounded-xl border border-white/15 bg-white/5 p-3">
             <p className="text-xs text-slate-300">Date of Birth</p>
-            <p className="mt-1 wrap-break-word text-sm text-white">{student.dateOfBirth ? `${new Date(student.dateOfBirth).toLocaleDateString()}${age ? ` • ${age} yrs` : ""}` : "N/A"}</p>
+            <p className="mt-1 wrap-break-word text-sm text-white">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : "N/A"}</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/5 p-3">
             <p className="text-xs text-slate-300">Blood Group</p>
@@ -71,19 +83,54 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({ student, onDownloadId, on
             <p className="text-xs text-slate-300">Current Batch</p>
             <p className="mt-1 wrap-break-word text-sm text-white">{valueOrFallback(student.currentBatch?.name, "No batch")}</p>
           </div>
+          <div className="rounded-xl border border-white/15 bg-white/5 p-3 sm:col-span-2">
+            <p className="text-xs text-slate-300">Student Portal Access</p>
+            <p className="mt-1 wrap-break-word text-sm text-white">
+              {hasStudentLogin
+                ? `Ready${student.user?.email ? ` • ${student.user.email}` : ""}`
+                : "No login account linked yet"}
+            </p>
+            <p className="mt-2 text-xs text-slate-400">
+              Passwords are not stored in readable form. If the student forgets it, use reset to issue a new temporary password.
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 xl:col-span-2">
           <Link href={`/admin/students/${student.id}/edit`} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100">
             <Edit3 size={16} /> Edit Profile
           </Link>
+          {hasStudentLogin ? (
+            <>
+              <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-500/15 px-4 py-3 text-sm font-semibold text-emerald-100">
+                <KeyRound size={16} /> Student Login Ready
+              </div>
+              <button
+                onClick={onResetStudentPassword}
+                disabled={isResettingStudentPassword}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isResettingStudentPassword ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                {isResettingStudentPassword ? "Resetting Password..." : "Reset Student Password"}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onCreateStudentLogin}
+              disabled={isCreatingStudentLogin}
+              className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isCreatingStudentLogin ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
+              {isCreatingStudentLogin ? "Creating Login..." : "Create Student Login"}
+            </button>
+          )}
           <button onClick={onDownloadId} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20">
             <Download size={16} /> Download ID Card
           </button>
           <button onClick={onChangeStatus} className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20">
             <BadgeAlert size={16} /> Change Status
           </button>
-          <button 
+          <button
             onClick={() => {
               const phone = student.phone || student.parent?.fatherPhone || student.parent?.motherPhone;
               if (phone) {

@@ -5,6 +5,8 @@ import { requireSuperAdmin } from "@/lib/adminAuth";
 import { generateNextStudentCode } from "@/lib/studentCode";
 import { studentCreateSchema } from "@/lib/validations/student";
 import { logActivityFromRequest } from "@/lib/activityLogger";
+import { hashPassword } from "@/lib/auth";
+import { generateNextParentCode } from "@/lib/parentCode";
 
 export const runtime = "nodejs";
 
@@ -182,6 +184,7 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await requireSuperAdmin(request);
     const body = await request.json();
+    console.log("POST /api/admin/students - Raw Body:", body);
     const parsed = studentCreateSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -192,6 +195,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data;
+    console.log("POST /api/admin/students - Parsed Data:", data);
     const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : null;
 
     if (email) {
@@ -219,7 +223,6 @@ export async function POST(request: NextRequest) {
     // The client displays a preview code, but it can become stale if another
     // student is created before submit completes.
     const studentCode = await generateNextStudentCode();
-    const { generateNextParentCode } = await import("@/lib/parentCode");
     const parentCode = await generateNextParentCode();
 
     const parent = await prisma.parent.create({
@@ -320,7 +323,6 @@ export async function POST(request: NextRequest) {
     );
 
     if (data.createStudentLogin) {
-      const { hashPassword } = await import("@/lib/auth");
       const hashedPassword = await hashPassword("temporary-student-login");
       const studentUser = await prisma.user.create({
         data: {
@@ -337,7 +339,6 @@ export async function POST(request: NextRequest) {
 
     // Create Parent User automatically if requested
     if (data.createParentLogin) {
-      const { hashPassword } = await import("@/lib/auth");
       const hashedPassword = await hashPassword("temporary-parent-login");
       const parentUser = await prisma.user.create({
         data: {

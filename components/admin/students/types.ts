@@ -50,6 +50,7 @@ export interface StudentListResponse {
 
 export interface StudentProfileData {
   id: string;
+  userId: string | null;
   studentCode: string;
   firstName: string;
   lastName: string;
@@ -73,8 +74,14 @@ export interface StudentProfileData {
   status: StudentStatus;
   category: StudentCategory;
   referredBy: string | null;
+  user: {
+    id: string;
+    email: string;
+    isActive: boolean;
+  } | null;
   parent: {
     id: string;
+    userId?: string | null;
     fatherName: string | null;
     fatherPhone: string | null;
     fatherEmail: string | null;

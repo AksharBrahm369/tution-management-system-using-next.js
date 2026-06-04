@@ -10,16 +10,23 @@ export default function StudentLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const normalizeStudentCode = (value: string) =>
+    value
+      .replace(/[\u2010-\u2015\u2212]/g, "-")
+      .replace(/\s+/g, "")
+      .toUpperCase();
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
+      const normalizedStudentCode = normalizeStudentCode(studentCode);
       const res = await fetch("/api/auth/student-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentCode, password, rememberMe: true }),
+        body: JSON.stringify({ studentCode: normalizedStudentCode, password, rememberMe: true }),
       });
 
       if (!res.ok) {
@@ -29,8 +36,8 @@ export default function StudentLoginPage() {
 
       router.push("/student/dashboard");
       router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to login");
     } finally {
       setLoading(false);
     }
@@ -64,7 +71,7 @@ export default function StudentLoginPage() {
                 className="relative block w-full rounded-xl border-0 py-3 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-cyan-600 dark:bg-slate-800 dark:text-white dark:ring-slate-700 sm:text-sm sm:leading-6 px-3"
                 placeholder="Student Code (e.g., STU-2026-001)"
                 value={studentCode}
-                onChange={(e) => setStudentCode(e.target.value)}
+                onChange={(e) => setStudentCode(normalizeStudentCode(e.target.value))}
               />
             </div>
             <div>

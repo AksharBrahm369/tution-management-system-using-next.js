@@ -19,9 +19,12 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
+  const [subjectsLoading, setSubjectsLoading] = useState(true);
+  const [subjectsError, setSubjectsError] = useState("");
+  const [subjectsRetryKey, setSubjectsRetryKey] = useState(0);
 
   const form = useForm<TeacherFormValues>({
-    resolver: zodResolver(teacherSchema) as any,
+    resolver: zodResolver(teacherSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -35,14 +38,46 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
   });
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/subjects').then(res => res.json()),
-      fetch(`/api/admin/teachers/${teacherId}`).then(res => res.json())
-    ])
-    .then(([subjectsData, teacherData]) => {
-      setSubjects(subjectsData?.subjects || []);
-      
-      if (teacherData && !teacherData.error) {
+    const loadData = async () => {
+      setLoading(true);
+      setSubjectsLoading(true);
+      setSubjectsError("");
+
+      try {
+        const [subjectsRes, teacherRes] = await Promise.all([
+          fetch('/api/admin/subjects?active=true', { credentials: 'include' }),
+          fetch(`/api/admin/teachers/${teacherId}`, { credentials: 'include' }),
+        ]);
+
+        if (subjectsRes.status === 401 || teacherRes.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
+
+        const subjectsPayload = await subjectsRes.json().catch(() => ({}));
+        const teacherPayload = await teacherRes.json().catch(() => ({}));
+        const teacherData = teacherPayload as {
+          firstName?: string;
+          lastName?: string;
+          email?: string;
+          phone?: string;
+          gender?: TeacherFormValues["gender"];
+          employmentType?: TeacherFormValues["employmentType"];
+          salaryType?: TeacherFormValues["salaryType"];
+          fixedSalary?: number;
+          perClassRate?: number;
+          subjects?: Array<{ subjectId: string }>;
+        };
+
+        if (!subjectsRes.ok) {
+          throw new Error(subjectsPayload.error || 'Failed to load subjects');
+        }
+
+        if (!teacherRes.ok) {
+          throw new Error(teacherPayload.error || 'Failed to load teacher');
+        }
+
+        setSubjects(Array.isArray(subjectsPayload?.subjects) ? subjectsPayload.subjects : []);
         form.reset({
           firstName: teacherData.firstName || '',
           lastName: teacherData.lastName || '',
@@ -53,13 +88,20 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
           salaryType: teacherData.salaryType || 'FIXED',
           fixedSalary: teacherData.fixedSalary || undefined,
           perClassRate: teacherData.perClassRate || undefined,
-          subjectIds: teacherData.subjects?.map((s: any) => s.subjectId) || [],
+          subjectIds: teacherData.subjects?.map((subject) => subject.subjectId) || [],
         });
+      } catch (err: unknown) {
+        console.error("Failed to load data", err);
+        setSubjects([]);
+        setSubjectsError(err instanceof Error ? err.message : "Failed to load subjects");
+      } finally {
+        setSubjectsLoading(false);
+        setLoading(false);
       }
-    })
-    .catch(err => console.error("Failed to load data", err))
-    .finally(() => setLoading(false));
-  }, [teacherId, form]);
+    };
+
+    loadData();
+  }, [teacherId, form, router, subjectsRetryKey]);
 
   const onSubmit = async (data: TeacherFormValues) => {
     setIsSubmitting(true);
@@ -213,7 +255,22 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
                 </button>
               );
             })}
-            {subjects.length === 0 && <p className="text-sm text-slate-500 col-span-full py-4 text-center">Loading subjects...</p>}
+            {subjectsLoading && <p className="text-sm text-slate-500 col-span-full py-4 text-center">Loading subjects...</p>}
+            {!subjectsLoading && subjectsError && (
+              <div className="col-span-full flex flex-col items-center gap-3 py-4 text-center">
+                <p className="text-sm text-red-500">{subjectsError}</p>
+                <button
+                  type="button"
+                  onClick={() => setSubjectsRetryKey((value) => value + 1)}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  Retry Loading Subjects
+                </button>
+              </div>
+            )}
+            {!subjectsLoading && !subjectsError && subjects.length === 0 && (
+              <p className="text-sm text-slate-500 col-span-full py-4 text-center">No active subjects found. Please create a subject first.</p>
+            )}
           </div>
         </div>
 

@@ -17,18 +17,33 @@ export async function GET(request: NextRequest) {
       where: { id: authContext.studentId },
       include: {
         batchEnrollments: {
+          where: { isActive: true },
+          orderBy: { enrollDate: "desc" },
           include: {
-            batch: true,
+            batch: {
+              include: {
+                room: {
+                  select: {
+                    id: true,
+                    name: true,
+                    code: true,
+                  },
+                },
+              },
+            },
           },
         },
         attendance: {
-          orderBy: { date: 'desc' },
-          take: 10, // Last 10 attendance records for summary
+          orderBy: { date: "desc" },
+          take: 10,
         },
         feeRecords: {
-          orderBy: { dueDate: 'asc' },
-          where: {
-            status: { not: "PAID" }, // Get pending or overdue fees
+          orderBy: [{ year: "desc" }, { month: "desc" }, { dueDate: "desc" }],
+          include: {
+            batch: true,
+            payments: {
+              orderBy: { paidAt: "desc" },
+            },
           },
         },
       },
@@ -41,28 +56,39 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Compute basic attendance summary (overall would require a bigger query, 
-    // but for now we can just return the data or basic count if needed)
     const totalAttendance = await prisma.attendance.count({
-      where: { studentId: authContext.studentId }
-    });
-    
-    const presentCount = await prisma.attendance.count({
-      where: { 
-        studentId: authContext.studentId,
-        status: "PRESENT" 
-      }
+      where: { studentId: authContext.studentId },
     });
 
-    const attendancePercent = totalAttendance > 0 
-      ? Math.round((presentCount / totalAttendance) * 100) 
+    const presentCount = await prisma.attendance.count({
+      where: {
+        studentId: authContext.studentId,
+        status: "PRESENT",
+      },
+    });
+
+    const attendancePercent = totalAttendance > 0
+      ? Math.round((presentCount / totalAttendance) * 100)
       : null;
 
-    return NextResponse.json({ 
+    const totalBilled = student.feeRecords.reduce((sum, record) => sum + record.totalAmount, 0);
+    const totalPaid = student.feeRecords.reduce((sum, record) => sum + record.paidAmount, 0);
+    const pendingFees = student.feeRecords.reduce((sum, record) => sum + record.pendingAmount, 0);
+    const pendingRecords = student.feeRecords.filter((record) => record.pendingAmount > 0).length;
+    const currentBatch = student.batchEnrollments[0]?.batch ?? null;
+
+    return NextResponse.json({
       student,
       summary: {
         attendancePercent,
-      }
+        totalAttendance,
+        presentCount,
+        totalBilled,
+        totalPaid,
+        pendingFees,
+        pendingRecords,
+        currentBatch,
+      },
     });
   } catch (error) {
     console.error("Error in GET /api/student/me:", error);
