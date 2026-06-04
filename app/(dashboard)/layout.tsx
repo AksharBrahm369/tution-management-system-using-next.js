@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useState } from "react";
@@ -21,12 +20,14 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const isStudentRoute = pathname?.startsWith("/student");
+  const logoutRedirectPath = isStudentRoute ? "/student/login" : "/auth/login";
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/auth/login");
+      router.push(logoutRedirectPath);
       router.refresh();
     } catch {
       setIsLoggingOut(false);
