@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useSyncExternalStore } from 'react';
-import { formatDate } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
 
 interface WelcomeHeaderProps {
@@ -13,15 +12,29 @@ function subscribeToTimeChanges(onStoreChange: () => void) {
   return () => window.clearInterval(timer);
 }
 
+const INDIA_TIMEZONE = 'Asia/Kolkata';
+
 function getGreetingSnapshot() {
-  const hour = new Date().getHours();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: INDIA_TIMEZONE,
+    hour: 'numeric',
+    hour12: false,
+  });
+  const hour = Number(formatter.format(new Date()));
+
   if (hour < 12) return 'Good Morning';
-  if (hour < 18) return 'Good Afternoon';
+  if (hour < 17) return 'Good Afternoon';
   return 'Good Evening';
 }
 
 function getDateSnapshot() {
-  return formatDate(new Date(), 'EEEE, d MMMM yyyy');
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: INDIA_TIMEZONE,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date());
 }
 
 const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin' }) => {
