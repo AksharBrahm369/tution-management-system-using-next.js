@@ -54,9 +54,12 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({ student, onChanged }) => {
 
   return (
     <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-      <div>
+      <div className="space-y-1">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Documents</h3>
         <p className="text-sm text-slate-500 dark:text-slate-400">Upload and manage student documents here.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="font-medium text-slate-700 dark:text-slate-300">Required/Suggested Documents:</span> Birth Certificate, School Leaving Certificate, Marksheets, ID Proof, Address Proof, Medical Records, and Photos.
+        </p>
       </div>
 
       {!selectedFile ? (
