@@ -8,7 +8,8 @@ import crypto from "crypto";
 export async function generateQRToken(
   batchId: string,
   sessionId?: string,
-  date?: Date
+  date?: Date,
+  baseUrl: string = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 ): Promise<{
   qrCode: string;
   qrToken: string;
@@ -18,8 +19,10 @@ export async function generateQRToken(
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + 30); // 30 minute validity
 
-  // Generate QR code with token
-  const qrCode = await QRCode.toDataURL(token, {
+  // Generate QR code with full URL to scan page
+  const scanUrl = `${baseUrl}/student/attendance/scan?token=${token}`;
+  
+  const qrCode = await QRCode.toDataURL(scanUrl, {
     width: 300,
     margin: 2,
     color: {

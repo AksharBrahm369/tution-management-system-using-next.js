@@ -39,11 +39,14 @@ export async function POST(req: NextRequest) {
     const qrDate = date ? new Date(date) : new Date();
     qrDate.setHours(0, 0, 0, 0);
 
+    const baseUrl = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
     // Generate QR token and code
     const { qrCode, qrToken, expiresAt } = await generateQRToken(
       batchId,
       sessionId,
-      qrDate
+      qrDate,
+      baseUrl
     );
 
     // Get session details
