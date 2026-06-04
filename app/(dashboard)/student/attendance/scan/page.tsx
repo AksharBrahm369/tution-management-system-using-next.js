@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
-export default function QRScanPage() {
+function QRScanContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function QRScanPage() {
   useEffect(() => {
     if (!token) {
       setStatus("error");
-      setMessage("No QR token found in the URL.");
+      setMessage("No QR token found in the URL. Please scan the QR code again.");
       return;
     }
 
@@ -26,6 +26,9 @@ export default function QRScanPage() {
     const markAttendance = async () => {
       try {
         setHasProcessed(true);
+        setStatus("loading");
+        setMessage("Processing your attendance...");
+        
         const res = await fetch("/api/attendance/qr/scan", {
           method: "POST",
           headers: {
@@ -34,16 +37,30 @@ export default function QRScanPage() {
           body: JSON.stringify({ qrToken: token }),
         });
 
-        const data = await res.json();
-
-        if (res.ok && data.success) {
-          setStatus("success");
-          setMessage("Your attendance has been marked successfully!");
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          if (res.ok && data.success) {
+            setStatus("success");
+            setMessage("Your attendance has been marked successfully!");
+          } else {
+            setStatus("error");
+            setMessage(data.error || data.message || "Failed to mark attendance. The QR code may be invalid or expired.");
+          }
         } else {
+          // Response is HTML or plain text (e.g. 500 error page or a redirect)
+          const text = await res.text();
+          console.error("Non-JSON response received from /api/attendance/qr/scan:", text);
+          
           setStatus("error");
-          setMessage(data.error || data.message || "Failed to mark attendance. The QR code may be invalid or expired.");
+          if (res.status === 401 || res.status === 403 || text.includes("login") || text.includes("SignIn") || text.includes("Sign In")) {
+            setMessage("You are not logged in. Please sign in to your student account first, then scan the QR code again.");
+          } else {
+            setMessage(`Server error (${res.status}). Please make sure you are logged in and try again.`);
+          }
         }
       } catch (error) {
+        console.error("Error during attendance QR scan fetch:", error);
         setStatus("error");
         setMessage("An unexpected error occurred while marking attendance.");
       }
@@ -95,5 +112,20 @@ export default function QRScanPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function QRScanPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[60vh] items-center justify-center p-4">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-16 w-16 animate-spin text-blue-500" />
+          <p className="text-slate-500">Loading scanner...</p>
+        </div>
+      </div>
+    }>
+      <QRScanContent />
+    </Suspense>
   );
 }

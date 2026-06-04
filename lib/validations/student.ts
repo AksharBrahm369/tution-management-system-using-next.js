@@ -138,8 +138,8 @@ export const studentCreateSchema = studentStep1Schema
   .extend({
     studentCode: z.preprocess((value) => (value === "" ? undefined : value), z.string().optional()),
     status: studentStatusSchema.optional(),
-    createStudentLogin: z.boolean().optional(),
-    createParentLogin: z.boolean().optional(),
+    createStudentLogin: z.preprocess((val) => val === true || val === "true" || val === "on", z.boolean().optional()),
+    createParentLogin: z.preprocess((val) => val === true || val === "true" || val === "on", z.boolean().optional()),
   });
 
 export const studentUpdateSchema = studentCreateSchema.partial().extend({

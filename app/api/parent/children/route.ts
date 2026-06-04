@@ -2,27 +2,63 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireParent, getRouteErrorStatus } from "@/lib/roleAuth";
 import { prisma } from "@/lib/prisma";
 
-export const runtime = "nodejs";
-
 export async function GET(request: NextRequest) {
   try {
-    const auth = await requireParent(request);
-    const parent = await prisma.parent.findUnique({
-      where: { userId: auth.userId },
+    const authContext = await requireParent(request);
+
+    if (!authContext.parentId) {
+      return NextResponse.json(
+        { message: "No parent profile linked to this account." },
+        { status: 404 }
+      );
+    }
+
+    const children = await prisma.student.findMany({
+      where: { parentId: authContext.parentId },
       include: {
-        students: {
+        batchEnrollments: {
           include: {
-            batchEnrollments: { where: { isActive: true }, include: { batch: { select: { id: true, name: true, code: true } } } },
-            feeRecords: { orderBy: { createdAt: "desc" }, take: 1 },
-            examResults: { orderBy: { createdAt: "desc" }, take: 1, include: { exam: { select: { title: true, examDate: true } } } },
+            batch: true,
+          },
+        },
+        feeRecords: {
+          orderBy: { dueDate: 'asc' },
+          where: {
+            status: { not: "PAID" },
           },
         },
       },
     });
 
-    return NextResponse.json({ children: parent?.students ?? [] });
+    // Compute basic attendance summary for each child
+    const childrenWithAttendance = await Promise.all(
+      children.map(async (child) => {
+        const totalAttendance = await prisma.attendance.count({
+          where: { studentId: child.id }
+        });
+        
+        const presentCount = await prisma.attendance.count({
+          where: { 
+            studentId: child.id,
+            status: "PRESENT" 
+          }
+        });
+
+        const attendancePercent = totalAttendance > 0 
+          ? Math.round((presentCount / totalAttendance) * 100) 
+          : null;
+
+        return {
+          ...child,
+          attendancePercent
+        };
+      })
+    );
+
+    return NextResponse.json({ children: childrenWithAttendance });
   } catch (error) {
+    console.error("Error in GET /api/parent/children:", error);
     const { message, status } = getRouteErrorStatus(error);
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ message }, { status });
   }
 }

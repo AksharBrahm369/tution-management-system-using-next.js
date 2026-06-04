@@ -1,5 +1,5 @@
-import ParentDashboard from "@/components/parent/dashboard/ParentDashboard";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <ParentDashboard />;
+export default function ParentDashboardPage() {
+  redirect("/parent/children");
 }

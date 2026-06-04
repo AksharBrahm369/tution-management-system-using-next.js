@@ -920,6 +920,7 @@ model Student {
 
 model Parent {
   id             String  @id @default(cuid())
+  parentCode     String? @unique
   fatherName     String?
   fatherPhone    String?
   fatherEmail    String?

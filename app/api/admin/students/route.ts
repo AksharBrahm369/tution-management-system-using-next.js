@@ -219,9 +219,12 @@ export async function POST(request: NextRequest) {
     // The client displays a preview code, but it can become stale if another
     // student is created before submit completes.
     const studentCode = await generateNextStudentCode();
+    const { generateNextParentCode } = await import("@/lib/parentCode");
+    const parentCode = await generateNextParentCode();
 
     const parent = await prisma.parent.create({
       data: {
+        parentCode,
         fatherName: data.fatherName || null,
         fatherPhone: data.fatherPhone,
         fatherEmail: data.fatherEmail || null,
@@ -316,18 +319,36 @@ export async function POST(request: NextRequest) {
       auth.userId
     );
 
-    if (data.createStudentLogin && student.email) {
+    if (data.createStudentLogin) {
+      const { hashPassword } = await import("@/lib/auth");
+      const hashedPassword = await hashPassword("temporary-student-login");
       const studentUser = await prisma.user.create({
         data: {
           name: `${student.firstName} ${student.lastName}`,
-          email: student.email,
-          password: "temporary-student-login",
+          email: `${studentCode}@tuitionpro.local`,
+          password: hashedPassword,
           role: "STUDENT",
           isActive: true,
         },
       });
 
       await prisma.student.update({ where: { id: student.id }, data: { userId: studentUser.id } });
+    }
+
+    // Create Parent User automatically if requested
+    if (data.createParentLogin) {
+      const { hashPassword } = await import("@/lib/auth");
+      const hashedPassword = await hashPassword("temporary-parent-login");
+      const parentUser = await prisma.user.create({
+        data: {
+          name: parent.fatherName || parent.motherName || parent.guardianName || `Parent of ${student.firstName}`,
+          email: `${parentCode}@tuitionpro.local`,
+          password: hashedPassword,
+          role: "PARENT",
+          isActive: true,
+        },
+      });
+      await prisma.parent.update({ where: { id: parent.id }, data: { userId: parentUser.id } });
     }
 
     await logActivityFromRequest(request, {

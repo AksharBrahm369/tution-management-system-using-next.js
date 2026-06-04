@@ -6,8 +6,15 @@ import { markAttendanceViaQR } from "@/lib/qrGenerator";
 export async function POST(req: NextRequest) {
   try {
     const payload = await validateJWT(req);
-    if (!payload || (payload.role !== "STUDENT" && payload.role !== "TEACHER")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!payload) {
+      return NextResponse.json({ error: "You must be logged in to mark attendance." }, { status: 401 });
+    }
+
+    if (payload.role !== "STUDENT" && payload.role !== "TEACHER") {
+      return NextResponse.json(
+        { error: `Only students can mark their attendance via QR code. You are currently logged in as ${payload.role}.` },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
