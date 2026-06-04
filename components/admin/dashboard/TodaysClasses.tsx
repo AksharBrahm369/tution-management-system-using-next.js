@@ -13,6 +13,15 @@ interface Class {
   status: 'upcoming' | 'ongoing' | 'completed';
 }
 
+function hasRealTeacherName(teacher: string) {
+  const normalizedTeacher = teacher.trim().toLowerCase();
+  return Boolean(
+    normalizedTeacher &&
+    normalizedTeacher !== 'tba' &&
+    normalizedTeacher !== 'teacher not assigned'
+  );
+}
+
 const TodaysClasses: React.FC = () => {
   const { data: classes, isLoading, isError } = useQuery<Class[]>({
     queryKey: ['todays-classes'],
@@ -75,9 +84,11 @@ const TodaysClasses: React.FC = () => {
                   <p className="font-medium text-slate-900 dark:text-white">
                     {classItem.name}
                   </p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    by {classItem.teacher}
-                  </p>
+                  {hasRealTeacherName(classItem.teacher) ? (
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                      by {classItem.teacher}
+                    </p>
+                  ) : null}
                 </div>
                 <span
                   className={`text-xs px-3 py-1 rounded-full font-medium capitalize ${getStatusColor(
