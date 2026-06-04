@@ -1,14 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Clock, MapPin } from 'lucide-react';
+import { Clock, MapPin, Video, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 interface Class {
   id: string;
   name: string;
   teacher: string;
-  time: string;
+  startTime: string;
+  endTime: string;
+  isOnline: boolean;
+  meetingLink?: string | null;
   room: string;
   status: 'upcoming' | 'ongoing' | 'completed';
 }
@@ -20,6 +23,20 @@ function hasRealTeacherName(teacher: string) {
     normalizedTeacher !== 'tba' &&
     normalizedTeacher !== 'teacher not assigned'
   );
+}
+
+function formatTimeTo12Hour(time: string) {
+  const [hourText, minuteText] = time.split(':');
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    return time;
+  }
+
+  const suffix = hour >= 12 ? 'PM' : 'AM';
+  const normalizedHour = hour % 12 || 12;
+  return `${normalizedHour}:${String(minute).padStart(2, '0')} ${suffix}`;
 }
 
 const TodaysClasses: React.FC = () => {
@@ -85,8 +102,9 @@ const TodaysClasses: React.FC = () => {
                     {classItem.name}
                   </p>
                   {hasRealTeacherName(classItem.teacher) ? (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                      by {classItem.teacher}
+                    <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
+                      <User size={14} />
+                      {classItem.teacher}
                     </p>
                   ) : null}
                 </div>
@@ -99,15 +117,21 @@ const TodaysClasses: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400 mt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
                 <div className="flex items-center gap-1">
                   <Clock size={16} />
-                  {classItem.time}
+                  {formatTimeTo12Hour(classItem.startTime)} - {formatTimeTo12Hour(classItem.endTime)} IST
                 </div>
                 <div className="flex items-center gap-1">
-                  <MapPin size={16} />
-                  {classItem.room}
+                  <Video size={16} />
+                  {classItem.isOnline ? 'Online' : 'Offline'}
                 </div>
+                {!classItem.isOnline && classItem.room ? (
+                  <div className="flex items-center gap-1">
+                    <MapPin size={16} />
+                    {classItem.room}
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}

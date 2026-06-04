@@ -1,3 +1,4 @@
+import { DayOfWeek } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireSuperAdmin } from '@/lib/adminAuth';
@@ -9,6 +10,32 @@ const NO_STORE_HEADERS = {
   'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate',
 };
 
+function getTeacherDisplayName(
+  teacher:
+    | {
+        firstName?: string | null;
+        lastName?: string | null;
+        user?: { name?: string | null } | null;
+      }
+    | null
+    | undefined
+) {
+  if (!teacher) {
+    return '';
+  }
+
+  const fullName = [teacher.firstName, teacher.lastName]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .join(' ')
+    .trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  return teacher.user?.name?.trim() ?? '';
+}
+
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin(request);
@@ -19,25 +46,27 @@ export async function GET(request: NextRequest) {
     });
     const tz = settings?.timezone || 'Asia/Kolkata';
 
-    // Format local date components in the target timezone
     const yearFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric' });
     const monthFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'numeric' });
     const dayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, day: 'numeric' });
     const weekdayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'long' });
-    const timeFormatter = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
+    const timeFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
 
-    const localYear = parseInt(yearFormatter.format(now));
-    const localMonth = parseInt(monthFormatter.format(now)) - 1; // 0-indexed month
-    const localDay = parseInt(dayFormatter.format(now));
+    const localYear = parseInt(yearFormatter.format(now), 10);
+    const localMonth = parseInt(monthFormatter.format(now), 10) - 1;
+    const localDay = parseInt(dayFormatter.format(now), 10);
 
-    // Calculate todayStart and todayEnd represented as UTC midnight dates
     const todayStart = new Date(Date.UTC(localYear, localMonth, localDay, 0, 0, 0, 0));
     const todayEnd = new Date(Date.UTC(localYear, localMonth, localDay, 23, 59, 59, 999));
 
-    const todayDayName = weekdayFormatter.format(now).toUpperCase(); // e.g., 'WEDNESDAY'
-    const currentHHMM = timeFormatter.format(now); // e.g., '13:36'
+    const todayDayName = weekdayFormatter.format(now).toUpperCase() as DayOfWeek;
+    const currentHHMM = timeFormatter.format(now);
 
-    // Fetch real class sessions from the database for today
     const sessions = await prisma.classSession.findMany({
       where: {
         date: {
@@ -60,8 +89,15 @@ export async function GET(request: NextRequest) {
         batch: {
           select: {
             name: true,
+            isOnline: true,
+            meetingLink: true,
+            room: {
+              select: { name: true },
+            },
             teacher: {
               select: {
+                firstName: true,
+                lastName: true,
                 user: {
                   select: { name: true },
                 },
@@ -75,19 +111,24 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Fetch all active batches running today
     const activeBatches = await prisma.batch.findMany({
       where: {
         status: 'ACTIVE',
         startDate: { lte: todayEnd },
-        OR: [
-          { endDate: null },
-          { endDate: { gte: todayStart } },
-        ],
+        OR: [{ endDate: null }, { endDate: { gte: todayStart } }],
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        days: true,
+        startTime: true,
+        endTime: true,
+        isOnline: true,
+        meetingLink: true,
         teacher: {
-          include: {
+          select: {
+            firstName: true,
+            lastName: true,
             user: {
               select: { name: true },
             },
@@ -99,67 +140,81 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const batchesRunningToday = activeBatches.filter((b) =>
-      b.days.includes(todayDayName as any)
+    const batchesRunningToday = activeBatches.filter((batch) =>
+      batch.days.includes(todayDayName)
     );
 
-    const formattedRealSessions = sessions.map((s) => {
+    const formattedRealSessions = sessions.map((session) => {
       let status: 'upcoming' | 'ongoing' | 'completed' = 'upcoming';
-      if (s.status === 'ONGOING') {
+
+      if (session.status === 'ONGOING') {
         status = 'ongoing';
-      } else if (s.status === 'COMPLETED') {
+      } else if (session.status === 'COMPLETED') {
         status = 'completed';
-      } else {
-        // Dynamically compute 'SCHEDULED' class sessions based on current time
-        if (currentHHMM >= s.startTime && currentHHMM <= s.endTime) {
-          status = 'ongoing';
-        } else if (currentHHMM > s.endTime) {
-          status = 'completed';
-        } else {
-          status = 'upcoming';
-        }
+      } else if (currentHHMM >= session.startTime && currentHHMM <= session.endTime) {
+        status = 'ongoing';
+      } else if (currentHHMM > session.endTime) {
+        status = 'completed';
       }
 
       return {
-        id: s.id,
-        name: s.topic ? `${s.batch.name} — ${s.topic}` : s.batch.name,
-        teacher: s.batch.teacher?.user?.name ?? 'TBA',
-        time: `${s.startTime} - ${s.endTime}`,
-        room: s.room?.name ?? 'Online',
+        id: session.id,
+        name: session.topic ? `${session.batch.name} - ${session.topic}` : session.batch.name,
+        teacher: getTeacherDisplayName(session.batch.teacher),
+        startTime: session.startTime,
+        endTime: session.endTime,
+        isOnline: session.batch.isOnline,
+        meetingLink: session.batch.meetingLink,
+        room: session.room?.name ?? session.batch.room?.name ?? '',
         status,
-        startTimeRaw: s.startTime,
-        batchId: s.batchId,
+        startTimeRaw: session.startTime,
+        batchId: session.batchId,
       };
     });
 
-    const realSessionBatchIds = new Set(sessions.map((s) => s.batchId));
+    const realSessionBatchIds = new Set(sessions.map((session) => session.batchId));
 
     const virtualSessions = batchesRunningToday
-      .filter((b) => !realSessionBatchIds.has(b.id))
-      .map((b) => {
+      .filter((batch) => !realSessionBatchIds.has(batch.id))
+      .map((batch) => {
         let status: 'upcoming' | 'ongoing' | 'completed' = 'upcoming';
-        if (currentHHMM >= b.startTime && currentHHMM <= b.endTime) {
+
+        if (currentHHMM >= batch.startTime && currentHHMM <= batch.endTime) {
           status = 'ongoing';
-        } else if (currentHHMM > b.endTime) {
+        } else if (currentHHMM > batch.endTime) {
           status = 'completed';
         }
 
         return {
-          id: `virtual-${b.id}`,
-          name: b.name,
-          teacher: b.teacher?.user?.name ?? 'TBA',
-          time: `${b.startTime} - ${b.endTime}`,
-          room: b.room?.name ?? 'Online',
+          id: `virtual-${batch.id}`,
+          name: batch.name,
+          teacher: getTeacherDisplayName(batch.teacher),
+          startTime: batch.startTime,
+          endTime: batch.endTime,
+          isOnline: batch.isOnline,
+          meetingLink: batch.meetingLink,
+          room: batch.room?.name ?? '',
           status,
-          startTimeRaw: b.startTime,
-          batchId: b.id,
+          startTimeRaw: batch.startTime,
+          batchId: batch.id,
         };
       });
 
-    const allSessions = [...formattedRealSessions, ...virtualSessions];
-    allSessions.sort((a, b) => a.startTimeRaw.localeCompare(b.startTimeRaw));
+    const allSessions = [...formattedRealSessions, ...virtualSessions].sort((a, b) =>
+      a.startTimeRaw.localeCompare(b.startTimeRaw)
+    );
 
-    const result = allSessions.slice(0, 10).map(({ startTimeRaw, batchId, ...rest }) => rest);
+    const result = allSessions.slice(0, 10).map((session) => ({
+      id: session.id,
+      name: session.name,
+      teacher: session.teacher,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      isOnline: session.isOnline,
+      meetingLink: session.meetingLink,
+      room: session.room,
+      status: session.status,
+    }));
 
     return NextResponse.json(result, { status: 200, headers: NO_STORE_HEADERS });
   } catch (error) {
@@ -170,6 +225,7 @@ export async function GET(request: NextRequest) {
       : message.startsWith('Unauthorized')
         ? 401
         : 500;
+
     return NextResponse.json({ error: message }, { status, headers: NO_STORE_HEADERS });
   }
 }
