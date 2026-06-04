@@ -90,6 +90,8 @@ interface StudentShareViewProps {
   studentId: string;
 }
 
+const STUDENT_PORTAL_URL = "https://tution-management-system-using-next-one.vercel.app/student/login";
+
 function money(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount || 0);
 }
@@ -224,10 +226,10 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
             <div className="h-9 w-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold tracking-wider text-sm shadow-md">
               TP
             </div>
-            <span className="font-bold text-slate-800 dark:text-white tracking-wide text-lg">TuitionPro Parent Portal</span>
+            <span className="font-bold text-slate-800 dark:text-white tracking-wide text-lg">TuitionPro Student Portal</span>
           </div>
           <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/10">
-            Secure Student Report
+            Student Portal Access
           </span>
         </div>
 
@@ -263,6 +265,9 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
               <p className="text-slate-500 dark:text-slate-400 font-medium text-sm mt-1">
                 Student ID: <code className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-xs text-slate-700 dark:text-slate-300 font-mono font-bold">{data.studentCode}</code>
               </p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Use the Student Portal for daily institute updates, attendance, exam records, fee details, and important announcements from your classes.
+              </p>
 
               <div className="grid grid-cols-1 gap-y-3 gap-x-6 pt-6 mt-6 text-sm border-t border-slate-100 sm:grid-cols-2 dark:border-slate-800/80">
                 <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
@@ -274,9 +279,25 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
                 </div>
                 <div className="flex items-center gap-2.5 text-slate-600 dark:text-slate-300 justify-center md:justify-start">
                   <Award className="h-4 w-4 text-indigo-500" />
-                  <div>
+                  <div className="w-full">
                     <span className="text-slate-400 text-xs block">Academic Year</span>
                     <span className="font-semibold text-slate-800 dark:text-white">{data.academicYear}</span>
+                    <div className="mt-3 rounded-2xl border border-indigo-200/70 bg-indigo-50/80 p-3 shadow-sm dark:border-indigo-500/20 dark:bg-indigo-500/10">
+                      <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:text-indigo-300">
+                        Student Portal Login Link
+                      </span>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-500 dark:text-slate-400">
+                        Open this link to sign in and check daily updates, attendance, fees, exams, and notices.
+                      </p>
+                      <a
+                        href={STUDENT_PORTAL_URL}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 block break-all text-xs font-semibold text-indigo-700 hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-200"
+                      >
+                        {STUDENT_PORTAL_URL}
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
