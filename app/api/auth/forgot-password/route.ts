@@ -12,6 +12,7 @@ import { generateResetToken } from "@/lib/auth";
 import { forgotPasswordApiSchema } from "@/lib/validations/auth";
 import { errorResponse, successResponse, maskEmail } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
+import { getAppUrl } from "@/lib/appUrl";
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     });
 
     // ── 5. Construct reset URL ────────────────────────────────────────────────
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = getAppUrl(request);
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     // ── 6. Send email (plug in your provider — Resend, Nodemailer, etc.) ──────

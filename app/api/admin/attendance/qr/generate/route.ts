@@ -1,9 +1,11 @@
+import os from "node:os";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { validateJWT } from "@/lib/auth";
 import { validateGenerateQR } from "@/lib/validations/attendance";
 import { generateQRToken } from "@/lib/qrGenerator";
 import { logActivityFromRequest } from "@/lib/activityLogger";
+import { getAppUrl } from "@/lib/appUrl";
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,12 +41,11 @@ export async function POST(req: NextRequest) {
     const qrDate = date ? new Date(date) : new Date();
     qrDate.setHours(0, 0, 0, 0);
 
-    let baseUrl = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    let baseUrl = getAppUrl(req);
 
     // Auto-resolve local IP in development for testing with physical mobile devices on the same Wi-Fi
     if (process.env.NODE_ENV === "development" && (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))) {
       try {
-        const os = require("os");
         const interfaces = os.networkInterfaces();
         let localIp = "";
         for (const interfaceName in interfaces) {
