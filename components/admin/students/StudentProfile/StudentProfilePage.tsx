@@ -15,6 +15,7 @@ import DocumentsTab from "./DocumentsTab";
 import TimelineTab from "./TimelineTab";
 import StudentIDCardModal from "../Modals/StudentIDCardModal";
 import ChangeStatusModal from "../Modals/ChangeStatusModal";
+import CredentialsModal from "../Modals/CredentialsModal";
 
 interface StudentProfilePageProps {
   studentId: string;
@@ -27,6 +28,12 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
   const [refreshKey, setRefreshKey] = useState(0);
   const [isCreatingLogin, setIsCreatingLogin] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [credentialsModal, setCredentialsModal] = useState<{
+    title: string;
+    studentCode: string;
+    email: string;
+    password: string;
+  } | null>(null);
 
   const { data, isLoading, refetch } = useQuery<StudentProfileData>({
     queryKey: ["student-profile", studentId, refreshKey],
@@ -103,7 +110,12 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
         toast.success("Student login created.");
       }
 
-      window.alert(`Student login created successfully.\n\n${credentialText}`);
+      setCredentialsModal({
+        title: "Student login created successfully.",
+        studentCode: data.studentCode,
+        email: payload.email,
+        password: payload.password,
+      });
       setRefreshKey((value) => value + 1);
       await refetch();
     } catch (error) {
@@ -140,7 +152,12 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
         toast.success("Student password reset.");
       }
 
-      window.alert(`Student password reset successfully.\n\n${credentialText}`);
+      setCredentialsModal({
+        title: "Student password reset successfully.",
+        studentCode: data.studentCode,
+        email: payload.email,
+        password: payload.password,
+      });
       setRefreshKey((value) => value + 1);
       await refetch();
     } catch (error) {
@@ -167,6 +184,15 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
 
       {showIdCard && <StudentIDCardModal student={data} onClose={() => setShowIdCard(false)} />}
       {showStatusModal && <ChangeStatusModal studentId={data.id} currentStatus={data.status} onClose={() => setShowStatusModal(false)} onUpdated={() => { setRefreshKey((value) => value + 1); refetch(); }} />}
+      {credentialsModal && (
+        <CredentialsModal
+          title={credentialsModal.title}
+          studentCode={credentialsModal.studentCode}
+          email={credentialsModal.email}
+          password={credentialsModal.password}
+          onClose={() => setCredentialsModal(null)}
+        />
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Loader2, Save } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -140,6 +141,57 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successStudent, setSuccessStudent] = useState<{ id: string; code: string; name: string } | null>(null);
 
+  const getFieldLabel = (field: string): string => {
+    const labels: Record<string, string> = {
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email Address",
+      phone: "Phone Number",
+      dateOfBirth: "Date of Birth",
+      gender: "Gender",
+      bloodGroup: "Blood Group",
+      academicYear: "Academic Year",
+      profilePhoto: "Profile Photo",
+      addressLine1: "Address Line 1",
+      addressLine2: "Address Line 2",
+      city: "City",
+      state: "State",
+      pincode: "Pincode",
+      fatherName: "Father's Name",
+      fatherPhone: "Father's Phone",
+      fatherEmail: "Father's Email",
+      fatherOccup: "Father's Occupation",
+      motherName: "Mother's Name",
+      motherPhone: "Mother's Phone",
+      motherEmail: "Mother's Email",
+      motherOccup: "Mother's Occupation",
+      guardianName: "Guardian's Name",
+      guardianPhone: "Guardian's Phone",
+      guardianRel: "Guardian Relationship",
+      primaryContact: "Primary Contact",
+      previousSchool: "Previous School",
+      previousClass: "Previous Class",
+      previousMarks: "Previous Marks",
+      joiningDate: "Joining Date",
+      category: "Category",
+      referredBy: "Referred By",
+      batchIds: "Batches",
+      notes: "Notes",
+      emergencyContacts: "Emergency Contacts",
+      allergies: "Allergies",
+      medications: "Medications",
+      conditions: "Medical Conditions",
+      doctorName: "Doctor's Name",
+      doctorPhone: "Doctor's Phone",
+      insuranceInfo: "Insurance Info",
+      extraNotes: "Medical Extra Notes",
+      siblingIds: "Siblings",
+      status: "Status",
+      studentCode: "Student Code",
+    };
+    return labels[field] || field.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
+  };
+
   const { data: codeData, refetch: refetchGeneratedCode } = useQuery({
     queryKey: ["admin-student-code", studentId ?? "new"],
     queryFn: async () => {
@@ -206,19 +258,33 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
       setStep((current) => Math.min(current + 1, 5));
     } else {
       const errors = form.formState.errors;
-      const errorMessages = fieldsToValidate
+      const errorList = fieldsToValidate
         .filter((field) => errors[field])
         .map((field) => {
           const err = errors[field];
-          // Handle array errors like emergencyContacts
+          const label = getFieldLabel(String(field));
           if (Array.isArray(err)) {
-            return `${field}: Validation failed in array items`;
+            return { field: label, message: "Validation failed in emergency contacts list" };
           }
-          return `${field}: ${(err as any)?.message || "Invalid value"}`;
-        })
-        .join("\n");
+          return { field: label, message: (err as any)?.message || "Invalid value" };
+        });
         
-      alert(`Please fix the following validation errors to proceed:\n\n${errorMessages}`);
+      toast.error(
+        <div className="flex flex-col gap-1 text-left">
+          <span className="font-bold text-sm">Please fix the following validation errors:</span>
+          <div className="text-xs space-y-1 mt-0.5 max-w-xs">
+            {errorList.map((err, idx) => (
+              <div key={idx} className="flex gap-1 items-start">
+                <span className="shrink-0">•</span>
+                <span>
+                  <strong className="font-semibold text-rose-600 dark:text-rose-400">{err.field}:</strong> {err.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>,
+        { duration: 5000 }
+      );
     }
   };
 
@@ -270,17 +336,34 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
         await refetchGeneratedCode();
       } catch (error) {
         console.error("🔴 Submit error:", error);
-        alert(error instanceof Error ? error.message : "Failed to save student");
+        toast.error(error instanceof Error ? error.message : "Failed to save student");
       } finally {
         setIsSubmitting(false);
       }
     },
     (errors) => {
       console.error("❌ Form validation failed:", errors);
-      const errorMessages = Object.entries(errors)
-        .map(([field, err]) => `${field}: ${err?.message}`)
-        .join("\n");
-      alert(`Validation failed. Please check the following fields:\n${errorMessages}\n\nYou may need to go back to previous steps to fix them.`);
+      const errorList = Object.entries(errors).map(([field, err]) => {
+        const label = getFieldLabel(field);
+        return { field: label, message: (err as any)?.message || "Invalid value" };
+      });
+      
+      toast.error(
+        <div className="flex flex-col gap-1 text-left">
+          <span className="font-bold text-sm">Please fix the following validation errors:</span>
+          <div className="text-xs space-y-1 mt-0.5 max-w-xs">
+            {errorList.map((err, idx) => (
+              <div key={idx} className="flex gap-1 items-start">
+                <span className="shrink-0">•</span>
+                <span>
+                  <strong className="font-semibold text-rose-600 dark:text-rose-400">{err.field}:</strong> {err.message}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>,
+        { duration: 5000 }
+      );
     }
   );
 
