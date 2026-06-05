@@ -2,15 +2,112 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, LayoutDashboard } from "lucide-react";
+import { User, LayoutDashboard, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState<"UNAUTHORIZED" | "FORBIDDEN" | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogInAsStudent = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      window.location.href = "/student/login";
+    }
+  };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        if (!res.ok) {
+          if (res.status === 401) {
+            setAuthError("UNAUTHORIZED");
+          } else {
+            setAuthError("FORBIDDEN");
+          }
+          return;
+        }
+        const data = await res.json();
+        const loggedUser = data.data?.user;
+        if (loggedUser && loggedUser.role === "STUDENT") {
+          setAuthError(null);
+        } else {
+          setAuthError("FORBIDDEN");
+        }
+      } catch (err) {
+        setAuthError("UNAUTHORIZED");
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, [pathname]);
 
   const navItems = [
     { name: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
     { name: "Profile", href: "/student/profile", icon: User },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+          <span className="text-sm font-medium">Verifying access...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <div className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white p-6 text-center shadow-xl dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex flex-col items-center">
+            {/* Warning Icon */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 dark:bg-amber-950/40 dark:text-amber-400 mb-4 shadow-inner animate-pulse">
+              <ShieldAlert size={28} />
+            </div>
+            
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+              {authError === "UNAUTHORIZED" ? "Access Restricted" : "Role Access Denied"}
+            </h3>
+            
+            <p className="mt-2.5 text-sm text-slate-500 dark:text-slate-400 leading-relaxed px-2">
+              {authError === "UNAUTHORIZED" ? (
+                "You are not currently logged in. Please log in with your student credentials to view this dashboard."
+              ) : (
+                "You are currently logged in with a non-student account. To access this portal, please log in with a Student account."
+              )}
+            </p>
+
+            {/* Hint Box */}
+            <div className="mt-4 text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800/85">
+              Need student access? Contact your administrator to get credentials.
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex flex-col gap-2.5 w-full">
+              <button
+                onClick={handleLogInAsStudent}
+                disabled={loggingOut}
+                className="flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition-all shadow-md active:scale-[0.98] disabled:opacity-75"
+              >
+                {loggingOut ? "Signing out..." : "Log In as Student"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 pb-16 md:pb-0">

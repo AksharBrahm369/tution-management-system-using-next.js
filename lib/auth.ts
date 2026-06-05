@@ -159,17 +159,8 @@ export function setAuthCookie(
   });
 }
 
-/**
- * Clears the auth cookie (sets it with an immediate expiry).
- */
 export function clearAuthCookie(response: NextResponse): void {
-  response.cookies.set(COOKIE_NAME, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 0,
-    path: "/",
-  });
+  response.cookies.delete(COOKIE_NAME);
 }
 
 /**
