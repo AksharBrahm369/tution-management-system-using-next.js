@@ -34,6 +34,8 @@ type MaterialItem = {
   access: string;
   resourceUrl?: string | null;
   description?: string | null;
+  fileName?: string | null;
+  fileSize?: string | null;
 };
 
 export default function MaterialsDashboardPage() {
@@ -211,7 +213,7 @@ export default function MaterialsDashboardPage() {
     },
     {
       label: "Uploads",
-      value: 1,
+      value: materials.filter((item) => item.fileName).length,
       icon: <Upload className="h-5 w-5" />,
       color: "blue" as const,
       changeLabel: "pending sync",
