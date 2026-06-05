@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CalendarDays, Save, Users, Clock3, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import QRCodeSection from '@/components/admin/attendance/Mark/QRCodeSection';
 
 const DEFAULT_STATUSES = ['PRESENT', 'ABSENT', 'LATE', 'ON_LEAVE'];
 
@@ -320,10 +319,6 @@ export default function MarkAttendancePage() {
         </CardContent>
       </Card>
 
-      {/* QR Code Section */}
-      {selectedBatchId ? (
-        <QRCodeSection batchId={selectedBatchId} date={selectedDate} />
-      ) : null}
 
       {selectedBatchId ? (
         <>

@@ -94,15 +94,31 @@ export async function POST(
       );
     }
 
-    const enrollments = studentIds.map((studentId) => ({
-      studentId,
-      batchId: id,
-      enrolledBy: auth.userId,
-      isActive: true,
-      notes: notes || null,
-    }));
-
-    await prisma.batchEnrollment.createMany({ data: enrollments, skipDuplicates: true });
+    // Use upsert for each student so that previously removed (isActive: false)
+    // enrollments get reactivated instead of being silently skipped by createMany.
+    await Promise.all(
+      studentIds.map((studentId) =>
+        prisma.batchEnrollment.upsert({
+          where: {
+            studentId_batchId: { studentId, batchId: id },
+          },
+          create: {
+            studentId,
+            batchId: id,
+            enrolledBy: auth.userId,
+            isActive: true,
+            notes: notes || null,
+          },
+          update: {
+            isActive: true,
+            leaveDate: null,
+            enrollDate: new Date(),
+            enrolledBy: auth.userId,
+            notes: notes || null,
+          },
+        })
+      )
+    );
 
     // Update current strength
     const newCount = await prisma.batchEnrollment.count({ where: { batchId: id, isActive: true } });
