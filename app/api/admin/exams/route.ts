@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
       type: params.get("type") ?? undefined,
       batchId: params.get("batchId") ?? undefined,
       subjectId: params.get("subjectId") ?? undefined,
+      standardId: params.get("standardId") ?? undefined,
       fromDate: params.get("fromDate") ?? undefined,
       toDate: params.get("toDate") ?? undefined,
       page: Number(params.get("page")) || 1,

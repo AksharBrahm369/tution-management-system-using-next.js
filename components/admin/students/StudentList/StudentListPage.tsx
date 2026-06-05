@@ -31,10 +31,17 @@ const defaultFilters: StudentFiltersState = {
   category: "ALL",
   batchId: "ALL",
   academicYear: "ALL",
+  standardId: "ALL",
 };
 
-const StudentListPage: React.FC = () => {
-  const [filters, setFilters] = useState<StudentFiltersState>(defaultFilters);
+interface StudentListPageProps {
+  standardId?: string;
+  standardName?: string;
+  basePath?: string;
+}
+
+const StudentListPage: React.FC<StudentListPageProps> = ({ standardId, standardName, basePath = "/admin/students" }) => {
+  const [filters, setFilters] = useState<StudentFiltersState>({ ...defaultFilters, standardId: standardId ?? "ALL" });
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState("createdAt");
@@ -50,7 +57,7 @@ const StudentListPage: React.FC = () => {
   useEffect(() => {
     setPage(1);
     setSelectedIds([]);
-  }, [debouncedSearch, filters.status, filters.category, filters.batchId, filters.academicYear, viewMode]);
+  }, [debouncedSearch, filters.status, filters.category, filters.batchId, filters.academicYear, filters.standardId, viewMode]);
 
   const queryFilters = useMemo(() => ({
     search: debouncedSearch,
@@ -58,7 +65,8 @@ const StudentListPage: React.FC = () => {
     category: filters.category,
     batchId: filters.batchId,
     academicYear: filters.academicYear,
-  }), [debouncedSearch, filters.status, filters.category, filters.batchId, filters.academicYear]);
+    standardId: standardId ?? filters.standardId,
+  }), [debouncedSearch, filters.status, filters.category, filters.batchId, filters.academicYear, filters.standardId, standardId]);
 
   const { data, isLoading, refetch } = useQuery<StudentListResponse>({
     queryKey: ["admin-students", queryFilters, page, viewMode, sortBy, sortOrder],
@@ -84,9 +92,11 @@ const StudentListPage: React.FC = () => {
   });
 
   const { data: batchesData } = useQuery<{ batches: Array<{ id: string; name: string }> }>({
-    queryKey: ["admin-batches-list-options"],
+    queryKey: ["admin-batches-list-options", standardId ?? "all"],
     queryFn: async () => {
-      const response = await fetch("/api/admin/batches?limit=1000");
+      const params = new URLSearchParams({ limit: "1000" });
+      if (standardId) params.set("standardId", standardId);
+      const response = await fetch(`/api/admin/batches?${params.toString()}`);
       if (!response.ok) {
         throw new Error("Failed to load batches");
       }
@@ -98,8 +108,21 @@ const StudentListPage: React.FC = () => {
     return batchesData?.batches ?? [];
   }, [batchesData]);
 
+  const { data: standardsData } = useQuery<{ standards: Array<{ id: string; name: string }> }>({
+    queryKey: ["admin-standards-options"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/standards");
+      if (!response.ok) throw new Error("Failed to load standards");
+      return response.json();
+    },
+    enabled: !standardId,
+  });
+
   const students = data?.students ?? [];
   const hasStudents = students.length > 0;
+  const addStudentHref = standardId
+    ? `/admin/students/add?standardId=${standardId}&returnTo=${encodeURIComponent(basePath)}`
+    : "/admin/students/add";
 
   const toggleSelected = (studentId: string) => {
     setSelectedIds((current) => (current.includes(studentId) ? current.filter((id) => id !== studentId) : [...current, studentId]));
@@ -126,7 +149,7 @@ const StudentListPage: React.FC = () => {
     }
   };
 
-  const resetFilters = () => setFilters(defaultFilters);
+  const resetFilters = () => setFilters({ ...defaultFilters, standardId: standardId ?? "ALL" });
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
@@ -142,15 +165,15 @@ const StudentListPage: React.FC = () => {
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900/60 dark:to-slate-950/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Student Management</p>
-          <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Students</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Manage all enrolled students</p>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Students` : "Students"}</h2>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{standardName ? `Manage students assigned to ${standardName}` : "Manage all enrolled students"}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             <Download size={18} /> Import Excel
           </button>
-          <Link href="/admin/students/add" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+          <Link href={addStudentHref} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
             <Plus size={18} /> Add Student
           </Link>
         </div>
@@ -163,7 +186,7 @@ const StudentListPage: React.FC = () => {
         onLeave={data?.stats.onLeave ?? 0}
       />
 
-      <StudentFilters filters={filters} onChange={setFilters} onReset={resetFilters} batchOptions={batchOptions} />
+      <StudentFilters filters={filters} onChange={setFilters} onReset={resetFilters} batchOptions={batchOptions} standardOptions={standardsData?.standards ?? []} hideStandardFilter={Boolean(standardId)} />
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
         <div className="flex items-center gap-2">
@@ -197,6 +220,7 @@ const StudentListPage: React.FC = () => {
             onChangeStatus={setStatusStudent}
             onDownloadId={setIdCardStudent}
             onDelete={handleDelete}
+            basePath={basePath}
           />
         ) : (
           <StudentTableView
@@ -207,6 +231,7 @@ const StudentListPage: React.FC = () => {
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={handleSort}
+            basePath={basePath}
           />
         )
       ) : (
@@ -216,7 +241,7 @@ const StudentListPage: React.FC = () => {
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Try clearing filters or add your first student to get started.</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button onClick={resetFilters} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Clear Search</button>
-              <Link href="/admin/students/add" className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Add First Student</Link>
+              <Link href={addStudentHref} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Add First Student</Link>
             </div>
           </div>
         </div>

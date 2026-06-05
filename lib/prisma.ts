@@ -1,8 +1,9 @@
 /**
- * TuitionPro - Prisma Client Singleton
+ * TuitionPro - Prisma Client
  *
- * Prevents multiple Prisma Client instances in development (due to hot-reload).
- * In production, a single instance is always created.
+ * In production we keep a singleton.
+ * In development we prefer a fresh client so schema changes made during
+ * active work are picked up immediately instead of reusing a stale delegate.
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -34,8 +35,11 @@ try {
 
 const adapter = new PrismaPg(pool);
 
+const isProduction = process.env.NODE_ENV === "production";
+const cachedPrisma = globalForPrisma.prisma;
+
 export const prisma =
-  globalForPrisma.prisma ??
+  (isProduction ? cachedPrisma : undefined) ??
   new PrismaClient({
     adapter,
     log:
@@ -44,8 +48,9 @@ export const prisma =
         : ["error"],
   });
 
-// Persist client across hot reloads in development only
-if (process.env.NODE_ENV !== "production") {
+// Persist only in production. In development we want schema changes
+// like new models/fields to be reflected without stale client reuse.
+if (isProduction) {
   globalForPrisma.prisma = prisma;
 }
 

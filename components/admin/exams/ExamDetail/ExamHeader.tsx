@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ExamItem } from "../types";
 
-export default function ExamHeader({ exam }: { exam: ExamItem }) {
+export default function ExamHeader({ exam, basePath = "/admin/exams" }: { exam: ExamItem; basePath?: string }) {
   const entered = exam.summary?.enteredCount ?? exam.enteredCount ?? 0;
   const total = exam.summary?.studentCount ?? exam.studentCount ?? exam.results.length;
   const progress = total > 0 ? Math.round((entered / total) * 100) : 0;
@@ -55,7 +55,7 @@ export default function ExamHeader({ exam }: { exam: ExamItem }) {
         </div>
 
         <div className="flex gap-2">
-          <Link href={`/admin/exams/${exam.id}/marks`} className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">Enter Marks</Link>
+          <Link href={`${basePath}/${exam.id}/marks`} className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">Enter Marks</Link>
         </div>
       </div>
 

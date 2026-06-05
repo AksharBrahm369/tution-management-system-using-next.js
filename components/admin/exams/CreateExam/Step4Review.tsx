@@ -25,7 +25,8 @@ export default function Step4Review({
           <h3 className="font-medium">Exam Details</h3>
           <p className="mt-2 text-sm">{form.title}</p>
           <p className="text-sm text-slate-500">{form.code || "Code will be generated"}</p>
-          <p className="text-sm text-slate-500">{form.type.replaceAll("_", " ")}</p>
+          <p className="text-sm text-slate-500">Category: {form.type.replaceAll("_", " ")}</p>
+          <p className="text-sm text-slate-500">Mode: {form.deliveryMode === "ONLINE" ? "Online" : "Offline"}</p>
           <p className="text-sm text-slate-500">{form.examDate}</p>
         </div>
 

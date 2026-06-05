@@ -8,9 +8,10 @@ import type { BatchCreateInput } from "@/lib/validations/batch";
 
 interface Step1Props {
   generatedCode: string;
+  lockedStandardId?: string;
 }
 
-const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
+const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode, lockedStandardId }) => {
   const queryClient = useQueryClient();
   const {
     register,
@@ -24,6 +25,12 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
       setValue("code", generatedCode);
     }
   }, [generatedCode, setValue]);
+
+  React.useEffect(() => {
+    if (lockedStandardId) {
+      setValue("standardId", lockedStandardId, { shouldValidate: true });
+    }
+  }, [lockedStandardId, setValue]);
 
   const isOnline = watch("isOnline");
   const currentYear = new Date().getFullYear();
@@ -42,8 +49,17 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
       return res.json() as Promise<{ subjects: Array<{ id: string; name: string; code: string }> }>;
     },
   });
+  const { data: standardsData } = useQuery({
+    queryKey: ["admin-standards-options"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/standards");
+      if (!res.ok) return { standards: [] };
+      return res.json() as Promise<{ standards: Array<{ id: string; name: string }> }>;
+    },
+  });
 
   const subjects = subjectsData?.subjects ?? [];
+  const standards = standardsData?.standards ?? [];
 
   // Subject quick add mutation
   const addSubjectMutation = useMutation({
@@ -99,6 +115,26 @@ const Step1BatchDetails: React.FC<Step1Props> = ({ generatedCode }) => {
       </h2>
 
       <div className="space-y-5">
+        <div>
+          <label className={labelClass}>Standard</label>
+          <select
+            {...register("standardId")}
+            className={`${inputClass} disabled:cursor-not-allowed disabled:opacity-75`}
+            disabled={Boolean(lockedStandardId)}
+          >
+            <option value="">Select standard...</option>
+            {standards.map((standard) => (
+              <option key={standard.id} value={standard.id}>{standard.name}</option>
+            ))}
+          </select>
+          {lockedStandardId && (
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              This batch will stay inside the selected standard.
+            </p>
+          )}
+          {errors.standardId && <p className={errorClass}>{errors.standardId.message}</p>}
+        </div>
+
         {/* Row 1: Name */}
         <div>
           <label className={labelClass}>

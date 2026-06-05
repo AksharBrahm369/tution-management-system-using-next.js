@@ -9,7 +9,7 @@ import SubmitConfirmModal from "./SubmitConfirmModal";
 import ImportMarksModal from "./ImportMarksModal";
 import { EditableMark } from "./StudentMarksRow";
 
-export default function MarksEntryPage({ exam }: { exam: ExamItem }) {
+export default function MarksEntryPage({ exam, basePath = "/admin/exams" }: { exam: ExamItem; basePath?: string }) {
   const router = useRouter();
   const [rows, setRows] = useState<ExamResult[]>(exam.results);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +65,7 @@ export default function MarksEntryPage({ exam }: { exam: ExamItem }) {
       }
 
       setShowConfirm(false);
-      router.push(`/admin/exams/${exam.id}`);
+      router.push(`${basePath}/${exam.id}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit marks");

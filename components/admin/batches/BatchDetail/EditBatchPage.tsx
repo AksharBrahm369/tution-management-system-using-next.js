@@ -16,6 +16,8 @@ import Step2Schedule from "@/components/admin/batches/CreateBatch/Step2Schedule"
 
 interface EditBatchPageProps {
   batchId: string;
+  basePath?: string;
+  initialSection?: "details" | "schedule" | "students";
 }
 
 interface EnrolledStudent {
@@ -27,6 +29,10 @@ interface EnrolledStudent {
     lastName: string;
     studentCode: string;
     phone?: string | null;
+    standard?: {
+      id: string;
+      name: string;
+    } | null;
   };
 }
 
@@ -36,6 +42,10 @@ interface SearchStudentItem {
   lastName: string;
   studentCode: string;
   status: string;
+  standard?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface BatchMeta {
@@ -44,6 +54,7 @@ interface BatchMeta {
   code: string;
   color?: string | null;
   description?: string | null;
+  standardId?: string | null;
   subjectId: string;
   teacherId: string;
   roomId?: string | null;
@@ -73,11 +84,15 @@ function useToast() {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
+const EditBatchPage: React.FC<EditBatchPageProps> = ({
+  batchId,
+  basePath = "/admin/batches",
+  initialSection = "details",
+}) => {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast, show: showToast } = useToast();
-  const [activeSection, setActiveSection] = useState<"details" | "schedule" | "students">("details");
+  const [activeSection, setActiveSection] = useState<"details" | "schedule" | "students">(initialSection);
 
   // ── Enrollment local state ────────────────────────────────────────────────
   const [enrollments, setEnrollments] = useState<EnrolledStudent[]>([]);
@@ -118,7 +133,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
 
   // Fetch once on mount + whenever we switch to students tab
   useEffect(() => {
-    fetchEnrollments();
+    void Promise.resolve().then(fetchEnrollments);
   }, [fetchEnrollments]);
 
   // ─── Batch meta (for form defaults + maxStrength) ─────────────────────────
@@ -144,6 +159,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
     if (batchData?.batch) {
       const b = batchData.batch;
       form.reset({
+        standardId: b.standardId ?? "",
         name: b.name,
         code: b.code,
         description: b.description ?? "",
@@ -181,7 +197,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
       }
       return res.json();
     },
-    onSuccess: () => router.push(`/admin/batches/${batchId}`),
+    onSuccess: () => router.push(`${basePath}/${batchId}`),
     onError: (err: Error) => showToast(err.message, "error"),
   });
 
@@ -267,7 +283,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <Link
-            href={`/admin/batches/${batchId}`}
+            href={`${basePath}/${batchId}`}
             className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white"
           >
             <ArrowLeft size={16} /> Back to Batch
@@ -439,6 +455,9 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
                                 {enrollment.student.firstName} {enrollment.student.lastName}
                               </p>
                               <p className="text-xs text-slate-500 font-mono">{enrollment.student.studentCode}</p>
+                              <p className="text-xs text-blue-600 dark:text-blue-300">
+                                {enrollment.student.standard?.name ?? "No standard assigned"}
+                              </p>
                             </div>
                           </div>
 
@@ -508,7 +527,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
           <div className="flex items-center justify-end gap-3 pt-2">
             {activeSection === "students" ? (
               <Link
-                href={`/admin/batches/${batchId}`}
+                href={`${basePath}/${batchId}`}
                 className="rounded-xl border border-slate-300 dark:border-slate-700 px-6 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
               >
                 Done
@@ -516,7 +535,7 @@ const EditBatchPage: React.FC<EditBatchPageProps> = ({ batchId }) => {
             ) : (
               <>
                 <Link
-                  href={`/admin/batches/${batchId}`}
+                  href={`${basePath}/${batchId}`}
                   className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-300"
                 >
                   Cancel
@@ -585,6 +604,7 @@ const StudentSearch: React.FC<StudentSearchProps> = ({
               lastName: s.lastName,
               studentCode: s.studentCode,
               status: s.status,
+              standard: s.standard ?? null,
             }))
           );
         }
@@ -670,6 +690,9 @@ const StudentSearch: React.FC<StudentSearchProps> = ({
                       {student.firstName} {student.lastName}
                     </p>
                     <p className="text-xs text-slate-500 font-mono">{student.studentCode}</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-300">
+                      {student.standard?.name ?? "No standard assigned"}
+                    </p>
                   </div>
                 </div>
                 <div className="ml-2 shrink-0">

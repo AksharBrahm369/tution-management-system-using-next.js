@@ -19,6 +19,8 @@ import Step5Review from "./Step5Review";
 
 interface AddStudentPageProps {
   studentId?: string;
+  standardId?: string;
+  returnHref?: string;
 }
 
 type StudentApiResponse = {
@@ -45,6 +47,7 @@ type StudentApiResponse = {
   status: StudentCreateInput["status"];
   category: StudentCreateInput["category"];
   referredBy: string | null;
+  standardId: string | null;
   parent: {
     fatherName: string | null;
     fatherPhone: string | null;
@@ -75,7 +78,7 @@ type StudentApiResponse = {
 
 const emptyContact = { name: "", relationship: "", phone: "" };
 
-function buildDefaultValues(student?: StudentApiResponse | null): StudentCreateInput {
+function buildDefaultValues(student?: StudentApiResponse | null, fallbackStandardId = ""): StudentCreateInput {
   return {
     firstName: student?.firstName ?? "",
     lastName: student?.lastName ?? "",
@@ -110,6 +113,7 @@ function buildDefaultValues(student?: StudentApiResponse | null): StudentCreateI
     joiningDate: student?.joiningDate ? new Date(student.joiningDate) : new Date(),
     category: student?.category ?? "AVERAGE",
     referredBy: student?.referredBy ?? "",
+    standardId: student?.standardId ?? fallbackStandardId,
     batchIds: student?.batchEnrollments?.filter((enrollment) => enrollment.isActive).map((enrollment) => enrollment.batchId) ?? [],
     notes: "",
     emergencyContacts: student?.emergencyContacts?.length
@@ -134,7 +138,7 @@ function buildDefaultValues(student?: StudentApiResponse | null): StudentCreateI
   };
 }
 
-const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
+const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId = "", returnHref }) => {
   const router = useRouter();
   const isEditMode = Boolean(studentId);
   const [step, setStep] = useState(1);
@@ -229,14 +233,14 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
 
   const form = useForm<z.input<typeof studentCreateSchema>, any, z.output<typeof studentCreateSchema>>({
     resolver: zodResolver(studentCreateSchema),
-    defaultValues: buildDefaultValues(null),
+    defaultValues: buildDefaultValues(null, standardId),
   });
 
   useEffect(() => {
     if (existingStudent) {
-      form.reset(buildDefaultValues(existingStudent) as never);
+      form.reset(buildDefaultValues(existingStudent, standardId) as never);
     }
-  }, [existingStudent, form]);
+  }, [existingStudent, form, standardId]);
 
   const watchedStudentCode = String(form.watch("studentCode") ?? "");
   const generatedCode: string = isEditMode
@@ -246,7 +250,7 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
   const stepFields: Record<number, (keyof StudentCreateInput)[]> = {
     1: ["firstName", "lastName", "email", "phone", "dateOfBirth", "gender", "bloodGroup", "academicYear", "profilePhoto"],
     2: ["addressLine1", "addressLine2", "city", "state", "pincode", "fatherName", "fatherPhone", "fatherEmail", "fatherOccup", "motherName", "motherPhone", "motherEmail", "motherOccup", "guardianName", "guardianPhone", "guardianRel", "primaryContact"],
-    3: ["previousSchool", "previousClass", "previousMarks", "joiningDate", "category", "referredBy", "batchIds", "notes"],
+    3: ["standardId", "previousSchool", "previousClass", "previousMarks", "joiningDate", "category", "referredBy", "batchIds", "notes"],
     4: ["emergencyContacts", "addMedicalInfo", "allergies", "medications", "conditions", "doctorName", "doctorPhone", "insuranceInfo", "extraNotes", "siblingIds"],
     5: ["createStudentLogin", "createParentLogin", "status", "studentCode"],
   };
@@ -324,14 +328,14 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
         console.log("✅ Student created/updated successfully:", payload);
         const student = payload.student as { id: string; studentCode: string; firstName: string; lastName: string };
 
-        if (isEditMode) {
-          router.push(`/admin/students/${studentId}`);
+      if (isEditMode) {
+          router.push(returnHref ?? `/admin/students/${studentId}`);
           router.refresh();
           return;
         }
 
-        setSuccessStudent({ id: student.id, code: student.studentCode, name: `${student.firstName} ${student.lastName}` });
-        form.reset(buildDefaultValues(null) as never);
+      setSuccessStudent({ id: student.id, code: student.studentCode, name: `${student.firstName} ${student.lastName}` });
+        form.reset(buildDefaultValues(null, standardId) as never);
         setStep(1);
         await refetchGeneratedCode();
       } catch (error) {
@@ -387,7 +391,7 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <Link href="/admin/students" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
+          <Link href={returnHref ?? "/admin/students"} className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
             <ArrowLeft size={16} /> Back to Students
           </Link>
           <h2 className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">{isEditMode ? "Edit Student" : "Add New Student"}</h2>
@@ -438,13 +442,13 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId }) => {
               <p className="text-sm font-semibold text-blue-600">{successStudent.code}</p>
             </div>
             <div className="mt-6 flex flex-col gap-3">
-              <Link href={`/admin/students/${successStudent.id}`} className="rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white">
+              <Link href={standardId ? `/admin/standards/${standardId}/students/${successStudent.id}` : `/admin/students/${successStudent.id}`} className="rounded-xl bg-blue-600 px-4 py-3 text-center text-sm font-semibold text-white">
                 View Profile
               </Link>
               <button onClick={() => setSuccessStudent(null)} className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
                 Add Another Student
               </button>
-              <Link href="/admin/students" className="rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <Link href={returnHref ?? "/admin/students"} className="rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
                 Go to Students List
               </Link>
             </div>

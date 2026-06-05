@@ -5,6 +5,11 @@ export const metadata = {
   description: "Create a new tuition batch",
 };
 
-export default function Page() {
-  return <CreateBatchPage />;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: Promise<{ standardId?: string; returnTo?: string }>;
+}) {
+  const params = await searchParams;
+  return <CreateBatchPage standardId={params?.standardId} returnHref={params?.returnTo} />;
 }

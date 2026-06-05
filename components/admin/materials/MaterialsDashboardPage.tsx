@@ -38,15 +38,25 @@ type MaterialItem = {
   fileSize?: string | null;
 };
 
-export default function MaterialsDashboardPage() {
+export default function MaterialsDashboardPage({
+  standardId,
+  standardName,
+  basePath = "/admin/materials",
+}: {
+  standardId?: string;
+  standardName?: string;
+  basePath?: string;
+}) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [standardFilter, setStandardFilter] = useState("");
   const [materials, setMaterials] = useState<MaterialItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Subject and Batch lists for dynamic dropdowns
   const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
   const [batches, setBatches] = useState<Array<{ id: string; name: string }>>([]);
+  const [standards, setStandards] = useState<Array<{ id: string; name: string }>>([]);
 
   // AI Generator Dialog State
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -60,11 +70,12 @@ export default function MaterialsDashboardPage() {
   // AI Execution States
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiPreviewContent, setAiPreviewContent] = useState("");
-  const [generatedMaterial, setGeneratedMaterial] = useState<any>(null);
+  const [generatedMaterial, setGeneratedMaterial] = useState<{ resourceUrl?: string | null } | null>(null);
   const [isRealAiSuccess, setIsRealAiSuccess] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  const createHref = standardId ? `${basePath}/create` : `/admin/materials/create${standardId ? `?standardId=${standardId}` : ""}`;
 
   const filteredMaterials = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -79,12 +90,14 @@ export default function MaterialsDashboardPage() {
   useEffect(() => {
     loadMaterials();
     loadFiltersData();
-  }, []);
+  }, [standardId, standardFilter]);
 
   async function loadMaterials() {
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/materials", { credentials: "include" });
+      const params = new URLSearchParams();
+      if (standardId || standardFilter) params.set("standardId", standardId ?? standardFilter);
+      const response = await fetch(`/api/admin/materials?${params.toString()}`, { credentials: "include" });
       if (response.status === 401) {
         router.push("/auth/login");
         return;
@@ -106,9 +119,10 @@ export default function MaterialsDashboardPage() {
 
   async function loadFiltersData() {
     try {
-      const [subRes, batRes] = await Promise.all([
+      const [subRes, batRes, stdRes] = await Promise.all([
         fetch("/api/admin/subjects"),
-        fetch("/api/admin/batches?limit=100")
+        fetch(`/api/admin/batches?limit=100${standardId ? `&standardId=${standardId}` : ""}`),
+        !standardId ? fetch("/api/admin/standards") : Promise.resolve(null),
       ]);
       if (subRes.ok) {
         const subData = await subRes.json();
@@ -123,6 +137,10 @@ export default function MaterialsDashboardPage() {
         if (batData.batches?.length > 0) {
           setAiBatchId(batData.batches[0].id);
         }
+      }
+      if (stdRes && stdRes.ok) {
+        const stdData = await stdRes.json();
+        setStandards(stdData.standards ?? []);
       }
     } catch (err) {
       console.error("Failed to load filter dependencies:", err);
@@ -229,13 +247,26 @@ export default function MaterialsDashboardPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Study Material</p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Manage notes, worksheets, and downloads</h2>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Study Material` : "Manage notes, worksheets, and downloads"}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
               This page is now live and reachable from the admin sidebar. It is ready for material cataloging, access control, and future upload integration.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {!standardId && (
+              <select
+                aria-label="Filter materials by standard"
+                value={standardFilter}
+                onChange={(event) => setStandardFilter(event.target.value)}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="">All Standards</option>
+                {standards.map((standard) => (
+                  <option key={standard.id} value={standard.id}>{standard.name}</option>
+                ))}
+              </select>
+            )}
             <button
               onClick={() => setIsAiModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 shadow-md active:scale-95"
@@ -244,12 +275,12 @@ export default function MaterialsDashboardPage() {
               Generate with AI
             </button>
             <Link
-              href="/admin/materials/create"
+              href={createHref}
               className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Create resource <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/admin/materials/create" className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500">
+            <Link href={createHref} className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500">
               <Upload className="h-4 w-4" />
               Upload file
             </Link>

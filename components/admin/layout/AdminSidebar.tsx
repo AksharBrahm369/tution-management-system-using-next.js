@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import * as Collapsible from "@radix-ui/react-collapsible"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -20,6 +21,8 @@ import {
   ActivitySquare,
   LogOut,
   Sparkles,
+  Layers3,
+  ChevronDown,
 } from "lucide-react"
 
 import type { CurrentAdminUser } from "@/lib/adminAuth"
@@ -34,6 +37,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
@@ -42,6 +48,7 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   badge?: number;
+  children?: Array<{ label: string; href: string }>;
 }
 
 interface NavSection {
@@ -56,12 +63,57 @@ interface AdminSidebarProps {
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ user }) => {
   const pathname = usePathname()
   const router = useRouter()
+  const [standards, setStandards] = React.useState<Array<{ id: string; name: string }>>([])
+  const [standardsOpen, setStandardsOpen] = React.useState(false)
+
+  React.useEffect(() => {
+    let mounted = true
+
+    const loadStandards = async () => {
+      try {
+        const response = await fetch("/api/admin/standards")
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as {
+          standards?: Array<{ id: string; name: string }>
+        }
+
+        if (mounted) {
+          setStandards(payload.standards ?? [])
+        }
+      } catch {
+        if (mounted) {
+          setStandards([])
+        }
+      }
+    }
+
+    void loadStandards()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const navSections: NavSection[] = [
     {
       title: "Main",
       items: [
         { label: "Dashboard", href: "/admin/dashboard", icon: <LayoutDashboard size={20} /> },
+        {
+          label: "Standards",
+          href: "/admin/standards",
+          icon: <Layers3 size={20} />,
+          children: [
+            { label: "All Standards", href: "/admin/standards" },
+            ...standards.map((standard) => ({
+              label: standard.name,
+              href: `/admin/standards/${standard.id}`,
+            })),
+          ],
+        },
         { label: "Students", href: "/admin/students", icon: <Users size={20} /> },
         { label: "Teachers", href: "/admin/teachers", icon: <GraduationCap size={20} /> },
         { label: "Batches", href: "/admin/batches", icon: <BookOpen size={20} /> },
@@ -148,6 +200,43 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user }) => {
               <SidebarMenu>
                 {section.items.map((item) => {
                   const active = isActive(item.href)
+                  const hasChildren = Boolean(item.children?.length)
+
+                  if (hasChildren) {
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <Collapsible.Root open={standardsOpen} onOpenChange={setStandardsOpen}>
+                          <Collapsible.Trigger asChild>
+                            <SidebarMenuButton
+                              isActive={active}
+                              tooltip={item.label}
+                              className="cursor-pointer"
+                            >
+                              {item.icon}
+                              <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                              <ChevronDown
+                                size={16}
+                                className={`ml-auto transition-transform duration-200 group-data-[collapsible=icon]:hidden ${standardsOpen ? "rotate-180" : ""}`}
+                              />
+                            </SidebarMenuButton>
+                          </Collapsible.Trigger>
+
+                          <Collapsible.Content>
+                            <SidebarMenuSub>
+                              {item.children?.map((child) => (
+                                <SidebarMenuSubItem key={child.href}>
+                                  <SidebarMenuSubButton asChild isActive={isActive(child.href)}>
+                                    <Link href={child.href}>{child.label}</Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </Collapsible.Content>
+                        </Collapsible.Root>
+                      </SidebarMenuItem>
+                    )
+                  }
+
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton

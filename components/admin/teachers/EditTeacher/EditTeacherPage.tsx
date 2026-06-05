@@ -12,9 +12,17 @@ import {
 import Link from 'next/link';
 import { teacherSchema } from '@/lib/validations/teacher';
 
-type TeacherFormValues = z.infer<typeof teacherSchema>;
+type TeacherFormValues = z.input<typeof teacherSchema>;
 
-export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
+export default function EditTeacherPage({
+  teacherId,
+  basePath = "/admin/teachers",
+  standardId,
+}: {
+  teacherId: string;
+  basePath?: string;
+  standardId?: string;
+}) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,6 +42,7 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
       employmentType: 'FULL_TIME',
       salaryType: 'FIXED',
       subjectIds: [],
+      standardId,
     }
   });
 
@@ -89,6 +98,7 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
           fixedSalary: teacherData.fixedSalary || undefined,
           perClassRate: teacherData.perClassRate || undefined,
           subjectIds: teacherData.subjects?.map((subject) => subject.subjectId) || [],
+          standardId,
         });
       } catch (err: unknown) {
         console.error("Failed to load data", err);
@@ -109,7 +119,10 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
       const response = await fetch(`/api/admin/teachers/${teacherId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          standardId,
+        }),
       });
 
       if (!response.ok) {
@@ -118,7 +131,7 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
         return;
       }
 
-      router.push(`/admin/teachers/${teacherId}`);
+      router.push(`${basePath}/${teacherId}`);
       router.refresh();
     } catch (error) {
       console.error(error);
@@ -151,7 +164,7 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href={`/admin/teachers/${teacherId}`}>
+        <Link href={`${basePath}/${teacherId}`}>
           <button type="button" aria-label="Back to profile" className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -332,7 +345,7 @@ export default function EditTeacherPage({ teacherId }: { teacherId: string }) {
           <button 
             type="button" 
             className="mr-4 px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm"
-            onClick={() => router.push(`/admin/teachers/${teacherId}`)}
+            onClick={() => router.push(`${basePath}/${teacherId}`)}
           >
             Cancel
           </button>

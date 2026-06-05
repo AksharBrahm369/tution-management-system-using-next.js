@@ -20,7 +20,7 @@ interface Batch {
   room?: { name: string } | null;
 }
 
-const BatchGridView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
+const BatchGridView: React.FC<{ batches: Batch[]; basePath?: string }> = ({ batches, basePath }) => {
   if (batches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-20 dark:border-slate-700 dark:bg-slate-900/30">
@@ -33,7 +33,7 @@ const BatchGridView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {batches.map((batch) => (
-        <BatchCard key={batch.id} batch={batch} />
+        <BatchCard key={batch.id} batch={batch} basePath={basePath} />
       ))}
     </div>
   );

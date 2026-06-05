@@ -15,10 +15,18 @@ function formatDateInputValue(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-export default function MarkAttendancePage() {
+export default function MarkAttendancePage({
+  standardId,
+  standardName,
+  basePath = "/admin/attendance",
+}: {
+  standardId?: string;
+  standardName?: string;
+  basePath?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const batchFromUrl = searchParams.get('batch') ?? '';
+  const batchFromUrl = searchParams.get('batch') ?? searchParams.get('batchId') ?? '';
   const [selectedBatchId, setSelectedBatchId] = useState(batchFromUrl);
   const [selectedDate, setSelectedDate] = useState(formatDateInputValue(new Date()));
   const [notifyParents, setNotifyParents] = useState(true);
@@ -34,9 +42,11 @@ export default function MarkAttendancePage() {
   }, [batchFromUrl]);
 
   const batchesQuery = useQuery({
-    queryKey: ['attendance', 'batches'],
+    queryKey: ['attendance', 'batches', standardId ?? 'all'],
     queryFn: async () => {
-      const res = await fetch('/api/admin/batches?limit=100');
+      const params = new URLSearchParams({ limit: '100' });
+      if (standardId) params.set('standardId', standardId);
+      const res = await fetch(`/api/admin/batches?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to load batches');
       return res.json();
     },
@@ -210,16 +220,16 @@ export default function MarkAttendancePage() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-            <Link href="/admin/attendance" className="hover:underline">Attendance</Link>
+            <Link href={basePath} className="hover:underline">{standardName ? `${standardName} Attendance` : 'Attendance'}</Link>
             <span>/</span>
             <span>Mark</span>
           </div>
           <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">Mark Attendance</h2>
-          <p className="text-slate-600 dark:text-slate-300">Select a batch, mark each student, then submit once.</p>
+          <p className="text-slate-600 dark:text-slate-300">{standardName ? `Mark attendance only for ${standardName} batches.` : 'Select a batch, mark each student, then submit once.'}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <Link href="/admin/attendance">Back to Overview</Link>
+            <Link href={basePath}>Back to Overview</Link>
           </Button>
           <Button variant="outline" onClick={() => markAll('PRESENT')} disabled={!enrollments.length}>
             Mark All Present

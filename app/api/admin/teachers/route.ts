@@ -9,6 +9,7 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
+    const standardId = searchParams.get("standardId");
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "100"));
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
 
@@ -22,6 +23,19 @@ export async function GET(req: Request) {
         { email: { contains: search, mode: "insensitive" } },
       ];
     }
+    if (standardId) {
+      const existingOr = where.OR;
+      delete where.OR;
+      where.AND = [
+        ...(existingOr ? [{ OR: existingOr }] : []),
+        {
+          OR: [
+            { standardSubjects: { some: { standardId } } },
+            { batches: { some: { standardId } } },
+          ],
+        },
+      ];
+    }
 
     // Note: Teacher model has no "status" field — intentionally removed to avoid empty results
 
@@ -32,6 +46,7 @@ export async function GET(req: Request) {
           subjects: {
             include: { subject: true },
           },
+          standardSubjects: { include: { standard: true, subject: true } },
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
@@ -99,9 +114,18 @@ export async function POST(req: Request) {
             isPrimary: index === 0, // First subject is primary
           })),
         },
+        standardSubjects: data.standardId
+          ? {
+              create: data.subjectIds.map((subjectId) => ({
+                standardId: data.standardId!,
+                subjectId,
+              })),
+            }
+          : undefined,
       },
       include: {
         subjects: true,
+        standardSubjects: true,
       },
     });
 

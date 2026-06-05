@@ -54,12 +54,19 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-const BatchListPage: React.FC = () => {
+interface BatchListPageProps {
+  standardId?: string;
+  standardName?: string;
+  basePath?: string;
+}
+
+const BatchListPage: React.FC<BatchListPageProps> = ({ standardId, standardName, basePath = "/admin/batches" }) => {
   const [view, setView] = useState<View>("grid");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [subjectId, setSubjectId] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [standardFilter, setStandardFilter] = useState("");
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [timeRange, setTimeRange] = useState("");
   const [page, setPage] = useState(1);
@@ -75,6 +82,7 @@ const BatchListPage: React.FC = () => {
     ...(status && { status }),
     ...(subjectId && { subjectId }),
     ...(teacherId && { teacherId }),
+    ...((standardId ?? standardFilter) && { standardId: standardId ?? standardFilter }),
     ...(selectedDays.length > 0 && { days: selectedDays.join(",") }),
     ...(timeRange && { timeRange }),
   });
@@ -105,6 +113,15 @@ const BatchListPage: React.FC = () => {
       return res.json() as Promise<{ teachers: Array<{ id: string; firstName: string; lastName: string }> }>;
     },
   });
+  const { data: standardsData } = useQuery({
+    queryKey: ["admin-standards-options"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/standards");
+      if (!res.ok) return { standards: [] };
+      return res.json() as Promise<{ standards: Array<{ id: string; name: string }> }>;
+    },
+    enabled: !standardId,
+  });
 
   const handleDayToggle = useCallback((day: string) => {
     setSelectedDays((prev) =>
@@ -117,6 +134,7 @@ const BatchListPage: React.FC = () => {
     setStatus("");
     setSubjectId("");
     setTeacherId("");
+    setStandardFilter("");
     setSelectedDays([]);
     setTimeRange("");
     setPage(1);
@@ -130,8 +148,8 @@ const BatchListPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Batches</h2>
-          <p className="mt-1 text-slate-500 dark:text-slate-400">Manage all tuition batches and schedules</p>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Batches` : "Batches"}</h2>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">{standardName ? `Manage batches and schedules for ${standardName}` : "Manage all tuition batches and schedules"}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -147,7 +165,7 @@ const BatchListPage: React.FC = () => {
             <Palmtree size={16} /> Manage Holidays
           </button>
           <Link
-            href="/admin/batches/add"
+            href={standardId ? `/admin/standards/${standardId}/batches/add` : "/admin/batches/add"}
             className="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
           >
             <Plus size={16} /> Create Batch
@@ -159,6 +177,19 @@ const BatchListPage: React.FC = () => {
       <BatchStatsBar stats={stats} />
 
       {/* Filters */}
+      {!standardId && (
+        <select
+          aria-label="Filter batches by standard"
+          value={standardFilter}
+          onChange={(event) => setStandardFilter(event.target.value)}
+          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white md:w-64"
+        >
+          <option value="">All Standards</option>
+          {(standardsData?.standards ?? []).map((standard) => (
+            <option key={standard.id} value={standard.id}>{standard.name}</option>
+          ))}
+        </select>
+      )}
       <BatchFilters
         search={search} onSearchChange={setSearch}
         status={status} onStatusChange={setStatus}
@@ -203,9 +234,9 @@ const BatchListPage: React.FC = () => {
       )}
 
       {/* Views */}
-      {!isLoading && view === "grid" && <BatchGridView batches={batches} />}
-      {!isLoading && view === "table" && <BatchTableView batches={batches} />}
-      {!isLoading && view === "timetable" && <BatchTimetableView batches={batches} />}
+      {!isLoading && view === "grid" && <BatchGridView batches={batches} basePath={basePath} />}
+      {!isLoading && view === "table" && <BatchTableView batches={batches} basePath={basePath} />}
+      {!isLoading && view === "timetable" && <BatchTimetableView batches={batches} basePath={basePath} />}
 
       {/* Pagination */}
       {(data?.totalPages ?? 1) > 1 && (

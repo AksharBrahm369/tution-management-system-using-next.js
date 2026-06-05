@@ -51,6 +51,7 @@ export const examCreateSchema = z.object({
   code: z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), z.string().optional()),
   description: z.preprocess((value) => (typeof value === "string" && value.trim() === "" ? undefined : value), z.string().nullable().optional()),
   type: examTypeSchema,
+  standardId: z.string().optional().or(z.literal("")),
   batchId: z.string().trim().min(1, "Please select a batch"),
   subjectId: z.string().trim().min(1, "Please select a subject"),
   academicYear: z.string().trim().min(1, "Academic year is required"),

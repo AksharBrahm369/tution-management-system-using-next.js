@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -22,8 +21,12 @@ interface SuccessResult {
   sessionsCount: number;
 }
 
-const CreateBatchPage: React.FC = () => {
-  const router = useRouter();
+interface CreateBatchPageProps {
+  standardId?: string;
+  returnHref?: string;
+}
+
+const CreateBatchPage: React.FC<CreateBatchPageProps> = ({ standardId = "", returnHref }) => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessResult | null>(null);
@@ -40,6 +43,7 @@ const CreateBatchPage: React.FC = () => {
   const form = useForm<BatchCreateInput>({
     resolver: zodResolver(batchCreateSchema) as never,
     defaultValues: {
+      standardId,
       name: "",
       code: codeData?.code ?? "",
       subjectId: "",
@@ -61,8 +65,38 @@ const CreateBatchPage: React.FC = () => {
     },
   });
 
+  React.useEffect(() => {
+    if (standardId) {
+      form.setValue("standardId", standardId, { shouldValidate: true });
+    }
+  }, [form, standardId]);
+
+  const resetFormForAnotherBatch = () => {
+    form.reset({
+      standardId,
+      name: "",
+      code: codeData?.code ?? "",
+      subjectId: "",
+      academicYear: `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`,
+      description: "",
+      color: "#3B82F6",
+      fees: 0,
+      maxStrength: 30,
+      isOnline: false,
+      meetingLink: "",
+      days: [],
+      startTime: "",
+      endTime: "",
+      teacherId: "",
+      roomId: "",
+      studentIds: [],
+      skipEnrollment: false,
+      generateSessions: true,
+    });
+  };
+
   const stepFields: Record<number, (keyof BatchCreateInput)[]> = {
-    1: ["name", "code", "subjectId", "academicYear", "startDate", "maxStrength", "fees"],
+    1: ["standardId", "name", "code", "subjectId", "academicYear", "startDate", "maxStrength", "fees"],
     2: ["days", "startTime", "endTime", "teacherId"],
     3: [],
     4: [],
@@ -123,7 +157,7 @@ const CreateBatchPage: React.FC = () => {
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <Link
-            href="/admin/batches"
+            href={returnHref ?? "/admin/batches"}
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
           >
             <ArrowLeft size={16} /> Back to Batches
@@ -141,7 +175,12 @@ const CreateBatchPage: React.FC = () => {
 
       <FormProvider {...form}>
         <form onSubmit={onSubmit} className="space-y-6">
-          {step === 1 && <Step1BatchDetails generatedCode={codeData?.code ?? ""} />}
+          {step === 1 && (
+            <Step1BatchDetails
+              generatedCode={codeData?.code ?? ""}
+              lockedStandardId={standardId || undefined}
+            />
+          )}
           {step === 2 && <Step2Schedule />}
           {step === 3 && <Step3Students />}
           {step === 4 && <Step4Review />}
@@ -214,7 +253,7 @@ const CreateBatchPage: React.FC = () => {
             </div>
             <div className="mt-8 flex flex-col gap-3">
               <Link
-                href={`/admin/batches/${success.id}`}
+                href={standardId ? `/admin/standards/${standardId}/batches/${success.id}` : `/admin/batches/${success.id}`}
                 className="rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
               >
                 View Batch
@@ -223,14 +262,14 @@ const CreateBatchPage: React.FC = () => {
                 onClick={() => {
                   setSuccess(null);
                   setStep(1);
-                  form.reset();
+                  resetFormForAnotherBatch();
                 }}
                 className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200"
               >
                 Create Another Batch
               </button>
               <Link
-                href="/admin/batches"
+                href={returnHref ?? "/admin/batches"}
                 className="rounded-xl border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200"
               >
                 Go to Batch List

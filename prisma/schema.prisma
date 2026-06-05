@@ -1,4 +1,4 @@
- // TuitionPro - Prisma Database Schema
+// TuitionPro - Prisma Database Schema
 // Modules 1-5: Auth, Dashboard, Students, Teachers, Batches & Schedules
 
 generator client {
@@ -493,36 +493,36 @@ model OTPVerification {
 }
 
 model ActivityLog {
-  id           String      @id @default(cuid())
+  id String @id @default(cuid())
 
   // Who
-  userId       String?
-  userName     String?
-  userRole     Role?
-  ipAddress    String?
-  userAgent    String?
+  userId    String?
+  userName  String?
+  userRole  Role?
+  ipAddress String?
+  userAgent String?
 
   // What
-  action       String
-  category     LogCategory  @default(SYSTEM)
-  severity     LogSeverity  @default(INFO)
+  action   String
+  category LogCategory @default(SYSTEM)
+  severity LogSeverity @default(INFO)
 
   // On What
-  entityType   String?
-  entityId     String?
-  entityName   String?
+  entityType String?
+  entityId   String?
+  entityName String?
 
   // Details
-  description  String       @default("")
-  oldValue     Json?
-  newValue     Json?
-  metadata     Json?
+  description String @default("")
+  oldValue    Json?
+  newValue    Json?
+  metadata    Json?
 
   // Status
-  isSuccessful Boolean     @default(true)
+  isSuccessful Boolean @default(true)
   errorMessage String?
 
-  createdAt    DateTime    @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -575,16 +575,16 @@ model Notification {
 }
 
 model Enquiry {
-  id            String        @id @default(cuid())
-  enquiryNumber String        @unique
+  id            String @id @default(cuid())
+  enquiryNumber String @unique
 
-  studentName   String
-  studentAge    Int?
-  studentClass  String?
-  parentName    String
-  parentPhone   String
-  parentEmail   String?
-  address       String?
+  studentName  String
+  studentAge   Int?
+  studentClass String?
+  parentName   String
+  parentPhone  String
+  parentEmail  String?
+  address      String?
 
   interestedIn   String[]
   preferredBatch String?
@@ -598,7 +598,7 @@ model Enquiry {
   priority Priority      @default(NORMAL)
 
   assignedTo String?
-  assignedAt  DateTime?
+  assignedAt DateTime?
 
   isConverted Boolean   @default(false)
   convertedAt DateTime?
@@ -622,15 +622,15 @@ model Enquiry {
 
 model FollowUp {
   id             String         @id @default(cuid())
-  enquiryId       String
-  type            FollowUpType
-  scheduledAt     DateTime
-  completedAt     DateTime?
-  status          FollowUpStatus @default(PENDING)
-  notes           String?
-  outcome         String?
-  nextFollowUpAt  DateTime?
-  doneBy          String?
+  enquiryId      String
+  type           FollowUpType
+  scheduledAt    DateTime
+  completedAt    DateTime?
+  status         FollowUpStatus @default(PENDING)
+  notes          String?
+  outcome        String?
+  nextFollowUpAt DateTime?
+  doneBy         String?
 
   enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
 
@@ -643,12 +643,12 @@ model FollowUp {
 }
 
 model DemoClass {
-  id             String      @id @default(cuid())
+  id             String     @id @default(cuid())
   enquiryId      String
   batchId        String?
   scheduledDate  DateTime
   scheduledTime  String
-  status         DemoStatus  @default(SCHEDULED)
+  status         DemoStatus @default(SCHEDULED)
   teacherNotes   String?
   parentFeedback String?
   interested     Boolean?
@@ -705,21 +705,21 @@ model InstituteSettings {
   workingDays         String[]
   workingHours        Json?
 
-  gstEnabled   Boolean @default(false)
-  gstNumber    String?
-  gstPercentage Float  @default(18)
-  panNumber    String?
+  gstEnabled    Boolean @default(false)
+  gstNumber     String?
+  gstPercentage Float   @default(18)
+  panNumber     String?
 
-  receiptPrefix     String @default("RCP")
-  receiptStartNumber String @default("001")
+  receiptPrefix      String  @default("RCP")
+  receiptStartNumber String  @default("001")
   receiptFooterText  String?
 
   razorpayKeyId     String?
   razorpayKeySecret String?
-  razorpayMode      String @default("TEST")
+  razorpayMode      String  @default("TEST")
 
-  twilioAccountSid  String?
-  twilioAuthToken   String?
+  twilioAccountSid     String?
+  twilioAuthToken      String?
   twilioWhatsAppNumber String?
 
   cloudinaryCloudName String?
@@ -755,9 +755,9 @@ model InstituteSettings {
   secondaryColor String @default("#10B981")
 
   onlinePaymentEnabled Boolean @default(false)
-  qrAttendanceEnabled   Boolean @default(true)
-  parentPortalEnabled   Boolean @default(true)
-  studentPortalEnabled  Boolean @default(true)
+  qrAttendanceEnabled  Boolean @default(true)
+  parentPortalEnabled  Boolean @default(true)
+  studentPortalEnabled Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -874,6 +874,7 @@ model Student {
   status     StudentStatus   @default(ACTIVE)
   category   StudentCategory @default(AVERAGE)
   referredBy String?
+  standardId String?
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -909,13 +910,35 @@ model Student {
   scholarships        Scholarship[]
   refunds             Refund[]
   onlinePaymentOrders OnlinePaymentOrder[]
+  standard            Standard?            @relation(fields: [standardId], references: [id], onDelete: SetNull)
 
   @@index([studentCode])
   @@index([firstName, lastName])
   @@index([status])
   @@index([category])
   @@index([academicYear])
+  @@index([standardId])
   @@map("students")
+}
+
+model Standard {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  order    Int     @unique
+  isActive Boolean @default(true)
+
+  students                Student[]
+  batches                 Batch[]
+  exams                   Exam[]
+  materials               StudyMaterial[]
+  classSessions           ClassSession[]
+  teacherStandardSubjects TeacherStandardSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("standards")
 }
 
 model Parent {
@@ -939,8 +962,8 @@ model Parent {
 
   students Student[]
 
-  ptmSlots       PTMSlot[]
-  feedbacks      ParentFeedback[]
+  ptmSlots  PTMSlot[]
+  feedbacks ParentFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1364,7 +1387,7 @@ model Announcement {
   title      String
   message    String
   audience   String             @default("ALL")
-  channels   String?            // comma-separated channels (WHATSAPP,SMS,EMAIL)
+  channels   String? // comma-separated channels (WHATSAPP,SMS,EMAIL)
   scheduleAt DateTime?
   status     AnnouncementStatus @default(DRAFT)
   createdAt  DateTime           @default(now())
@@ -1425,24 +1448,24 @@ enum SnapshotType {
 
 // Reports & Analytics Models
 model Report {
-  id                String          @id @default(cuid())
+  id String @id @default(cuid())
 
   // Identity
-  name              String
-  description       String?
-  type              ReportType
-  category          ReportCategory
+  name        String
+  description String?
+  type        ReportType
+  category    ReportCategory
 
   // Config
-  config            Json
-  filters           Json?
-  columns           String[]
-  groupBy           String?
-  sortBy            String?
-  sortOrder         String?
+  config    Json
+  filters   Json?
+  columns   String[]
+  groupBy   String?
+  sortBy    String?
+  sortOrder String?
 
   // Schedule
-  isScheduled       Boolean         @default(false)
+  isScheduled       Boolean       @default(false)
   scheduleFrequency ScheduleFreq?
   scheduleDay       Int?
   scheduleTime      String?
@@ -1450,128 +1473,128 @@ model Report {
   nextRunAt         DateTime?
 
   // Email
-  emailEnabled      Boolean         @default(false)
-  emailRecipients   String[]
+  emailEnabled    Boolean  @default(false)
+  emailRecipients String[]
 
   // Status
-  isActive          Boolean         @default(true)
-  isFavorite        Boolean         @default(false)
-  isDefault         Boolean         @default(false)
+  isActive   Boolean @default(true)
+  isFavorite Boolean @default(false)
+  isDefault  Boolean @default(false)
 
-  createdBy         String
-  runs              ReportRun[]
+  createdBy String
+  runs      ReportRun[]
 
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("reports")
 }
 
 model ReportRun {
-  id                String          @id @default(cuid())
+  id String @id @default(cuid())
 
-  reportId          String
-  runBy             String
-  runType           RunType         @default(MANUAL)
+  reportId String
+  runBy    String
+  runType  RunType @default(MANUAL)
 
   // Status
-  status            RunStatus       @default(PENDING)
-  startedAt         DateTime        @default(now())
-  completedAt       DateTime?
-  errorMessage      String?
+  status       RunStatus @default(PENDING)
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  errorMessage String?
 
   // Output
-  rowCount          Int?
-  fileUrl           String?
-  fileType          String?
-  fileSize          String?
+  rowCount Int?
+  fileUrl  String?
+  fileType String?
+  fileSize String?
 
   // Filters used
-  filtersUsed       Json?
-  dateRange         Json?
+  filtersUsed Json?
+  dateRange   Json?
 
-  report            Report          @relation(fields:[reportId], references:[id])
+  report Report @relation(fields: [reportId], references: [id])
 
-  createdAt         DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@map("report_runs")
 }
 
 model AnalyticsSnapshot {
-  id                String          @id @default(cuid())
+  id String @id @default(cuid())
 
-  date              DateTime
-  type              SnapshotType
+  date DateTime
+  type SnapshotType
 
   // Student Metrics
-  totalStudents     Int             @default(0)
-  activeStudents    Int             @default(0)
-  newStudents       Int             @default(0)
-  leftStudents      Int             @default(0)
+  totalStudents  Int @default(0)
+  activeStudents Int @default(0)
+  newStudents    Int @default(0)
+  leftStudents   Int @default(0)
 
   // Attendance Metrics
-  avgAttendance     Float           @default(0)
-  presentCount      Int             @default(0)
-  absentCount       Int             @default(0)
+  avgAttendance Float @default(0)
+  presentCount  Int   @default(0)
+  absentCount   Int   @default(0)
 
   // Fee Metrics
-  feeDue            Float           @default(0)
-  feeCollected      Float           @default(0)
-  feePending        Float           @default(0)
-  collectionRate    Float           @default(0)
+  feeDue         Float @default(0)
+  feeCollected   Float @default(0)
+  feePending     Float @default(0)
+  collectionRate Float @default(0)
 
   // Exam Metrics
-  examsHeld         Int             @default(0)
-  avgExamScore      Float           @default(0)
-  passRate          Float           @default(0)
+  examsHeld    Int   @default(0)
+  avgExamScore Float @default(0)
+  passRate     Float @default(0)
 
   // Communication Metrics
-  messagesSent      Int             @default(0)
-  deliveryRate      Float           @default(0)
+  messagesSent Int   @default(0)
+  deliveryRate Float @default(0)
 
-  createdAt         DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([date, type])
   @@map("analytics_snapshots")
 }
 
 model StudentProgressReport {
-  id                String          @id @default(cuid())
+  id String @id @default(cuid())
 
-  studentId         String
-  batchId           String
-  month             Int
-  year              Int
+  studentId String
+  batchId   String
+  month     Int
+  year      Int
 
   // Attendance
-  attendancePercent Float           @default(0)
-  classesPresent    Int             @default(0)
-  classesAbsent     Int             @default(0)
+  attendancePercent Float @default(0)
+  classesPresent    Int   @default(0)
+  classesAbsent     Int   @default(0)
 
   // Academic
-  examsTaken        Int             @default(0)
-  avgScore          Float           @default(0)
-  highestScore      Float           @default(0)
-  lowestScore       Float           @default(0)
-  avgGrade          String?
+  examsTaken   Int     @default(0)
+  avgScore     Float   @default(0)
+  highestScore Float   @default(0)
+  lowestScore  Float   @default(0)
+  avgGrade     String?
 
   // Fee
-  feeStatus         String?
-  feePaid           Float           @default(0)
-  feePending        Float           @default(0)
+  feeStatus  String?
+  feePaid    Float   @default(0)
+  feePending Float   @default(0)
 
   // Rank
-  batchRank         Int?
-  totalInBatch      Int?
+  batchRank    Int?
+  totalInBatch Int?
 
   // Overall
-  overallRating     String?
-  teacherComment    String?
-  adminComment      String?
+  overallRating  String?
+  teacherComment String?
+  adminComment   String?
 
-  student           Student         @relation(fields:[studentId], references:[id])
+  student Student @relation(fields: [studentId], references: [id])
 
-  generatedAt       DateTime        @default(now())
+  generatedAt DateTime @default(now())
 
   @@unique([studentId, batchId, month, year])
   @@map("student_progress_reports")
@@ -1591,11 +1614,11 @@ model PTMMeeting {
   isForAll    Boolean   @default(true)
   status      PTMStatus @default(SCHEDULED)
 
-  slots       PTMSlot[]
+  slots PTMSlot[]
 
-  createdBy   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([meetingDate])
   @@index([batchId])
@@ -1645,8 +1668,8 @@ model ParentFeedback {
   respondedBy   String?
   respondedAt   DateTime?
 
-  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent  Parent   @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   teacher Teacher? @relation(fields: [teacherId], references: [id])
 
   createdAt DateTime @default(now())
@@ -1659,42 +1682,41 @@ model ParentFeedback {
 }
 
 model TeacherPerformanceReport {
-  id                String          @id @default(cuid())
+  id String @id @default(cuid())
 
-  teacherId         String
-  month             Int
-  year              Int
+  teacherId String
+  month     Int
+  year      Int
 
   // Attendance
-  attendancePercent Float           @default(0)
-  daysPresent       Int             @default(0)
-  daysAbsent        Int             @default(0)
+  attendancePercent Float @default(0)
+  daysPresent       Int   @default(0)
+  daysAbsent        Int   @default(0)
 
   // Classes
-  classesScheduled  Int             @default(0)
-  classesTaken      Int             @default(0)
-  classesCancelled  Int             @default(0)
+  classesScheduled Int @default(0)
+  classesTaken     Int @default(0)
+  classesCancelled Int @default(0)
 
   // Student Performance
-  avgStudentScore   Float           @default(0)
-  studentPassRate   Float           @default(0)
+  avgStudentScore Float @default(0)
+  studentPassRate Float @default(0)
 
   // Salary
-  salaryStatus      String?
-  salaryAmount      Float           @default(0)
+  salaryStatus String?
+  salaryAmount Float   @default(0)
 
   // Rating
-  rating            Float?
-  adminNotes        String?
+  rating     Float?
+  adminNotes String?
 
-  teacher           Teacher         @relation(fields:[teacherId], references:[id])
+  teacher Teacher @relation(fields: [teacherId], references: [id])
 
-  generatedAt       DateTime        @default(now())
+  generatedAt DateTime @default(now())
 
   @@unique([teacherId, month, year])
   @@map("teacher_performance_reports")
 }
-
 
 model Exam {
   id String @id @default(cuid())
@@ -1706,6 +1728,7 @@ model Exam {
 
   batchId      String
   subjectId    String
+  standardId   String?
   academicYear String
 
   examDate  DateTime
@@ -1728,6 +1751,7 @@ model Exam {
 
   batch          Batch           @relation(fields: [batchId], references: [id])
   subject        Subject         @relation(fields: [subjectId], references: [id])
+  standard       Standard?       @relation(fields: [standardId], references: [id], onDelete: SetNull)
   results        ExamResult[]
   questions      ExamQuestion[]
   onlineAttempts OnlineAttempt[]
@@ -1738,6 +1762,7 @@ model Exam {
 
   @@index([batchId])
   @@index([subjectId])
+  @@index([standardId])
   @@index([status])
   @@index([examDate])
   @@map("exams")
@@ -1832,8 +1857,8 @@ model StudentAnswer {
   marksAwarded   Float?
   isCorrect      Boolean?
 
-  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  student  Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  question ExamQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  student  Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
   attempt  OnlineAttempt? @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
@@ -1863,8 +1888,8 @@ model OnlineAttempt {
   isTerminated    Boolean @default(false)
   terminateReason String?
 
-  exam    Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  exam    Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
   answers StudentAnswer[]
 
   createdAt DateTime @default(now())
@@ -2027,13 +2052,14 @@ model Teacher {
   user   User?   @relation(fields: [userId], references: [id])
 
   // Relations
-  subjects      TeacherSubject[]
-  batches       Batch[]
-  attendance    TeacherAttendance[]
-  leaves        TeacherLeave[]
-  salaryRecords SalaryRecord[]
-  documents     TeacherDocument[]
-  performance   TeacherPerformance[]
+  subjects                  TeacherSubject[]
+  standardSubjects          TeacherStandardSubject[]
+  batches                   Batch[]
+  attendance                TeacherAttendance[]
+  leaves                    TeacherLeave[]
+  salaryRecords             SalaryRecord[]
+  documents                 TeacherDocument[]
+  performance               TeacherPerformance[]
   // Reports relation
   teacherPerformanceReports TeacherPerformanceReport[]
   ptmSlots                  PTMSlot[]
@@ -2052,10 +2078,11 @@ model Subject {
   description String?
   isActive    Boolean @default(true)
 
-  teachers TeacherSubject[]
-  batches  Batch[]
-  exams    Exam[]
-  materials StudyMaterial[]
+  teachers                TeacherSubject[]
+  teacherStandardSubjects TeacherStandardSubject[]
+  batches                 Batch[]
+  exams                   Exam[]
+  materials               StudyMaterial[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2066,25 +2093,28 @@ model Subject {
 model StudyMaterial {
   id String @id @default(cuid())
 
-  title       String
-  description String?
-  subjectId   String?
-  batchId     String?
+  title        String
+  description  String?
+  subjectId    String?
+  batchId      String?
+  standardId   String?
   resourceType String
-  accessLevel  String @default("PUBLIC")
+  accessLevel  String  @default("PUBLIC")
   resourceUrl  String?
   fileName     String?
   fileSize     String?
   createdBy    String?
 
-  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  batch   Batch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  subject  Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  batch    Batch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  standard Standard? @relation(fields: [standardId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([subjectId])
   @@index([batchId])
+  @@index([standardId])
   @@index([accessLevel])
   @@map("study_materials")
 }
@@ -2101,6 +2131,24 @@ model TeacherSubject {
 
   @@unique([teacherId, subjectId])
   @@map("teacher_subjects")
+}
+
+model TeacherStandardSubject {
+  id         String @id @default(cuid())
+  teacherId  String
+  standardId String
+  subjectId  String
+
+  teacher  Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  standard Standard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  subject  Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, standardId, subjectId])
+  @@index([standardId])
+  @@index([subjectId])
+  @@map("teacher_standard_subjects")
 }
 
 model TeacherAttendance {
@@ -2239,8 +2287,9 @@ model Batch {
   color       String?
 
   // Subject and Teacher
-  subjectId String
-  teacherId String
+  subjectId  String
+  teacherId  String
+  standardId String?
 
   // Schedule
   days            DayOfWeek[]
@@ -2269,6 +2318,7 @@ model Batch {
   // Relations
   subject                 Subject                  @relation(fields: [subjectId], references: [id])
   teacher                 Teacher                  @relation(fields: [teacherId], references: [id])
+  standard                Standard?                @relation(fields: [standardId], references: [id], onDelete: SetNull)
   room                    Room?                    @relation(fields: [roomId], references: [id])
   enrollments             BatchEnrollment[]
   sessions                ClassSession[]
@@ -2278,8 +2328,8 @@ model Batch {
   attendanceNotifications AttendanceNotification[]
   timetableSlots          TimetableSlot[]
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
   feeStructures FeeStructure[]
   feeRecords    FeeRecord[]
   exams         Exam[]
@@ -2290,6 +2340,7 @@ model Batch {
   @@index([academicYear])
   @@index([teacherId])
   @@index([subjectId])
+  @@index([standardId])
   @@map("batches")
 }
 
@@ -2336,9 +2387,10 @@ model TimetableSlot {
 model ClassSession {
   id String @id @default(cuid())
 
-  batchId   String
-  teacherId String
-  roomId    String?
+  batchId    String
+  teacherId  String
+  roomId     String?
+  standardId String?
 
   // Schedule
   date            DateTime
@@ -2347,9 +2399,10 @@ model ClassSession {
   durationMinutes Int
 
   // Content
-  topic       String?
-  description String?
-  homework    String?
+  topic           String?
+  description     String?
+  homework        String?
+  isAutoGenerated Boolean @default(false)
 
   // Status
   status       SessionStatus @default(SCHEDULED)
@@ -2369,6 +2422,7 @@ model ClassSession {
 
   // Relations
   batch      Batch        @relation(fields: [batchId], references: [id])
+  standard   Standard?    @relation(fields: [standardId], references: [id], onDelete: SetNull)
   room       Room?        @relation(fields: [roomId], references: [id])
   attendance Attendance[]
 
@@ -2376,6 +2430,7 @@ model ClassSession {
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+  @@index([standardId])
   @@index([date])
   @@index([status])
   @@map("class_sessions")

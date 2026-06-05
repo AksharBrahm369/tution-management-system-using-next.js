@@ -19,9 +19,10 @@ import CredentialsModal from "../Modals/CredentialsModal";
 
 interface StudentProfilePageProps {
   studentId: string;
+  basePath?: string;
 }
 
-const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) => {
+const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId, basePath = "/admin/students" }) => {
   const [activeTab, setActiveTab] = useState<StudentProfileTab>("overview");
   const [showIdCard, setShowIdCard] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -171,6 +172,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId }) =>
     <div className="space-y-6">
       <ProfileHeader
         student={data}
+        editHref={`${basePath}/${studentId}/edit`}
         onDownloadId={() => setShowIdCard(true)}
         onChangeStatus={() => setShowStatusModal(true)}
         onCreateStudentLogin={handleCreateLogin}

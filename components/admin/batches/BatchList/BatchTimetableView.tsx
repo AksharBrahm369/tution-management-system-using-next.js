@@ -27,7 +27,7 @@ function toMinutes(t: string): number {
   return h * 60 + m;
 }
 
-const BatchTimetableView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
+const BatchTimetableView: React.FC<{ batches: Batch[]; basePath?: string }> = ({ batches, basePath = "/admin/batches" }) => {
   const activeDays = DAYS_ORDER;
 
   if (batches.length === 0) {
@@ -54,7 +54,7 @@ const BatchTimetableView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
       .map((b) => (
         <Link
           key={b.id}
-          href={`/admin/batches/${b.id}`}
+          href={`${basePath}/${b.id}`}
           className="block rounded-lg px-2 py-1.5 text-xs text-white transition-opacity hover:opacity-90 mb-1"
           style={{ backgroundColor: b.color ?? "#3B82F6" }}
         >

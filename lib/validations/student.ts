@@ -99,6 +99,7 @@ export const studentStep2Schema = z.object({
 });
 
 export const studentStep3Schema = z.object({
+  standardId: z.string().optional().or(z.literal("")),
   previousSchool: z.string().optional().or(z.literal("")),
   previousClass: z.string().optional().or(z.literal("")),
   previousMarks: z.string().optional().or(z.literal("")),

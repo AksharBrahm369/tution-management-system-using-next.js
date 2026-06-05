@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { batchUpdateSchema } from "@/lib/validations/batch";
-import { checkConflicts } from "@/lib/conflictDetector";
 import { regenerateFutureSessions } from "@/lib/sessionGenerator";
+import { syncTeacherStandardSubjectForBatch } from "@/lib/standardAssignments";
 
 export const runtime = "nodejs";
 
@@ -105,25 +105,7 @@ export async function PUT(
       return NextResponse.json({ error: "Batch not found" }, { status: 404 });
     }
 
-    // Only check conflicts if schedule-related fields changed
     const scheduleChanged = data.scheduleChanged || false;
-    if (scheduleChanged && data.teacherId && data.days && data.startTime && data.endTime) {
-      const conflicts = await checkConflicts({
-        teacherId: data.teacherId,
-        roomId: data.roomId || undefined,
-        days: data.days,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        excludeBatchId: id,
-      });
-
-      if (conflicts.hasConflict) {
-        return NextResponse.json(
-          { error: "Schedule conflict detected", conflicts },
-          { status: 409 }
-        );
-      }
-    }
 
     const startTime = data.startTime ?? existing.startTime;
     const endTime = data.endTime ?? existing.endTime;
@@ -146,6 +128,7 @@ export async function PUT(
         durationMinutes,
         maxStrength: data.maxStrength,
         academicYear: data.academicYear,
+        standardId: data.standardId === "" ? null : data.standardId,
         startDate: data.startDate,
         endDate: data.endDate,
         fees: data.fees,
@@ -153,6 +136,8 @@ export async function PUT(
         meetingLink: data.meetingLink || null,
       },
     });
+
+    await syncTeacherStandardSubjectForBatch(prisma, id);
 
     // Update timetable slots if schedule changed
     if (scheduleChanged && data.days && data.startTime && data.endTime) {

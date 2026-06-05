@@ -4,6 +4,8 @@ export interface CreateExamForm {
   title: string;
   code: string;
   type: string;
+  deliveryMode: "OFFLINE" | "ONLINE";
+  standardId: string;
   batchId: string;
   subjectId: string;
   academicYear: string;

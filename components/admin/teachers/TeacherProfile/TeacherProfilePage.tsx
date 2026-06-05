@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, Award, GraduationCap, Edit, Trash2, Banknote } from 'lucide-react';
 
-export default function TeacherProfilePage({ teacherId }: { teacherId: string }) {
+export default function TeacherProfilePage({ teacherId, basePath = "/admin/teachers" }: { teacherId: string; basePath?: string }) {
   const [teacher, setTeacher] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +34,7 @@ export default function TeacherProfilePage({ teacherId }: { teacherId: string })
       <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h3 className="text-xl font-bold text-slate-900 dark:text-white">Teacher Not Found</h3>
         <p className="text-slate-500 mt-2">The teacher profile you are looking for does not exist.</p>
-        <Link href="/admin/teachers">
+        <Link href={basePath}>
           <button type="button" className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             Back to Teachers
           </button>
@@ -48,7 +48,7 @@ export default function TeacherProfilePage({ teacherId }: { teacherId: string })
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div className="flex items-center gap-4">
-          <Link href="/admin/teachers">
+          <Link href={basePath}>
             <button type="button" aria-label="Back to teachers" className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
               <ArrowLeft className="h-5 w-5" />
             </button>
@@ -70,7 +70,7 @@ export default function TeacherProfilePage({ teacherId }: { teacherId: string })
         </div>
         
         <div className="flex gap-3">
-          <Link href={`/admin/teachers/${teacherId}/edit`}>
+          <Link href={`${basePath}/${teacherId}/edit`}>
             <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm">
               <Edit className="h-4 w-4" />
               Edit Profile

@@ -33,6 +33,8 @@ export interface StudentListItem {
   batch: StudentBatch | null;
   attendancePercent: number;
   feeStatus: string;
+  standard?: { id: string; name: string } | null;
+  standardId?: string | null;
 }
 
 export interface StudentListResponse {
@@ -74,6 +76,10 @@ export interface StudentProfileData {
   status: StudentStatus;
   category: StudentCategory;
   referredBy: string | null;
+  standard: {
+    id: string;
+    name: string;
+  } | null;
   user: {
     id: string;
     email: string;
@@ -204,4 +210,5 @@ export interface StudentFiltersState {
   category: string;
   batchId: string;
   academicYear: string;
+  standardId: string;
 }

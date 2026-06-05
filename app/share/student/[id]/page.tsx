@@ -1,4 +1,5 @@
 import StudentShareView from "@/components/public/StudentShareView";
+import { getPublicStudentProfile } from "@/lib/publicStudentProfile";
 
 export const dynamic = "force-dynamic";
 
@@ -8,5 +9,6 @@ interface PageProps {
 
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
-  return <StudentShareView studentId={id} />;
+  const initialData = await getPublicStudentProfile(id);
+  return <StudentShareView studentId={id} initialData={initialData} />;
 }

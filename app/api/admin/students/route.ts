@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma, StudentStatus } from "@prisma/client";
+import { Prisma, StudentStatus, type BloodGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { generateNextStudentCode } from "@/lib/studentCode";
@@ -20,6 +20,7 @@ function buildWhere(searchParams: URLSearchParams): Prisma.StudentWhereInput {
   const status = searchParams.get("status") as StudentStatus | null;
   const category = searchParams.get("category");
   const batchId = searchParams.get("batchId");
+  const standardId = searchParams.get("standardId");
   const academicYear = searchParams.get("academicYear");
 
   const where: Prisma.StudentWhereInput = {};
@@ -44,6 +45,9 @@ function buildWhere(searchParams: URLSearchParams): Prisma.StudentWhereInput {
         isActive: true,
       },
     };
+  }
+  if (standardId) {
+    where.standardId = standardId;
   }
 
   return where;
@@ -72,7 +76,7 @@ function buildOrderBy(sortBy: string | null, sortOrder: string | null): Prisma.S
 async function getCurrentBatch(studentId: string) {
   const enrollment = await prisma.batchEnrollment.findFirst({
     where: { studentId, isActive: true },
-    include: { batch: true },
+    include: { batch: { include: { standard: true } } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -92,6 +96,8 @@ async function buildStudentCard(student: {
   joiningDate: Date;
   academicYear: string;
   city: string | null;
+  standard?: { id: string; name: string } | null;
+  standardId?: string | null;
 }) {
   const [batch, attendanceTotal, attendancePresent, latestFeeRecord] = await Promise.all([
     getCurrentBatch(student.id),
@@ -101,11 +107,14 @@ async function buildStudentCard(student: {
   ]);
 
   const attendancePercent = attendanceTotal > 0 ? Math.round((attendancePresent / attendanceTotal) * 100) : 0;
+  const resolvedStandard = student.standard ?? batch?.standard ?? null;
 
   return {
     ...student,
     fullName: `${student.firstName} ${student.lastName}`,
     batch,
+    standard: resolvedStandard,
+    standardId: student.standardId ?? resolvedStandard?.id ?? null,
     attendancePercent,
     feeStatus: latestFeeRecord?.status ?? "UNPAID",
   };
@@ -121,6 +130,12 @@ async function createStudentTimeline(studentId: string, title: string, descripti
       performedById,
     },
   });
+}
+
+function normalizeOptionalEmail(value: unknown) {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  return email.length > 0 ? email : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -141,6 +156,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         include: {
           parent: true,
+          standard: true,
           batchEnrollments: { include: { batch: true } },
           emergencyContacts: true,
           medicalInfo: true,
@@ -150,10 +166,10 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.student.count({ where }),
-      prisma.student.count(),
-      prisma.student.count({ where: { status: "ACTIVE" } }),
-      prisma.student.count({ where: { status: "INACTIVE" } }),
-      prisma.student.count({ where: { status: "ON_LEAVE" } }),
+      prisma.student.count({ where }),
+      prisma.student.count({ where: { ...where, status: "ACTIVE" } }),
+      prisma.student.count({ where: { ...where, status: "INACTIVE" } }),
+      prisma.student.count({ where: { ...where, status: "ON_LEAVE" } }),
     ]);
 
     const studentsWithExtras = await Promise.all(students.map((student) => buildStudentCard(student)));
@@ -196,7 +212,7 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data;
     console.log("POST /api/admin/students - Parsed Data:", data);
-    const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : null;
+    const email = normalizeOptionalEmail(data.email);
 
     if (email) {
       const duplicateEmail = await prisma.student.findFirst({
@@ -211,12 +227,21 @@ export async function POST(request: NextRequest) {
 
     // Validate batch IDs if provided
     let validBatchIds: string[] = [];
+    let inferredStandardId = data.standardId || null;
     if (data.batchIds && data.batchIds.length > 0) {
       const existingBatches = await prisma.batch.findMany({
         where: { id: { in: data.batchIds } },
-        select: { id: true }
+        select: { id: true, standardId: true }
       });
       validBatchIds = existingBatches.map(b => b.id);
+      const batchStandardIds = [...new Set(existingBatches.map((batch) => batch.standardId).filter((value): value is string => Boolean(value)))];
+      if (batchStandardIds.length > 1) {
+        return NextResponse.json({ error: "Selected batches belong to multiple standards. Please select batches from only one standard." }, { status: 400 });
+      }
+      if (data.standardId && batchStandardIds[0] && data.standardId !== batchStandardIds[0]) {
+        return NextResponse.json({ error: "Student standard does not match the selected batch standard." }, { status: 400 });
+      }
+      inferredStandardId = inferredStandardId ?? batchStandardIds[0] ?? null;
     }
 
     // Always allocate a fresh server-side code for new students.
@@ -252,7 +277,7 @@ export async function POST(request: NextRequest) {
         phone: data.phone || null,
         dateOfBirth: data.dateOfBirth ?? null,
         gender: data.gender,
-        bloodGroup: (data.bloodGroup as any) ?? null,
+        bloodGroup: (data.bloodGroup as BloodGroup | undefined) ?? null,
         profilePhoto: data.profilePhoto || null,
         addressLine1: data.addressLine1 || null,
         addressLine2: data.addressLine2 || null,
@@ -264,6 +289,7 @@ export async function POST(request: NextRequest) {
         previousMarks: data.previousMarks || null,
         joiningDate: data.joiningDate,
         academicYear: data.academicYear,
+        standardId: inferredStandardId,
         status: data.status ?? "ACTIVE",
         category: data.category,
         referredBy: data.referredBy || null,
@@ -366,6 +392,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ student }, { status: 201 });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : "unique field";
+      const message = target.includes("email")
+        ? "A student with this email already exists"
+        : `Duplicate value found for ${target}`;
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;
     return NextResponse.json({ error: message }, { status });

@@ -14,6 +14,8 @@ const initialForm: CreateExamForm = {
   title: "",
   code: "",
   type: "UNIT_TEST",
+  deliveryMode: "OFFLINE",
+  standardId: "",
   batchId: "",
   subjectId: "",
   academicYear: "2025-26",
@@ -30,12 +32,22 @@ const initialForm: CreateExamForm = {
   questions: [],
 };
 
-export default function CreateExamPage({ batches, subjects }: { batches: BatchOption[]; subjects: SubjectOption[] }) {
+export default function CreateExamPage({
+  batches,
+  subjects,
+  standardId = "",
+  basePath = "/admin/exams",
+}: {
+  batches: BatchOption[];
+  subjects: SubjectOption[];
+  standardId?: string;
+  basePath?: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<CreateExamForm>(initialForm);
+  const [form, setForm] = useState<CreateExamForm>({ ...initialForm, standardId });
 
   const studentCount = useMemo(() => {
     const batch = batches.find((b) => b.id === form.batchId);
@@ -46,14 +58,16 @@ export default function CreateExamPage({ batches, subjects }: { batches: BatchOp
     setSubmitting(true);
     setError(null);
     try {
+      const isOnlineExam = form.deliveryMode === "ONLINE";
       const response = await fetch("/api/admin/exams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           ...form,
+          type: isOnlineExam ? "ONLINE_TEST" : form.type,
           examDate: form.examDate,
-          questions: form.type === "ONLINE_TEST" ? form.questions : [],
+          questions: isOnlineExam ? form.questions : [],
         }),
       });
 
@@ -63,7 +77,7 @@ export default function CreateExamPage({ batches, subjects }: { batches: BatchOp
       }
 
       const payload = await response.json();
-      router.push(`/admin/exams/${payload.exam.id}`);
+      router.push(`${basePath}/${payload.exam.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create exam");
     } finally {
@@ -102,6 +116,7 @@ export default function CreateExamPage({ batches, subjects }: { batches: BatchOp
       {step === 3 && (
         <Step3QuestionSetup
           form={form}
+          subjects={subjects}
           onChange={setForm}
           onPrevious={() => setStep(2)}
           onNext={() => setStep(4)}

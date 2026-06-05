@@ -42,7 +42,7 @@ interface Batch {
   room?: { name: string } | null;
 }
 
-const BatchTableView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
+const BatchTableView: React.FC<{ batches: Batch[]; basePath?: string }> = ({ batches, basePath = "/admin/batches" }) => {
   if (batches.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-20 dark:border-slate-700 dark:bg-slate-900/30">
@@ -118,13 +118,13 @@ const BatchTableView: React.FC<{ batches: Batch[] }> = ({ batches }) => {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1.5">
                     <Link
-                      href={`/admin/batches/${batch.id}`}
+                      href={`${basePath}/${batch.id}`}
                       className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
                     >
                       <Eye size={15} />
                     </Link>
                     <Link
-                      href={`/admin/batches/${batch.id}/edit`}
+                      href={`${basePath}/${batch.id}/edit`}
                       className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
                     >
                       <Edit size={15} />

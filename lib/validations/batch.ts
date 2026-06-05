@@ -178,6 +178,7 @@ export const calendarEventUpdateSchema = calendarEventCreateSchema.partial();
  * Validates name, code, subject, fees, academic year, and active dates.
  */
 export const batchStep1Schema = z.object({
+  standardId: z.string().optional().or(z.literal("")),
   name: z.string().min(3, "Batch name must be at least 3 characters long"),
   code: z.string().optional().or(z.literal("")),
   subjectId: z.string().min(1, "Please select a valid subject"),
@@ -250,6 +251,7 @@ export const batchUpdateSchema = batchStep1Schema
  * Zod schema for manual creation of a Class Session.
  */
 export const sessionCreateSchema = z.object({
+  standardId: z.string().optional().or(z.literal("")),
   batchId: z.string().min(1, "Batch ID is required"),
   date: requiredDateSchema,
   startTime: timeSchema,

@@ -4,7 +4,7 @@ import { requireSuperAdmin } from "@/lib/adminAuth";
 import { batchCreateSchema } from "@/lib/validations/batch";
 import { generateBatchCode } from "@/lib/batchCode";
 import { generateSessions } from "@/lib/sessionGenerator";
-import { checkConflicts } from "@/lib/conflictDetector";
+import { assignStudentsToBatchStandard, syncTeacherStandardSubjectForBatch, validateStudentsForBatchStandard } from "@/lib/standardAssignments";
 
 export const runtime = "nodejs";
 
@@ -111,6 +111,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const subjectId = searchParams.get("subjectId");
     const teacherId = searchParams.get("teacherId");
+    const standardId = searchParams.get("standardId");
     const timeRange = searchParams.get("timeRange");
     const daysParam = searchParams.get("days");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
@@ -138,6 +139,7 @@ export async function GET(request: NextRequest) {
 
     if (subjectId) where.subjectId = subjectId;
     if (teacherId) where.teacherId = teacherId;
+    if (standardId) where.standardId = standardId;
 
     if (daysParam) {
       const days = daysParam.split(",").filter(Boolean);
@@ -169,14 +171,15 @@ export async function GET(request: NextRequest) {
         orderBy,
         include: {
           subject: true,
+          standard: true,
           teacher: { select: { id: true, firstName: true, lastName: true, profilePhoto: true } },
           room: { select: { id: true, name: true, code: true } },
           enrollments: { where: { isActive: true }, select: { id: true } },
           _count: { select: { sessions: true } },
         },
       }),
-      prisma.batch.count(),
-      prisma.batchEnrollment.count({ where: { isActive: true } }),
+      prisma.batch.count({ where }),
+      prisma.batchEnrollment.count({ where: { isActive: true, batch: where } }),
     ]);
 
     const computedBatches = allBatches.map((batch) => ({
@@ -230,21 +233,7 @@ export async function POST(request: NextRequest) {
 
     const data = parsed.data;
 
-    // Check conflicts
-    const conflicts = await checkConflicts({
-      teacherId: data.teacherId,
-      roomId: data.roomId || undefined,
-      days: data.days,
-      startTime: data.startTime,
-      endTime: data.endTime,
-    });
-
-    if (conflicts.hasConflict) {
-      return NextResponse.json(
-        { error: "Schedule conflict detected", conflicts },
-        { status: 409 }
-      );
-    }
+    await validateStudentsForBatchStandard(prisma, data.studentIds ?? [], data.standardId || null);
 
     const code = data.code || (await generateBatchCode());
     const [sh, sm] = data.startTime.split(":").map(Number);
@@ -273,6 +262,7 @@ export async function POST(request: NextRequest) {
         maxStrength: data.maxStrength,
         currentStrength: 0,
         academicYear: data.academicYear,
+        standardId: data.standardId || null,
         startDate: data.startDate,
         endDate: data.endDate || null,
         fees: data.fees,
@@ -295,6 +285,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    await syncTeacherStandardSubjectForBatch(prisma, batch.id);
+
     // Enroll students
     let enrolledCount = 0;
     if (!data.skipEnrollment && data.studentIds && data.studentIds.length > 0) {
@@ -306,6 +298,8 @@ export async function POST(request: NextRequest) {
       }));
       await prisma.batchEnrollment.createMany({ data: enrollments, skipDuplicates: true });
       enrolledCount = data.studentIds.length;
+
+      await assignStudentsToBatchStandard(prisma, data.studentIds, data.standardId || null);
 
       await prisma.batch.update({
         where: { id: batch.id },
@@ -326,6 +320,7 @@ export async function POST(request: NextRequest) {
         days: data.days,
         startTime: data.startTime,
         endTime: data.endTime,
+        standardId: data.standardId || null,
       });
     }
 

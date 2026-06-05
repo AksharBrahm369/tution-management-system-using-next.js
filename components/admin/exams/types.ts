@@ -72,6 +72,7 @@ export interface ExamItem {
   type: ExamType;
   batchId: string;
   subjectId: string;
+  standardId?: string | null;
   academicYear: string;
   examDate: string;
   startTime?: string | null;

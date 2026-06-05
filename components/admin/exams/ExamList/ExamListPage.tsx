@@ -2,57 +2,94 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, LayoutGrid, List, Search, RefreshCcw } from "lucide-react";
+import { Plus, LayoutGrid, List, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ExamFilters from "./ExamFilters";
 import ExamStatsBar from "./ExamStatsBar";
 import ExamGridView from "./ExamGridView";
 import ExamTableView from "./ExamTableView";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ExamItem } from "../types";
 
-export default function ExamListPage() {
+export default function ExamListPage({
+  standardId,
+  standardName,
+  basePath = "/admin/exams",
+}: {
+  standardId?: string;
+  standardName?: string;
+  basePath?: string;
+}) {
   const router = useRouter();
-  const [exams, setExams] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [exams, setExams] = useState<ExamItem[]>([]);
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [filters, setFilters] = useState({ search: "", status: "ALL", type: "ALL" });
-
-  const fetchExams = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const query = new URLSearchParams();
-      if (filters.search.trim()) query.set("search", filters.search.trim());
-      if (filters.status && filters.status !== "ALL") query.set("status", filters.status);
-      if (filters.type && filters.type !== "ALL") query.set("type", filters.type);
-      const res = await fetch(`/api/admin/exams?${query.toString()}`);
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(payload.error || "Failed to fetch exams");
-      }
-
-      setExams(payload.exams ?? []);
-      setStats(payload.stats ?? null);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to fetch exams");
-      console.error("Failed to fetch exams:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [filters, setFilters] = useState({ search: "", status: "ALL", type: "ALL", standardId: "ALL" });
+  const [standards, setStandards] = useState<Array<{ id: string; name: string }>>([]);
+  const [reloadKey, setReloadKey] = useState(0);
+  const createHref = standardId ? `${basePath}/create` : "/admin/exams/create";
 
   useEffect(() => {
-    fetchExams();
-  }, [filters]);
+    let active = true;
+
+    const loadExams = async () => {
+      if (active) {
+        setLoading(true);
+        setError(null);
+      }
+
+      try {
+        const query = new URLSearchParams();
+        if (filters.search.trim()) query.set("search", filters.search.trim());
+        if (filters.status && filters.status !== "ALL") query.set("status", filters.status);
+        if (filters.type && filters.type !== "ALL") query.set("type", filters.type);
+        if (standardId) query.set("standardId", standardId);
+        else if (filters.standardId !== "ALL") query.set("standardId", filters.standardId);
+        const res = await fetch(`/api/admin/exams?${query.toString()}`);
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(payload.error || "Failed to fetch exams");
+        }
+
+        if (active) {
+          setExams(payload.exams ?? []);
+          setStats(payload.stats ?? null);
+        }
+      } catch (error) {
+        if (active) {
+          setError(error instanceof Error ? error.message : "Failed to fetch exams");
+        }
+        console.error("Failed to fetch exams:", error);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadExams();
+
+    return () => {
+      active = false;
+    };
+  }, [filters, standardId, reloadKey]);
+
+  useEffect(() => {
+    if (standardId) return;
+    fetch("/api/admin/standards")
+      .then((res) => (res.ok ? res.json() : { standards: [] }))
+      .then((payload) => setStandards(payload.standards ?? []))
+      .catch(() => setStandards([]));
+  }, [standardId]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const resetFilters = () => {
-    setFilters({ search: "", status: "ALL", type: "ALL" });
+    setFilters({ search: "", status: "ALL", type: "ALL", standardId: "ALL" });
   };
 
   return (
@@ -61,15 +98,15 @@ export default function ExamListPage() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Exams</p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Exam Management</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300">Manage tests, assignments, marks, and published results from one clean dashboard.</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{standardName ? `${standardName} Exams` : "Exam Management"}</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">{standardName ? `Manage tests and results for ${standardName}.` : "Manage tests, assignments, marks, and published results from one clean dashboard."}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => router.push("/admin/exams/create")} className="gap-2 rounded-full bg-cyan-500 px-5 text-white hover:bg-cyan-600">
+            <Button onClick={() => router.push(createHref)} className="gap-2 rounded-full bg-cyan-500 px-5 text-white hover:bg-cyan-600">
               <Plus className="h-4 w-4" /> Create Exam
             </Button>
-            <Button variant="outline" onClick={fetchExams} className="gap-2 rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+            <Button variant="outline" onClick={() => setReloadKey((current) => current + 1)} className="gap-2 rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white">
               <RefreshCcw className="h-4 w-4" /> Refresh
             </Button>
           </div>
@@ -83,10 +120,23 @@ export default function ExamListPage() {
           <ExamFilters
             onSearch={(val: string) => handleFilterChange("search", val)}
             onFilterChange={handleFilterChange}
-            onRefresh={fetchExams}
+            onRefresh={() => setReloadKey((current) => current + 1)}
             onReset={resetFilters}
             filters={filters}
           />
+          {!standardId && (
+            <select
+              aria-label="Filter exams by standard"
+              value={filters.standardId}
+              onChange={(event) => handleFilterChange("standardId", event.target.value)}
+              className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            >
+              <option value="ALL">All Standards</option>
+              {standards.map((standard) => (
+                <option key={standard.id} value={standard.id}>{standard.name}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
@@ -123,22 +173,22 @@ export default function ExamListPage() {
         </div>
       ) : (
         viewMode === "grid" ? (
-          <ExamGridView 
-            exams={exams} 
-            onView={(id: string) => router.push(`/admin/exams/${id}`)}
-            onEnterMarks={(id: string) => router.push(`/admin/exams/${id}/marks`)}
-            onCreate={() => router.push("/admin/exams/create")}
+            <ExamGridView 
+              exams={exams} 
+            onView={(id: string) => router.push(`${basePath}/${id}`)}
+            onEnterMarks={(id: string) => router.push(`${basePath}/${id}/marks`)}
+            onCreate={() => router.push(createHref)}
             onReset={resetFilters}
-            hasFilters={Boolean(filters.search || filters.status !== "ALL" || filters.type !== "ALL")}
+            hasFilters={Boolean(filters.search || filters.status !== "ALL" || filters.type !== "ALL" || filters.standardId !== "ALL")}
           />
         ) : (
           <ExamTableView 
             exams={exams} 
-            onView={(id: string) => router.push(`/admin/exams/${id}`)}
-            onEnterMarks={(id: string) => router.push(`/admin/exams/${id}/marks`)}
-            onCreate={() => router.push("/admin/exams/create")}
+            onView={(id: string) => router.push(`${basePath}/${id}`)}
+            onEnterMarks={(id: string) => router.push(`${basePath}/${id}/marks`)}
+            onCreate={() => router.push(createHref)}
             onReset={resetFilters}
-            hasFilters={Boolean(filters.search || filters.status !== "ALL" || filters.type !== "ALL")}
+            hasFilters={Boolean(filters.search || filters.status !== "ALL" || filters.type !== "ALL" || filters.standardId !== "ALL")}
           />
         )
       )}

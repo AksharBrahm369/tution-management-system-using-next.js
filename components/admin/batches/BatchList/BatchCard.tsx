@@ -43,9 +43,10 @@ interface BatchCardProps {
     room?: { name: string } | null;
   };
   onDelete?: (id: string) => void;
+  basePath?: string;
 }
 
-const BatchCard: React.FC<BatchCardProps> = ({ batch }) => {
+const BatchCard: React.FC<BatchCardProps> = ({ batch, basePath = "/admin/batches" }) => {
   const strengthPct = batch.maxStrength > 0
     ? Math.round((batch.currentStrength / batch.maxStrength) * 100)
     : 0;
@@ -123,13 +124,13 @@ const BatchCard: React.FC<BatchCardProps> = ({ batch }) => {
         {/* Actions */}
         <div className="mt-4 flex items-center gap-2">
           <Link
-            href={`/admin/batches/${batch.id}`}
+            href={`${basePath}/${batch.id}`}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <Eye size={14} /> View
           </Link>
           <Link
-            href={`/admin/batches/${batch.id}/edit`}
+            href={`${basePath}/${batch.id}/edit`}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
           >
             <Edit size={14} /> Edit

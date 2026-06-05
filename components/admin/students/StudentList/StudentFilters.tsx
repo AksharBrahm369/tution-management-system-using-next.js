@@ -1,18 +1,20 @@
 import React from "react";
 import { Search } from "lucide-react";
-import { StudentFiltersState, StudentListItem } from "../types";
+import { StudentFiltersState } from "../types";
 
 interface StudentFiltersProps {
   filters: StudentFiltersState;
   onChange: (next: StudentFiltersState) => void;
   onReset: () => void;
   batchOptions: Array<{ id: string; name: string }>;
+  standardOptions?: Array<{ id: string; name: string }>;
+  hideStandardFilter?: boolean;
 }
 
 const baseSelect = "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 
-const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onReset, batchOptions }) => {
-  const hasActiveFilters = Boolean(filters.search || filters.status !== "ALL" || filters.category !== "ALL" || filters.batchId !== "ALL" || filters.academicYear !== "ALL");
+const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onReset, batchOptions, standardOptions = [], hideStandardFilter = false }) => {
+  const hasActiveFilters = Boolean(filters.search || filters.status !== "ALL" || filters.category !== "ALL" || filters.batchId !== "ALL" || filters.academicYear !== "ALL" || filters.standardId !== "ALL");
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 lg:flex-row lg:items-center lg:justify-between">
@@ -54,6 +56,15 @@ const StudentFilters: React.FC<StudentFiltersProps> = ({ filters, onChange, onRe
             <option key={batch.id} value={batch.id}>{batch.name}</option>
           ))}
         </select>
+
+        {!hideStandardFilter && (
+          <select aria-label="Filter students by standard" value={filters.standardId} onChange={(event) => onChange({ ...filters, standardId: event.target.value })} className={baseSelect}>
+            <option value="ALL">All Standards</option>
+            {standardOptions.map((standard) => (
+              <option key={standard.id} value={standard.id}>{standard.name}</option>
+            ))}
+          </select>
+        )}
 
         <select aria-label="Filter students by academic year" value={filters.academicYear} onChange={(event) => onChange({ ...filters, academicYear: event.target.value })} className={baseSelect}>
           <option value="ALL">All Years</option>

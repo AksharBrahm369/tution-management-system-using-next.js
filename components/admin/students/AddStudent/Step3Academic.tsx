@@ -1,14 +1,34 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import { StudentCreateInput } from "@/lib/validations/student";
 
 const Step3Academic: React.FC = () => {
   const { register, formState: { errors } } = useFormContext<StudentCreateInput>();
+  const { data: standardsData } = useQuery<{ standards: Array<{ id: string; name: string }> }>({
+    queryKey: ["admin-standards-options"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/standards");
+      if (!response.ok) throw new Error("Failed to load standards");
+      return response.json();
+    },
+  });
+  const standards = standardsData?.standards ?? [];
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
       <h2 className="text-xl font-bold text-slate-900 dark:text-white">Academic Background</h2>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="space-y-1">
+          <label className="text-[10px] uppercase font-bold text-slate-500 ml-1">Standard</label>
+          <select {...register("standardId")} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white">
+            <option value="">Select Standard</option>
+            {standards.map((standard) => (
+              <option key={standard.id} value={standard.id}>{standard.name}</option>
+            ))}
+          </select>
+          {errors.standardId && <p className="text-red-500 text-[10px]">{errors.standardId.message}</p>}
+        </div>
         <div className="space-y-1">
           <input {...register("previousSchool")} placeholder="Previous School Name" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
           {errors.previousSchool && <p className="text-red-500 text-[10px]">{errors.previousSchool.message}</p>}

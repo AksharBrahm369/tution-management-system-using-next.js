@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
 import { Search, X, AlertTriangle, Loader2 } from "lucide-react";
@@ -19,21 +19,27 @@ const Step3Students: React.FC = () => {
   const { setValue, watch } = useFormContext<BatchCreateInput>();
   const selectedIds = watch("studentIds") ?? [];
   const subjectId = watch("subjectId");
+  const standardId = watch("standardId");
   const skip = watch("skipEnrollment") ?? false;
   const maxStrength = watch("maxStrength") ?? 30;
 
   const [search, setSearch] = useState("");
 
+  useEffect(() => {
+    setValue("studentIds", []);
+  }, [standardId, setValue]);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["students-select", search],
+    queryKey: ["students-select", search, standardId ?? ""],
     queryFn: async () => {
       const params = new URLSearchParams({ limit: "50" });
       if (search) params.set("search", search);
+      if (standardId) params.set("standardId", standardId);
       const res = await fetch(`/api/admin/students?${params}`);
       if (!res.ok) return { students: [] };
       return res.json() as Promise<{ students: Student[] }>;
     },
-    enabled: !skip,
+    enabled: !skip && Boolean(standardId),
   });
 
   const students = data?.students ?? [];
@@ -150,8 +156,14 @@ const Step3Students: React.FC = () => {
                   <Loader2 className="animate-spin text-blue-500" size={24} />
                   <p className="text-sm">Loading students...</p>
                 </div>
+              ) : !standardId ? (
+                <p className="py-8 text-center text-sm text-slate-400">
+                  Select a standard in Batch Details to load students.
+                </p>
               ) : students.length === 0 ? (
-                <p className="py-8 text-center text-sm text-slate-400">No students found</p>
+                <p className="py-8 text-center text-sm text-slate-400">
+                  No students found for this standard.
+                </p>
               ) : (
                 students.map((student) => {
                   const isSelected = selectedIds.includes(student.id);

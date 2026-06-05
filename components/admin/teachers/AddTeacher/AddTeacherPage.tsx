@@ -7,14 +7,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   ArrowLeft, CheckCircle2, UserPlus, BookOpen, 
-  Briefcase, Banknote, ShieldCheck 
+  Briefcase
 } from 'lucide-react';
 import Link from 'next/link';
 import { teacherSchema } from '@/lib/validations/teacher';
 
-type TeacherFormValues = z.infer<typeof teacherSchema>;
+type TeacherFormValues = z.input<typeof teacherSchema>;
 
-export default function AddTeacherPage() {
+export default function AddTeacherPage({
+  standardId,
+  standardName,
+  returnHref = "/admin/teachers",
+}: {
+  standardId?: string;
+  standardName?: string;
+  returnHref?: string;
+}) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
@@ -33,6 +41,7 @@ export default function AddTeacherPage() {
       employmentType: 'FULL_TIME',
       salaryType: 'FIXED',
       subjectIds: [],
+      standardId,
     }
   });
 
@@ -74,7 +83,10 @@ export default function AddTeacherPage() {
       const response = await fetch('/api/admin/teachers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          standardId,
+        }),
       });
 
       if (!response.ok) {
@@ -83,7 +95,7 @@ export default function AddTeacherPage() {
         return;
       }
 
-      router.push('/admin/teachers');
+      router.push(returnHref);
       router.refresh();
     } catch (error) {
       console.error(error);
@@ -108,7 +120,7 @@ export default function AddTeacherPage() {
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
-        <Link href="/admin/teachers">
+        <Link href={returnHref}>
           <button type="button" aria-label="Back to teachers" className="flex items-center justify-center h-10 w-10 rounded-full border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all dark:border-slate-700 dark:hover:bg-slate-800 dark:text-slate-300">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -118,7 +130,9 @@ export default function AddTeacherPage() {
             <UserPlus className="h-7 w-7 text-primary" />
             Add New Teacher
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Complete the profile to onboard a new teaching staff member</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            {standardName ? `Create a teacher directly inside ${standardName}.` : "Complete the profile to onboard a new teaching staff member"}
+          </p>
         </div>
       </div>
 
@@ -289,7 +303,7 @@ export default function AddTeacherPage() {
           <button 
             type="button" 
             className="mr-4 px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md transition-colors dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 font-medium text-sm"
-            onClick={() => router.push('/admin/teachers')}
+            onClick={() => router.push(returnHref)}
           >
             Cancel
           </button>

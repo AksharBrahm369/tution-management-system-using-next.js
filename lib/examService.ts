@@ -17,6 +17,7 @@ export interface ExamFilters {
   type?: string;
   batchId?: string;
   subjectId?: string;
+  standardId?: string;
   fromDate?: string;
   toDate?: string;
   page?: number;
@@ -126,6 +127,14 @@ export function buildExamWhere(filters: ExamFilters): Prisma.ExamWhereInput {
       { subject: { name: { contains: filters.search, mode: "insensitive" } } },
     ];
   }
+  if (filters.standardId) {
+    const existingOr = where.OR;
+    delete where.OR;
+    where.AND = [
+      ...(existingOr ? [{ OR: existingOr }] : []),
+      { OR: [{ standardId: filters.standardId }, { batch: { standardId: filters.standardId } }] },
+    ];
+  }
   return where;
 }
 
@@ -195,10 +204,13 @@ export async function listExams(filters: ExamFilters) {
 export async function createExam(rawInput: ExamCreateInput, createdBy: string) {
   const input = examCreateSchema.parse(rawInput);
   const code = input.code?.trim() || (await generateNextExamCode(input.examDate.getFullYear()));
-  const enrollments = await prisma.batchEnrollment.findMany({
-    where: { batchId: input.batchId, isActive: true },
-    select: { studentId: true },
-  });
+  const [batch, enrollments] = await Promise.all([
+    prisma.batch.findUnique({ where: { id: input.batchId }, select: { standardId: true } }),
+    prisma.batchEnrollment.findMany({
+      where: { batchId: input.batchId, isActive: true },
+      select: { studentId: true },
+    }),
+  ]);
 
   return prisma.exam.create({
     data: {
@@ -209,6 +221,7 @@ export async function createExam(rawInput: ExamCreateInput, createdBy: string) {
       batchId: input.batchId,
       subjectId: input.subjectId,
       academicYear: input.academicYear,
+      standardId: input.standardId || batch?.standardId || null,
       examDate: input.examDate,
       startTime: input.startTime,
       endTime: input.endTime,

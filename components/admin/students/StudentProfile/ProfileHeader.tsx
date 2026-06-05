@@ -12,6 +12,7 @@ interface ProfileHeaderProps {
   isCreatingStudentLogin: boolean;
   onResetStudentPassword: () => void;
   isResettingStudentPassword: boolean;
+  editHref?: string;
 }
 
 function badgeClass(value: string): string {
@@ -34,10 +35,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   isCreatingStudentLogin,
   onResetStudentPassword,
   isResettingStudentPassword,
+  editHref,
 }) => {
   const initials = student.fullName?.trim().slice(0, 2).toUpperCase() ?? "ST";
   const fullAddress = [student.addressLine1, student.addressLine2, student.city, student.state, student.pincode].filter(Boolean).join(", ");
   const hasStudentLogin = Boolean(student.userId);
+  const standardName = student.standard?.name ?? "No standard assigned";
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 p-4 text-white shadow-xl dark:border-slate-800 sm:p-6">
@@ -80,6 +83,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <p className="mt-1 wrap-break-word text-sm text-white">{valueOrFallback(fullAddress, "No address")}</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/5 p-3 sm:col-span-2">
+            <p className="text-xs text-slate-300">Standard</p>
+            <p className="mt-1 wrap-break-word text-sm text-white">{standardName}</p>
+          </div>
+          <div className="rounded-xl border border-white/15 bg-white/5 p-3 sm:col-span-2">
             <p className="text-xs text-slate-300">Current Batch</p>
             <p className="mt-1 wrap-break-word text-sm text-white">{valueOrFallback(student.currentBatch?.name, "No batch")}</p>
           </div>
@@ -97,7 +104,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-3 xl:col-span-2">
-          <Link href={`/admin/students/${student.id}/edit`} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100">
+          <Link href={editHref ?? `/admin/students/${student.id}/edit`} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg transition hover:bg-slate-100">
             <Edit3 size={16} /> Edit Profile
           </Link>
           {hasStudentLogin ? (

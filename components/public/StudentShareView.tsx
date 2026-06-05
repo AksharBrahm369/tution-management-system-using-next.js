@@ -23,71 +23,13 @@ import {
   CartesianGrid,
   Tooltip as ChartTooltip
 } from "recharts";
+import type { PublicStudentProfileData } from "@/lib/publicStudentProfile";
 
-type StudentData = {
-  id: string;
-  fullName: string;
-  studentCode: string;
-  profilePhoto: string | null;
-  email: string | null;
-  phone: string | null;
-  joiningDate: string;
-  academicYear: string;
-  currentBatch: { name: string; subject?: string | null } | null;
-  parent: {
-    fatherName: string | null;
-    fatherPhone: string | null;
-    fatherEmail: string | null;
-    motherName: string | null;
-    motherPhone: string | null;
-    guardianName: string | null;
-    guardianPhone: string | null;
-    primaryContact: string;
-  } | null;
-  stats: {
-    attendancePercent: number;
-    attendanceTotal: number;
-    attendancePresent: number;
-    attendanceAbsent: number;
-    attendanceLeave: number;
-    feesPaid: number;
-    pendingFees: number;
-  };
-  attendance: Array<{
-    id: string;
-    date: string;
-    status: string;
-    lateMinutes: number | null;
-  }>;
-  feeRecords: Array<{
-    id: string;
-    month: number;
-    year: number;
-    baseFee: number;
-    discountAmount: number;
-    scholarshipAmount: number;
-    lateFee: number;
-    otherCharges: number;
-    totalAmount: number;
-    paidAmount: number;
-    pendingAmount: number;
-    status: string;
-    dueDate: string;
-    batchName: string;
-  }>;
-  examResults: Array<{
-    id: string;
-    examName: string;
-    subject: string;
-    score: number;
-    totalMarks: number;
-    percentage: number;
-    examDate: string;
-  }>;
-};
+type StudentData = PublicStudentProfileData;
 
 interface StudentShareViewProps {
   studentId: string;
+  initialData?: StudentData | null;
 }
 
 const STUDENT_PORTAL_URL = "https://tution-management-system-using-next-one.vercel.app/student/login";
@@ -101,9 +43,9 @@ const getMonthName = (month: number) => {
   return date.toLocaleString("default", { month: "long" });
 };
 
-export default function StudentShareView({ studentId }: StudentShareViewProps) {
-  const [data, setData] = useState<StudentData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export default function StudentShareView({ studentId, initialData = null }: StudentShareViewProps) {
+  const [data, setData] = useState<StudentData | null>(initialData);
+  const [loading, setLoading] = useState<boolean>(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [debugState, setDebugState] = useState<string>("Initializing...");
 
@@ -115,7 +57,7 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
     const fetchStudentData = async () => {
       try {
         if (isMounted) {
-          setLoading(true);
+          setLoading(!initialData);
           setDebugState(`Fetching student ID: ${studentId}`);
         }
         
@@ -167,7 +109,7 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
       isMounted = false;
       controller.abort();
     };
-  }, [studentId]);
+  }, [studentId, initialData]);
 
   if (loading) {
     return (
@@ -536,7 +478,10 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
                   {data.feeRecords.map((fee) => {
                     const isPaid = fee.status === "PAID";
                     const isPending = fee.status === "PENDING";
-                    const isOverdue = fee.status === "OVERDUE" || (isPending && new Date(fee.dueDate) < new Date());
+                    const dueDateValue = fee.dueDate ? new Date(fee.dueDate) : null;
+                    const isOverdue =
+                      fee.status === "OVERDUE" ||
+                      (isPending && dueDateValue !== null && dueDateValue < new Date());
 
                     let badgeColor = "bg-rose-50 dark:bg-rose-950/20 text-rose-600 border-rose-200/30";
                     let statusLabel = fee.status;
@@ -561,7 +506,9 @@ export default function StudentShareView({ studentId }: StudentShareViewProps) {
                               {getMonthName(fee.month)} {fee.year} Fee
                             </span>
                             <span className="text-[10px] text-slate-400 block mt-0.5">
-                              Due by: {new Date(fee.dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                              Due by: {fee.dueDate
+                                ? new Date(fee.dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                                : "N/A"}
                             </span>
                           </div>
 

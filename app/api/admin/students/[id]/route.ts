@@ -1,6 +1,6 @@
 // File reloaded to clear Turbopack cache
 import { NextRequest, NextResponse } from "next/server";
-import type { BloodGroup } from "@prisma/client";
+import { Prisma, type BloodGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { studentUpdateSchema } from "@/lib/validations/student";
@@ -8,6 +8,7 @@ import { generateNextStudentCode } from "@/lib/studentCode";
 import { hashPassword } from "@/lib/auth";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 import { generateNextParentCode } from "@/lib/parentCode";
+import { inferStandardIdFromBatchIds } from "@/lib/standardAssignments";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,12 @@ async function createTimeline(studentId: string, title: string, description: str
   await prisma.studentActivity.create({
     data: { studentId, type: title.toUpperCase().replace(/\s+/g, "_"), title, description, performedById: userId },
   });
+}
+
+function normalizeOptionalEmail(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const email = value.trim().toLowerCase();
+  return email.length > 0 ? email : null;
 }
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -33,6 +40,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
             isActive: true,
           },
         },
+        standard: true,
         batchEnrollments: { include: { batch: true } },
         attendance: { orderBy: { date: "desc" }, take: 100 },
         feeRecords: {
@@ -96,7 +104,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     }
 
     const data = parsed.data;
-    const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : null;
+    const email = normalizeOptionalEmail(data.email);
 
     // Convert bloodGroup from validation schema to Prisma enum
     const bloodGroupValue = data.bloodGroup as BloodGroup | undefined;
@@ -119,13 +127,22 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       }
     }
 
+    let inferredStandardId = data.standardId === "" ? null : data.standardId ?? existing.standardId;
+    if (data.batchIds !== undefined && data.batchIds.length > 0) {
+      const batchStandardId = await inferStandardIdFromBatchIds(prisma, data.batchIds);
+      if (data.standardId && data.standardId !== "" && batchStandardId && data.standardId !== batchStandardId) {
+        return NextResponse.json({ error: "Student standard does not match the selected batch standard." }, { status: 400 });
+      }
+      inferredStandardId = batchStandardId ?? inferredStandardId;
+    }
+
     await prisma.student.update({
       where: { id },
       data: {
         studentCode: data.studentCode ?? existing.studentCode ?? (await generateNextStudentCode()),
         firstName: data.firstName ?? existing.firstName,
         lastName: data.lastName ?? existing.lastName,
-        email: email ?? existing.email,
+        email: email === undefined ? existing.email : email,
         phone: data.phone === "" ? null : data.phone ?? existing.phone,
         dateOfBirth: data.dateOfBirth ?? existing.dateOfBirth,
         gender: data.gender ?? existing.gender,
@@ -141,6 +158,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         previousMarks: data.previousMarks === "" ? null : data.previousMarks ?? existing.previousMarks,
         joiningDate: data.joiningDate ?? existing.joiningDate,
         academicYear: data.academicYear ?? existing.academicYear,
+        standardId: inferredStandardId,
         status: data.status ?? existing.status,
         category: data.category ?? existing.category,
         referredBy: data.referredBy === "" ? null : data.referredBy ?? existing.referredBy,
@@ -230,23 +248,58 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       });
     }
 
-    if (data.batchIds) {
-      // Validate batch IDs if provided
+    if (data.batchIds !== undefined && data.batchIds.length > 0) {
       let validBatchIds: string[] = [];
       if (data.batchIds.length > 0) {
         const existingBatches = await prisma.batch.findMany({
           where: { id: { in: data.batchIds } },
-          select: { id: true }
+          select: { id: true },
         });
-        validBatchIds = existingBatches.map(b => b.id);
+        validBatchIds = existingBatches.map((batch) => batch.id);
       }
 
-      await prisma.batchEnrollment.updateMany({ where: { studentId: id }, data: { isActive: false, leaveDate: new Date() } });
-      if (validBatchIds.length > 0) {
-        await prisma.batchEnrollment.createMany({
-          data: validBatchIds.map((batchId) => ({ studentId: id, batchId, isActive: true, enrolledBy: auth.userId })),
-          skipDuplicates: true,
-        });
+      const desiredBatchIds = new Set(validBatchIds);
+      const currentEnrollments = await prisma.batchEnrollment.findMany({
+        where: { studentId: id },
+        select: { id: true, batchId: true, isActive: true },
+      });
+
+      const currentByBatchId = new Map(currentEnrollments.map((enrollment) => [enrollment.batchId, enrollment]));
+      const enrollmentsToDeactivate = currentEnrollments
+        .filter((enrollment) => enrollment.isActive && !desiredBatchIds.has(enrollment.batchId))
+        .map((enrollment) => enrollment.id);
+
+      const updates = [];
+
+      if (enrollmentsToDeactivate.length > 0) {
+        updates.push(
+          prisma.batchEnrollment.updateMany({
+            where: { id: { in: enrollmentsToDeactivate } },
+            data: { isActive: false, leaveDate: new Date() },
+          })
+        );
+      }
+
+      for (const batchId of validBatchIds) {
+        const existingEnrollment = currentByBatchId.get(batchId);
+        if (existingEnrollment) {
+          updates.push(
+            prisma.batchEnrollment.update({
+              where: { id: existingEnrollment.id },
+              data: { isActive: true, leaveDate: null },
+            })
+          );
+        } else {
+          updates.push(
+            prisma.batchEnrollment.create({
+              data: { studentId: id, batchId, isActive: true, enrolledBy: auth.userId },
+            })
+          );
+        }
+      }
+
+      if (updates.length > 0) {
+        await prisma.$transaction(updates);
       }
     }
 
@@ -311,6 +364,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
             isActive: true,
           },
         },
+        standard: true,
         batchEnrollments: { include: { batch: true } },
         emergencyContacts: true,
         medicalInfo: true,
@@ -322,6 +376,13 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     return NextResponse.json({ student: updated }, { status: 200 });
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : "unique field";
+      const message = target.includes("email")
+        ? "A student with this email already exists"
+        : `Duplicate value found for ${target}`;
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message === "Forbidden" ? 403 : message === "Unauthorized" ? 401 : 500;
     return NextResponse.json({ error: message }, { status });

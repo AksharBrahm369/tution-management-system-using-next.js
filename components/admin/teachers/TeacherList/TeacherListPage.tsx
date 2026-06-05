@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Filter, Mail, Phone, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Mail, Phone } from 'lucide-react';
 
 interface Teacher {
   id: string;
@@ -16,28 +16,56 @@ interface Teacher {
   subjects: { subject: { name: string } }[];
 }
 
-export default function TeacherListPage() {
+export default function TeacherListPage({ standardId, standardName, basePath = "/admin/teachers" }: { standardId?: string; standardName?: string; basePath?: string }) {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [standardFilter, setStandardFilter] = useState('');
+  const [standards, setStandards] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
-    fetchTeachers();
-  }, []);
+    let active = true;
 
-  const fetchTeachers = async () => {
-    try {
-      const res = await fetch('/api/admin/teachers');
-      if (res.ok) {
-        const data = await res.json();
-        setTeachers(data?.teachers ?? []);
+    const loadTeachers = async () => {
+      if (active) {
+        setLoading(true);
       }
-    } catch (error) {
-      console.error('Failed to fetch teachers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      try {
+        const params = new URLSearchParams();
+        if (standardId || standardFilter) params.set("standardId", standardId ?? standardFilter);
+        const res = await fetch(`/api/admin/teachers?${params.toString()}`);
+        if (!res.ok || !active) {
+          return;
+        }
+
+        const data = await res.json();
+        if (active) {
+          setTeachers(data?.teachers ?? []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch teachers:', error);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadTeachers();
+
+    return () => {
+      active = false;
+    };
+  }, [standardId, standardFilter]);
+
+  useEffect(() => {
+    if (standardId) return;
+    fetch("/api/admin/standards")
+      .then((res) => (res.ok ? res.json() : { standards: [] }))
+      .then((payload) => setStandards(payload.standards ?? []))
+      .catch(() => setStandards([]));
+  }, [standardId]);
 
   const filteredTeachers = teachers.filter(t => 
     t.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,16 +73,17 @@ export default function TeacherListPage() {
     t.teacherCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const addTeacherHref = standardId ? `${basePath}/add` : "/admin/teachers/add";
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Teachers</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Manage teaching staff and assignments</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Teachers` : "Teachers"}</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{standardName ? `Teachers assigned to ${standardName}` : "Manage teaching staff and assignments"}</p>
         </div>
-        <Link href="/admin/teachers/add">
+        <Link href={addTeacherHref}>
           <button className="flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium">
             <Plus className="h-4 w-4" />
             Add Teacher
@@ -79,6 +108,19 @@ export default function TeacherListPage() {
           <Filter className="h-4 w-4 text-slate-500" />
           Filters
         </button>
+        {!standardId && (
+          <select
+            aria-label="Filter teachers by standard"
+            value={standardFilter}
+            onChange={(event) => setStandardFilter(event.target.value)}
+            className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+          >
+            <option value="">All Standards</option>
+            {standards.map((standard) => (
+              <option key={standard.id} value={standard.id}>{standard.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Content */}
@@ -95,7 +137,7 @@ export default function TeacherListPage() {
           </div>
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">No teachers found</h3>
           <p className="text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
-            We couldn't find any teachers matching your search criteria. Try adjusting your filters or add a new teacher.
+            We could not find any teachers matching your search criteria. Try adjusting your filters or add a new teacher.
           </p>
         </div>
       ) : (
@@ -160,7 +202,7 @@ export default function TeacherListPage() {
                   </span>
                 </div>
                 
-                <Link href={`/admin/teachers/${teacher.id}`}>
+                <Link href={`${basePath}/${teacher.id}`}>
                   <button className="px-3 py-1.5 text-sm font-medium rounded-md text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-500 dark:hover:text-blue-400 dark:hover:bg-blue-950/50 transition-all -mr-2">
                     View Profile
                   </button>

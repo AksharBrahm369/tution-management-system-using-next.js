@@ -57,12 +57,14 @@ function normalizeAccessLevel(value: string | null) {
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin(request);
+    const standardId = request.nextUrl.searchParams.get("standardId");
 
     const materials = await prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
       SELECT
         sm.id,
         sm.title,
         sm.description,
+        sm."standardId",
         sm."subjectId",
         sm."batchId",
         sm."resourceType",
@@ -78,6 +80,7 @@ export async function GET(request: NextRequest) {
       FROM study_materials sm
       LEFT JOIN subjects s ON s.id = sm."subjectId"
       LEFT JOIN batches b ON b.id = sm."batchId"
+      WHERE ${standardId ? Prisma.sql`(sm."standardId" = ${standardId} OR b."standardId" = ${standardId})` : Prisma.sql`TRUE`}
       ORDER BY sm."createdAt" DESC
     `);
 
@@ -106,6 +109,7 @@ export async function POST(request: NextRequest) {
     const description = String(formData.get("description") ?? "").trim() || null;
     const subjectId = String(formData.get("subjectId") ?? "").trim() || null;
     const batchId = String(formData.get("batchId") ?? "").trim() || null;
+    let standardId = String(formData.get("standardId") ?? "").trim() || null;
     const resourceType = String(formData.get("resourceType") ?? "").trim();
     const accessLevel = normalizeAccessLevel(String(formData.get("accessLevel") ?? null));
     const resourceUrl = String(formData.get("resourceUrl") ?? "").trim() || null;
@@ -151,12 +155,17 @@ export async function POST(request: NextRequest) {
     }
 
     const id = randomUUID();
+    if (!standardId && batchId) {
+      const batch = await prisma.batch.findUnique({ where: { id: batchId }, select: { standardId: true } });
+      standardId = batch?.standardId ?? null;
+    }
 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO study_materials (
         id,
         title,
         description,
+        "standardId",
         "subjectId",
         "batchId",
         "resourceType",
@@ -171,6 +180,7 @@ export async function POST(request: NextRequest) {
         ${id},
         ${title},
         ${description},
+        ${standardId},
         ${subjectId},
         ${batchId},
         ${resourceType},
@@ -189,6 +199,7 @@ export async function POST(request: NextRequest) {
         sm.id,
         sm.title,
         sm.description,
+        sm."standardId",
         sm."subjectId",
         sm."batchId",
         sm."resourceType",

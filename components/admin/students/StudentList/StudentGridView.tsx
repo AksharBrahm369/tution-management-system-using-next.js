@@ -7,9 +7,10 @@ interface StudentGridViewProps {
   onChangeStatus: (student: StudentListItem) => void;
   onDownloadId: (student: StudentListItem) => void;
   onDelete: (student: StudentListItem) => void;
+  basePath?: string;
 }
 
-const StudentGridView: React.FC<StudentGridViewProps> = ({ students, onChangeStatus, onDownloadId, onDelete }) => {
+const StudentGridView: React.FC<StudentGridViewProps> = ({ students, onChangeStatus, onDownloadId, onDelete, basePath }) => {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {students.map((student) => (
@@ -19,6 +20,7 @@ const StudentGridView: React.FC<StudentGridViewProps> = ({ students, onChangeSta
           onChangeStatus={onChangeStatus}
           onDownloadId={onDownloadId}
           onDelete={onDelete}
+          basePath={basePath}
         />
       ))}
     </div>

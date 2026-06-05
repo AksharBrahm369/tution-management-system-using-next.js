@@ -33,4 +33,5 @@ export const teacherSchema = z.object({
   upiId: z.string().optional(),
   
   subjectIds: z.array(z.string()).min(1, "At least one subject is required"),
+  standardId: z.string().optional(),
 });

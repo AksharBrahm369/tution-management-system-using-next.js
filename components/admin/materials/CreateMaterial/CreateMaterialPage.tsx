@@ -29,11 +29,17 @@ const initialForm = {
   resourceType: "PDF Notes",
   accessLevel: "PUBLIC",
   resourceUrl: "",
+  standardId: "",
 };
 
-export default function CreateMaterialPage({ batches, subjects }: Props) {
+export default function CreateMaterialPage({
+  batches,
+  subjects,
+  standardId = "",
+  returnHref,
+}: Props & { standardId?: string; returnHref?: string }) {
   const router = useRouter();
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState({ ...initialForm, standardId });
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +68,7 @@ export default function CreateMaterialPage({ batches, subjects }: Props) {
         throw new Error(data.error || "Failed to save study material");
       }
 
-      router.push("/admin/materials");
+      router.push(returnHref ?? "/admin/materials");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save study material");
     } finally {

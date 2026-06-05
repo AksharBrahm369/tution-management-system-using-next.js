@@ -10,9 +10,10 @@ interface StudentTableViewProps {
   sortBy: string;
   sortOrder: "asc" | "desc";
   onSort: (column: string) => void;
+  basePath?: string;
 }
 
-const StudentTableView: React.FC<StudentTableViewProps> = ({ students, selectedIds, onToggleSelect, onToggleAll, sortBy, sortOrder, onSort }) => {
+const StudentTableView: React.FC<StudentTableViewProps> = ({ students, selectedIds, onToggleSelect, onToggleAll, sortBy, sortOrder, onSort, basePath }) => {
   const allSelected = students.length > 0 && students.every((student) => selectedIds.includes(student.id));
 
   const sortIndicator = (column: string) => (sortBy === column ? (sortOrder === "asc" ? " ▲" : " ▼") : "");
@@ -27,6 +28,7 @@ const StudentTableView: React.FC<StudentTableViewProps> = ({ students, selectedI
               {[
                 ["name", "Student"],
                 ["contact", "Contact"],
+                ["standard", "Standard"],
                 ["batch", "Batch"],
                 ["joiningDate", "Joining Date"],
                 ["status", "Status"],
@@ -45,7 +47,7 @@ const StudentTableView: React.FC<StudentTableViewProps> = ({ students, selectedI
           </thead>
           <tbody>
             {students.map((student) => (
-              <StudentTableRow key={student.id} student={student} selected={selectedIds.includes(student.id)} onToggleSelect={onToggleSelect} />
+              <StudentTableRow key={student.id} student={student} selected={selectedIds.includes(student.id)} onToggleSelect={onToggleSelect} basePath={basePath} />
             ))}
           </tbody>
         </table>

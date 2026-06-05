@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 import { enrollStudentsSchema } from "@/lib/validations/batch";
 import { logActivityFromRequest } from "@/lib/activityLogger";
+import { assignStudentsToBatchStandard, validateStudentsForBatchStandard } from "@/lib/standardAssignments";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,17 @@ export async function GET(
     await requireSuperAdmin(request);
     const { id } = await params;
     const search = request.nextUrl.searchParams.get("search")?.trim();
+    const batch = await prisma.batch.findUnique({
+      where: { id },
+      select: {
+        standard: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     const enrollments = await prisma.batchEnrollment.findMany({
       where: {
@@ -41,13 +53,27 @@ export async function GET(
             profilePhoto: true,
             phone: true,
             status: true,
+            standard: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
       orderBy: { enrollDate: "asc" },
     });
 
-    return NextResponse.json({ enrollments });
+    return NextResponse.json({
+      enrollments: enrollments.map((enrollment) => ({
+        ...enrollment,
+        student: {
+          ...enrollment.student,
+          standard: enrollment.student.standard ?? batch?.standard ?? null,
+        },
+      })),
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;
@@ -74,7 +100,7 @@ export async function POST(
 
     const batch = await prisma.batch.findUnique({
       where: { id },
-      select: { maxStrength: true, currentStrength: true },
+      select: { maxStrength: true, currentStrength: true, standardId: true },
     });
 
     if (!batch) {
@@ -82,6 +108,8 @@ export async function POST(
     }
 
     const { studentIds, notes } = parsed.data;
+
+    await validateStudentsForBatchStandard(prisma, studentIds, batch.standardId);
 
     const currentCount = await prisma.batchEnrollment.count({
       where: { batchId: id, isActive: true },
@@ -119,6 +147,8 @@ export async function POST(
         })
       )
     );
+
+    await assignStudentsToBatchStandard(prisma, studentIds, batch.standardId);
 
     // Update current strength
     const newCount = await prisma.batchEnrollment.count({ where: { batchId: id, isActive: true } });
