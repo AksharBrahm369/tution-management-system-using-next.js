@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getStandardById } from "@/lib/standards";
 
 const modules = [
-  { label: "Overview", href: "", icon: BarChart3 },
+  { label: "Overview", href: "overview", icon: BarChart3 },
   { label: "Students", href: "students", icon: Users },
   { label: "Teachers", href: "teachers", icon: GraduationCap },
   { label: "Batches", href: "batches", icon: BookOpen },
