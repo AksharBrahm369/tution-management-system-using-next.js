@@ -3,6 +3,8 @@
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ActivityLogRow } from "@/types/activityLog";
+import { formatEnum } from "@/lib/utils";
+
 
 interface LogDetailModalProps {
   log: ActivityLogRow | null;
@@ -30,7 +32,7 @@ export default function LogDetailModal({ log, onClose }: LogDetailModalProps) {
       <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{log.action}</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{formatEnum(log.action)}</h2>
             <p className="text-sm text-slate-500">{new Date(log.createdAt).toLocaleString()}</p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={onClose}>
@@ -47,15 +49,15 @@ export default function LogDetailModal({ log, onClose }: LogDetailModalProps) {
           </div>
           <div>
             <dt className="text-slate-500">Role</dt>
-            <dd>{log.userRole ?? "—"}</dd>
+            <dd>{log.userRole ? formatEnum(log.userRole) : "—"}</dd>
           </div>
           <div>
             <dt className="text-slate-500">Category</dt>
-            <dd>{log.category}</dd>
+            <dd>{formatEnum(log.category)}</dd>
           </div>
           <div>
             <dt className="text-slate-500">Severity</dt>
-            <dd>{log.severity}</dd>
+            <dd>{formatEnum(log.severity)}</dd>
           </div>
           <div>
             <dt className="text-slate-500">Entity</dt>

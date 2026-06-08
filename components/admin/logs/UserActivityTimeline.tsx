@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import type { ActivityLogRow } from "@/types/activityLog";
+import { formatEnum } from "@/lib/utils";
+
 
 interface ActorOption {
   id: string;
@@ -42,7 +44,7 @@ export default function UserActivityTimeline({
         <option value="">Select a user…</option>
         {actors.map((a) => (
           <option key={a.id} value={a.id}>
-            {a.name} — {a.role}
+            {a.name} — {formatEnum(a.role)}
           </option>
         ))}
       </select>
@@ -65,7 +67,7 @@ export default function UserActivityTimeline({
               <li key={log.id} className="mb-6 ml-2">
                 <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full bg-blue-500 ring-4 ring-white dark:ring-slate-900" />
                 <time className="text-xs text-slate-500">{new Date(log.createdAt).toLocaleString()}</time>
-                <p className="font-medium text-slate-900 dark:text-white">{log.action}</p>
+                <p className="font-medium text-slate-900 dark:text-white">{formatEnum(log.action)}</p>
                 <p className="text-sm text-slate-600 dark:text-slate-400">{log.description}</p>
                 {log.entityName && (
                   <p className="mt-1 text-xs text-slate-500">Entity: {log.entityName}</p>

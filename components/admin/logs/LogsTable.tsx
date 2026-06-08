@@ -12,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ActivityLogRow } from "@/types/activityLog";
+import { formatEnum } from "@/lib/utils";
+
 
 interface LogsTableProps {
   logs: ActivityLogRow[];
@@ -88,16 +90,16 @@ export default function LogsTable({
                   </div>
                   {log.userRole && (
                     <Badge variant={roleBadgeVariant(log.userRole)} className="mt-1 text-[10px]">
-                      {log.userRole}
+                      {formatEnum(log.userRole)}
                     </Badge>
                   )}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="text-[10px]">
-                    {log.category}
+                    {formatEnum(log.category)}
                   </Badge>
                 </TableCell>
-                <TableCell className="max-w-[200px] truncate text-sm">{log.action}</TableCell>
+                <TableCell className="max-w-[200px] truncate text-sm">{formatEnum(log.action)}</TableCell>
                 <TableCell className="max-w-[160px] truncate text-sm text-slate-600">
                   {log.entityName ?? log.entityType ?? "—"}
                 </TableCell>

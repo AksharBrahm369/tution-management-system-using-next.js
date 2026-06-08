@@ -90,6 +90,19 @@ export function formatDate(date: Date | string, formatStr: string = "dd MMM yyyy
   }
 }
 
+/**
+ * Formats a raw uppercase, snake_case enum string to a human-readable Title Case string.
+ * Example: "USER_LOGGED_IN" -> "User Logged In", "SUPER_ADMIN" -> "Super Admin"
+ */
+export function formatEnum(value: string | null | undefined): string {
+  if (!value) return "";
+  return value
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+
 // ─── Password Strength ────────────────────────────────────────────────────────
 
 export type PasswordStrength = "weak" | "fair" | "good" | "strong";

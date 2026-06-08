@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!parsed.success) {
-      return NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 400 });
+      const response = NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 400 });
+      response.headers.set("Access-Control-Allow-Origin", "*");
+      return response;
     }
 
     const data = parsed.data;
@@ -45,9 +47,25 @@ export async function POST(request: NextRequest) {
     await sendEnquiryWhatsAppAcknowledgement(data.parentName.trim(), data.parentPhone.trim());
     await notifySuperAdmins("New website enquiry", `${data.studentName} submitted the public enquiry form.`, "/admin/enquiries");
 
-    return NextResponse.json({ enquiry, message: "Thank you for your enquiry. We will contact you within 24 hours." }, { status: 201 });
+    const response = NextResponse.json({ enquiry, message: "Thank you for your enquiry. We will contact you within 24 hours." }, { status: 201 });
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const response = NextResponse.json({ error: message }, { status: 500 });
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    return response;
   }
 }
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    },
+  });
+}
+

@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatEnum } from "@/lib/utils";
+
 
 const LOG_CATEGORIES = [
   "AUTH",
@@ -75,7 +77,7 @@ export default function LogsFilters({
         >
           {CATEGORIES.map((category) => (
             <option key={category} value={category}>
-              {category === "ALL" ? "All categories" : category.replace(/_/g, " ")}
+              {category === "ALL" ? "All categories" : formatEnum(category)}
             </option>
           ))}
         </select>
@@ -87,7 +89,7 @@ export default function LogsFilters({
         >
           {SEVERITIES.map((severity) => (
             <option key={severity} value={severity}>
-              {severity === "ALL" ? "All severities" : severity}
+              {severity === "ALL" ? "All severities" : formatEnum(severity)}
             </option>
           ))}
         </select>
@@ -100,7 +102,7 @@ export default function LogsFilters({
           <option value="">All users</option>
           {actors.map((actor) => (
             <option key={actor.id} value={actor.id}>
-              {actor.name} ({actor.role})
+              {actor.name} ({formatEnum(actor.role)})
             </option>
           ))}
         </select>

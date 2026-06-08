@@ -340,6 +340,7 @@ export default function MaterialsDashboardPage({
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search study material..."
+                aria-label="Search study materials"
                 className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200"
               />
             </label>
@@ -533,8 +534,9 @@ export default function MaterialsDashboardPage({
                   {/* Subject and Batch */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Subject</label>
+                      <label htmlFor="ai-subject" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Subject</label>
                       <select 
+                        id="ai-subject"
                         value={aiSubjectId} 
                         onChange={(e) => setAiSubjectId(e.target.value)}
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
@@ -546,8 +548,9 @@ export default function MaterialsDashboardPage({
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Target Batch</label>
+                      <label htmlFor="ai-batch" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Target Batch</label>
                       <select 
+                        id="ai-batch"
                         value={aiBatchId} 
                         onChange={(e) => setAiBatchId(e.target.value)}
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
@@ -561,8 +564,9 @@ export default function MaterialsDashboardPage({
                   {/* Resource Type and Access Level */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Resource Category</label>
+                      <label htmlFor="ai-type" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Resource Category</label>
                       <select 
+                        id="ai-type"
                         value={aiType} 
                         onChange={(e) => setAiType(e.target.value)}
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
@@ -576,8 +580,9 @@ export default function MaterialsDashboardPage({
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Access Level</label>
+                      <label htmlFor="ai-access" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Access Level</label>
                       <select 
+                        id="ai-access"
                         value={aiAccess} 
                         onChange={(e) => setAiAccess(e.target.value)}
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
@@ -592,8 +597,9 @@ export default function MaterialsDashboardPage({
 
                   {/* Resource Title */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Material / Resource Title</label>
+                    <label htmlFor="ai-title" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Material / Resource Title</label>
                     <input 
+                      id="ai-title"
                       type="text"
                       value={aiTitle}
                       onChange={(e) => setAiTitle(e.target.value)}
@@ -605,8 +611,9 @@ export default function MaterialsDashboardPage({
 
                   {/* Topic / Prompt */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Prompt / Topic Description</label>
+                    <label htmlFor="ai-topic" className="text-xs font-semibold text-slate-600 dark:text-slate-400">Prompt / Topic Description</label>
                     <textarea 
+                      id="ai-topic"
                       value={aiTopic}
                       onChange={(e) => setAiTopic(e.target.value)}
                       placeholder="Describe what key concepts, formulas, and proofs you want the AI to incorporate. E.g.: Trigonometric identity proofs, solved problems, exam cheat sheets, and 5 multiple choice quiz questions."

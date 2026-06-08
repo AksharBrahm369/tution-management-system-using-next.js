@@ -31,19 +31,23 @@ export async function GET(request: NextRequest) {
       backups,
       integrations: {
         twilio: {
-          connected: Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN),
-          maskedAccountSid: process.env.TWILIO_ACCOUNT_SID ? `${process.env.TWILIO_ACCOUNT_SID.slice(0, 4)}••••${process.env.TWILIO_ACCOUNT_SID.slice(-4)}` : null,
+          connected: Boolean(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) || Boolean(settings.twilioAccountSid && settings.twilioAuthToken),
+          maskedAccountSid: process.env.TWILIO_ACCOUNT_SID 
+            ? `${process.env.TWILIO_ACCOUNT_SID.slice(0, 4)}••••${process.env.TWILIO_ACCOUNT_SID.slice(-4)}` 
+            : settings.twilioAccountSid 
+              ? `${settings.twilioAccountSid.slice(0, 4)}••••${settings.twilioAccountSid.slice(-4)}` 
+              : null,
         },
         cloudinary: {
-          connected: Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY),
-          cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? null,
+          connected: Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY) || Boolean(settings.cloudinaryCloudName && settings.cloudinaryApiKey),
+          cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? settings.cloudinaryCloudName ?? null,
         },
         firebase: {
-          connected: Boolean(process.env.FIREBASE_PROJECT_ID),
-          projectId: process.env.FIREBASE_PROJECT_ID ?? null,
+          connected: Boolean(process.env.FIREBASE_PROJECT_ID) || Boolean(settings.firebaseProjectId),
+          projectId: process.env.FIREBASE_PROJECT_ID ?? settings.firebaseProjectId ?? null,
         },
         razorpay: {
-          connected: Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+          connected: (Boolean(process.env.RAZORPAY_KEY_ID) && Boolean(process.env.RAZORPAY_KEY_SECRET)) || (Boolean(settings.razorpayKeyId) && Boolean(settings.razorpayKeySecret)),
         },
       },
     });

@@ -2,46 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import { randomUUID } from "crypto";
 import path from "path";
-import { Readable } from "stream";
-import { v2 as cloudinary } from "cloudinary";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
+import { getCloudinaryConfig, uploadToCloudinary } from "@/lib/cloudinary";
 
 export const runtime = "nodejs";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
-
-function hasCloudinaryCredentials() {
-  return Boolean(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
-}
 
 function isReadOnlyFilesystemError(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "EROFS";
 }
 
-async function uploadMaterialToCloudinary(buffer: Buffer, filename: string): Promise<{ url: string }> {
-  return new Promise((resolve, reject) => {
-    const publicId = `${Date.now()}-${path.parse(filename).name.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-    const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: "tuitionpro/materials", public_id: publicId, resource_type: "auto" },
-      (error, result) => {
-        if (error || !result) {
-          reject(error ?? new Error("Upload failed"));
-          return;
-        }
-        resolve({ url: result.secure_url });
-      }
-    );
-
-    Readable.from(buffer).pipe(uploadStream);
-  });
-}
 
 function normalizeAccessLevel(value: string | null) {
   switch (value) {
@@ -128,9 +99,10 @@ export async function POST(request: NextRequest) {
       storedFileName = file.name;
       storedFileSize = `${Math.max(1, Math.round(file.size / 1024))} KB`;
 
-      if (hasCloudinaryCredentials()) {
+      const config = await getCloudinaryConfig();
+      if (config) {
         try {
-          const uploaded = await uploadMaterialToCloudinary(buffer, file.name);
+          const uploaded = await uploadToCloudinary(buffer, file.name, "tuitionpro/materials");
           storedFilePath = uploaded.url;
         } catch (uploadError: any) {
           console.error("Cloudinary upload error:", uploadError);
