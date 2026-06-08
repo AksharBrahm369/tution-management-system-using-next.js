@@ -87,9 +87,9 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
           <SidebarTrigger className="md:hidden rounded-xl p-2.5 h-11 w-11 text-slate-850 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50" />
 
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">
+            <p className="truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">
               {pageTitle}
-            </h1>
+            </p>
             {breadcrumbItems.length > 1 && (
               <div className="mt-0.5 hidden items-center gap-1 text-xs text-slate-500 md:flex dark:text-slate-400">
                 {breadcrumbItems.map((item, idx) => (

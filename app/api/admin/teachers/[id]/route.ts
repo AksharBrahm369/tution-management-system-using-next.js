@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { teacherSchema } from "@/lib/validations/teacher";
 import * as z from "zod";
+import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin(req);
     const { id } = await params;
     const teacher = await prisma.teacher.findUnique({
       where: { id },
@@ -25,12 +27,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json(teacher);
   } catch (error) {
     console.error("[TEACHER_GET]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await requireAdmin(req);
     const { id } = await params;
     const body = await req.json();
     const data = teacherSchema.parse(body);
@@ -97,9 +101,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json(teacher);
   } catch (error) {
     console.error("[TEACHER_PUT]", error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.issues }, { status: 400 });
-    }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

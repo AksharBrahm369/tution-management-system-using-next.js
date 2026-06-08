@@ -3,11 +3,13 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import ParentResultsPage from "@/components/parent/exams/ParentResultsPage";
 
+export const dynamic = "force-dynamic";
+
 export default async function ParentExamsRoutePage() {
   const session = await getCurrentSession();
   if (!session || session.role !== "PARENT") redirect("/auth/login");
 
-  const parent = await prisma.parent.findFirst({
+  const parent = await prisma.parent.findUnique({
     where: { userId: session.userId },
     include: { students: { select: { id: true, firstName: true, lastName: true } } },
   });

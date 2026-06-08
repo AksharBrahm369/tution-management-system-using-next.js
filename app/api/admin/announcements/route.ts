@@ -12,8 +12,11 @@ import {
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-export async function GET() {
+import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
+
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
     const list: any = await prisma.$queryRaw`
       SELECT id, "userId", title, message, audience, channels, "scheduleAt", status, "createdAt", "updatedAt"
       FROM announcements
@@ -23,27 +26,15 @@ export async function GET() {
     return NextResponse.json(list, { status: 200 });
   } catch (error) {
     console.error('List announcements error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get("tuitionpro_auth")?.value ?? request.cookies.get('auth-token')?.value;
-    console.log('[announcements] POST incoming. auth-token/tuitionpro_auth present:', !!token);
-    if (!token) return NextResponse.json({ error: 'Unauthorized: missing auth-token or tuitionpro_auth cookie' }, { status: 401 });
-
-    let payload: any;
-    try {
-      const verified = await jwtVerify(token, JWT_SECRET);
-      payload = verified.payload;
-    } catch (err) {
-      console.error('[announcements] JWT verify failed:', err);
-      return NextResponse.json({ error: 'Unauthorized: invalid token', detail: err instanceof Error ? err.message : String(err) }, { status: 401 });
-    }
-
-    const userId = payload.sub as string;
-    if (!userId) return NextResponse.json({ error: 'Unauthorized: token missing sub claim' }, { status: 401 });
+    const auth = await requireAdmin(request);
+    const userId = auth.userId;
 
     const body = await request.json();
     console.log('[announcements] body:', body);
@@ -77,7 +68,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
     console.error('Create announcement error:', error);
-    return NextResponse.json({ error: 'Internal server error', detail: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }
 

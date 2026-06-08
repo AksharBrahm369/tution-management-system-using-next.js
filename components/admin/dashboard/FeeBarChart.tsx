@@ -22,6 +22,11 @@ interface ChartData {
 }
 
 const FeeBarChart: React.FC = () => {
+  const [mounted, setMounted] = useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [period, setPeriod] = useState<'6' | '12'>('6');
   const { data, isLoading, isError } = useQuery<ChartData>({
     queryKey: ['dashboard-charts'],
@@ -33,7 +38,7 @@ const FeeBarChart: React.FC = () => {
     refetchInterval: 5000,
   });
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 h-80 flex flex-col items-center justify-center shadow-lg">
         <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-500 animate-spin mb-4"></div>

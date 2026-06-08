@@ -4,15 +4,12 @@ import { prisma } from '@/lib/prisma';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
+import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
+
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get('tuitionpro_auth')?.value ?? request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const userId = payload.sub as string;
+    const auth = await requireAdmin(request);
+    const userId = auth.userId;
 
     // Fetch user notifications using raw SQL to avoid Prisma client/DB schema mismatch
     const notifications: any = await prisma.$queryRaw`
@@ -26,6 +23,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(notifications, { status: 200 });
   } catch (error) {
     console.error('Notifications fetch error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

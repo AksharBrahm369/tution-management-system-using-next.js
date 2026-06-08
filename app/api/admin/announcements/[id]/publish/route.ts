@@ -8,14 +8,11 @@ import {
   resolveAnnouncementRecipients,
 } from '@/lib/announcementDelivery';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
+import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get('tuitionpro_auth')?.value ?? request.cookies.get('auth-token')?.value;
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    await jwtVerify(token, JWT_SECRET);
+    await requireAdmin(request);
 
     const { id } = await params;
     const ann = await prisma.announcement.findUnique({ where: { id } });
@@ -30,9 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ message: 'Published', count: notificationCount, delivery }, { status: 200 });
   } catch (error) {
     console.error('Publish error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', detail: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

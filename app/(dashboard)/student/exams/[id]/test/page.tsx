@@ -3,14 +3,15 @@ import { redirect, notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import OnlineTestPage from "@/components/student/exams/OnlineTest/OnlineTestPage";
 
+export const dynamic = "force-dynamic";
+
 export default async function StudentOnlineTestRoutePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getCurrentSession();
   if (!session || session.role !== "STUDENT") redirect("/auth/login");
-
-  const { id } = await params;
-
   const student = await prisma.student.findFirst({ where: { userId: session.userId }, select: { id: true } });
   if (!student) redirect("/student/dashboard");
+
+  const { id } = await params;
 
   const exam = await prisma.exam.findUnique({
     where: { id },

@@ -129,9 +129,23 @@ export async function POST(request: NextRequest) {
       storedFileSize = `${Math.max(1, Math.round(file.size / 1024))} KB`;
 
       if (hasCloudinaryCredentials()) {
-        const uploaded = await uploadMaterialToCloudinary(buffer, file.name);
-        storedFilePath = uploaded.url;
+        try {
+          const uploaded = await uploadMaterialToCloudinary(buffer, file.name);
+          storedFilePath = uploaded.url;
+        } catch (uploadError: any) {
+          console.error("Cloudinary upload error:", uploadError);
+          return NextResponse.json(
+            { error: `Cloudinary upload failed: ${uploadError?.message || "Upload service error"}` },
+            { status: 400 }
+          );
+        }
       } else {
+        if (process.env.NODE_ENV === "production") {
+          return NextResponse.json(
+            { error: "Cloudinary credentials are not configured. Add a Resource URL or configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables." },
+            { status: 400 }
+          );
+        }
         try {
           const uploadsDir = path.join(process.cwd(), "public", "uploads", "materials");
           await mkdir(uploadsDir, { recursive: true });

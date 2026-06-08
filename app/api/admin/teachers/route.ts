@@ -1,12 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { teacherSchema } from "@/lib/validations/teacher";
 import { generateTeacherCode } from "@/lib/teacherCode";
 import * as z from "zod";
 import { logActivity } from "@/lib/activityLogger";
+import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
+    await requireAdmin(req);
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
     const standardId = searchParams.get("standardId");
@@ -58,13 +60,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ teachers, total, page });
   } catch (error) {
     console.error("[TEACHERS_GET]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const auth = await requireAdmin(req);
     const body = await req.json();
     const data = teacherSchema.parse(body);
 
@@ -137,14 +141,13 @@ export async function POST(req: Request) {
       entityType: "Teacher",
       entityId: teacher.id,
       entityName: `${teacher.firstName} ${teacher.lastName}`,
+      userId: auth.userId,
     });
 
     return NextResponse.json(teacher, { status: 201 });
   } catch (error) {
     console.error("[TEACHERS_POST]", error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Validation error", details: error.issues }, { status: 400 });
-    }
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }

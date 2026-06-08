@@ -19,6 +19,11 @@ interface ChartData {
 }
 
 const AttendanceDonutChart: React.FC = () => {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { data, isLoading, isError } = useQuery<ChartData>({
     queryKey: ['dashboard-charts'],
     queryFn: async () => {
@@ -29,7 +34,7 @@ const AttendanceDonutChart: React.FC = () => {
     refetchInterval: 5000,
   });
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 h-80 flex flex-col items-center justify-center shadow-lg">
         <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-green-500 animate-spin mb-4"></div>

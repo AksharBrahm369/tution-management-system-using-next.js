@@ -4,11 +4,13 @@ import prisma from "@/lib/prisma";
 import StudentExamsPage from "@/components/student/exams/StudentExamsPage";
 import { syncActiveExamStatuses } from "@/lib/examService";
 
+export const dynamic = "force-dynamic";
+
 export default async function StudentExamsRoutePage() {
   const session = await getCurrentSession();
   if (!session || session.role !== "STUDENT") redirect("/auth/login");
 
-  const student = await prisma.student.findFirst({
+  const student = await prisma.student.findUnique({
     where: { userId: session.userId },
     select: { id: true },
   });

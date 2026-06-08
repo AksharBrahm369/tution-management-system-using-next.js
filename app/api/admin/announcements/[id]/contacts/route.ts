@@ -3,14 +3,11 @@ import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 import { resolveAnnouncementRecipients } from "@/lib/announcementDelivery";
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key");
+import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = request.cookies.get("tuitionpro_auth")?.value ?? request.cookies.get("auth-token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    await jwtVerify(token, JWT_SECRET);
+    await requireAdmin(request);
 
     const { id } = await params;
     const announcement = await prisma.announcement.findUnique({ where: { id } });
@@ -32,9 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     });
   } catch (error) {
     console.error("Announcement contacts error:", error);
-    return NextResponse.json(
-      { error: "Internal server error", detail: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
   }
 }
