@@ -85,7 +85,9 @@ export async function GET(request: NextRequest) {
       feeRecords,
       upcomingEvents,
       stats: {
-        attendance: parent.students.length > 0 ? 0 : 0,
+        attendance: parent.students.length > 0 
+          ? Math.round((parent.students.reduce((acc, student) => acc + (student.attendance?.[0]?.status === "PRESENT" ? 1 : 0), 0) / parent.students.length) * 100) 
+          : 0,
         unreadMessages: notices.filter((item) => !item.isRead).length,
       },
     });

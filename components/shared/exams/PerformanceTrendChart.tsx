@@ -6,7 +6,7 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 export default function PerformanceTrendChart({ data }: { data: Array<{ name: string; percentage: number }> }) {
   return (
     <div className="h-72 w-full">
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <XAxis dataKey="name" />
           <YAxis domain={[0, 100]} />

@@ -15,14 +15,14 @@ export default function TeacherDashboardPage() {
         <p className="text-sm text-slate-500">Manage your classes, students, and schedules</p>
       </div>
 
-      {/* Coming Soon Banner */}
-      <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-600 to-emerald-700 p-8 text-white shadow-lg shadow-emerald-600/20">
+      {/* Setup in Progress Banner */}
+      <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-600 to-indigo-700 p-8 text-white shadow-lg shadow-indigo-600/20">
         <div className="flex items-center gap-3">
-          <Clock className="h-8 w-8 text-emerald-200" />
+          <Clock className="h-8 w-8 text-indigo-200" />
           <div>
-            <h2 className="text-xl font-bold">Teacher Dashboard — Coming Soon</h2>
-            <p className="mt-1 text-sm text-emerald-100">
-              Module 2 will include class management, student lists, attendance marking, and lesson planning tools.
+            <h2 className="text-xl font-bold">Teacher Portal Setup in Progress</h2>
+            <p className="mt-1 text-sm text-indigo-100">
+              Your teacher portal is currently being configured by the administration. Class management, attendance tools, and lesson planning features will be available soon.
             </p>
           </div>
         </div>

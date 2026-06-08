@@ -5,7 +5,7 @@ export default function ParentResultsPage({
 }) {
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-6">
-      <h1 className="text-2xl font-semibold">Child Results</h1>
+      <h2 className="text-2xl font-semibold">Child Results</h2>
       <div className="overflow-x-auto rounded-xl border dark:border-slate-700">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">

@@ -17,7 +17,8 @@ import {
   Loader2,
   CheckCircle2,
   X,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle
 } from "lucide-react";
 import WelcomeHeader from "@/components/admin/dashboard/WelcomeHeader";
 import StatsCard from "@/components/admin/dashboard/StatsCard";
@@ -38,15 +39,21 @@ type MaterialItem = {
   fileSize?: string | null;
 };
 
-export default function MaterialsDashboardPage({
-  standardId,
-  standardName,
-  basePath = "/admin/materials",
-}: {
+interface Props {
   standardId?: string;
   standardName?: string;
   basePath?: string;
-}) {
+  isCloudinaryConfigured?: boolean;
+  isGeminiConfigured?: boolean;
+}
+
+export default function MaterialsDashboardPage({ 
+  standardId, 
+  standardName, 
+  basePath = "/admin/materials",
+  isCloudinaryConfigured = true,
+  isGeminiConfigured = true,
+}: Props) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [standardFilter, setStandardFilter] = useState("");
@@ -243,13 +250,30 @@ export default function MaterialsDashboardPage({
     <div className="space-y-6">
       <WelcomeHeader />
 
+      {(!isCloudinaryConfigured || !isGeminiConfigured) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-5 w-5" />
+            <span>Configuration Missing</span>
+          </div>
+          <ul className="mt-2 ml-7 list-disc space-y-1">
+            {!isCloudinaryConfigured && (
+              <li><strong>Cloudinary</strong> credentials are not set. File uploads are disabled or restricted to local storage. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your environment.</li>
+            )}
+            {!isGeminiConfigured && (
+              <li><strong>Gemini AI</strong> API key is not set. The AI generator will fall back to basic local compilation. Add GEMINI_API_KEY to enable smart generation.</li>
+            )}
+          </ul>
+        </div>
+      )}
+
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Study Material</p>
             <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Study Material` : "Manage notes, worksheets, and downloads"}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-              This page is now live and reachable from the admin sidebar. It is ready for material cataloging, access control, and future upload integration.
+              This page is now live and reachable from the admin sidebar. Create AI-generated resources, upload files, and control which batches or standards can access each material.
             </p>
           </div>
 
@@ -492,6 +516,7 @@ export default function MaterialsDashboardPage({
                 </div>
               </div>
               <button 
+                aria-label="Close AI Generator"
                 onClick={() => setIsAiModalOpen(false)}
                 className="h-8 w-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
               >
@@ -697,6 +722,7 @@ export default function MaterialsDashboardPage({
                 </div>
               </div>
               <button 
+                aria-label="Close details"
                 onClick={() => setSelectedMaterial(null)}
                 className="h-8 w-8 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
               >
