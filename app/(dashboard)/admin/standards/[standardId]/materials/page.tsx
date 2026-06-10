@@ -3,6 +3,8 @@ import MaterialsDashboardPage from "@/components/admin/materials/MaterialsDashbo
 import { getStandardById } from "@/lib/standards";
 import { getCloudinaryConfig } from "@/lib/cloudinary";
 
+export const dynamic = "force-dynamic";
+
 export default async function StandardMaterialsPage({ params }: { params: Promise<{ standardId: string }> }) {
   const { standardId } = await params;
   const standard = await getStandardById(standardId);

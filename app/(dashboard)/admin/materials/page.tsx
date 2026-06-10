@@ -1,6 +1,8 @@
 import MaterialsDashboardPage from "@/components/admin/materials/MaterialsDashboardPage";
 import { getCloudinaryConfig } from "@/lib/cloudinary";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminMaterialsPage() {
   const cloudinaryConfig = await getCloudinaryConfig();
   const hasCloudinary = Boolean(cloudinaryConfig);
