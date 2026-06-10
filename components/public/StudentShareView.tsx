@@ -30,6 +30,7 @@ type StudentData = PublicStudentProfileData;
 interface StudentShareViewProps {
   studentId: string;
   initialData?: StudentData | null;
+  baseUrl?: string;
 }
 
 
@@ -43,12 +44,14 @@ const getMonthName = (month: number) => {
   return date.toLocaleString("en-IN", { month: "long" });
 };
 
-export default function StudentShareView({ studentId, initialData = null }: StudentShareViewProps) {
+export default function StudentShareView({ studentId, initialData = null, baseUrl }: StudentShareViewProps) {
   const [data, setData] = useState<StudentData | null>(initialData);
   const [loading, setLoading] = useState<boolean>(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [debugState, setDebugState] = useState<string>("Initializing...");
-  const [portalUrl, setPortalUrl] = useState<string>("https://tution-management-system-using-next-one.vercel.app/student/login");
+  const [portalUrl, setPortalUrl] = useState<string>(
+    baseUrl ? `${baseUrl}/student/login` : "/student/login"
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {
