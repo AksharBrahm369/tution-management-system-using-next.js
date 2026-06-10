@@ -81,6 +81,10 @@ export default function CollectFeePage() {
       alert("Select at least one fee record");
       return;
     }
+    if (Number(amount) <= 0) {
+      alert("Enter an amount greater than zero");
+      return;
+    }
     if (!collectedBy.trim()) {
       alert("Enter collected by name");
       return;
@@ -129,7 +133,7 @@ export default function CollectFeePage() {
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Collect Fee</h2>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Collect Fee</h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">Collect pending fee records and create payment entries.</p>
       </div>
 
@@ -142,12 +146,12 @@ export default function CollectFeePage() {
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-4">
               <label className="space-y-1 text-sm">
-                <span className="block text-slate-500">Amount</span>
-                <input className="w-full rounded-lg border px-3 py-2" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                <span className="block text-slate-500">Amount <span className="text-red-500">*</span></span>
+                <input className="w-full rounded-lg border px-3 py-2" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} required aria-required="true" min={1} />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="block text-slate-500">Payment Mode</span>
-                <select className="w-full rounded-lg border px-3 py-2" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)}>
+                <span className="block text-slate-500">Payment Mode <span className="text-red-500">*</span></span>
+                <select className="w-full rounded-lg border px-3 py-2" value={paymentMode} onChange={(e) => setPaymentMode(e.target.value)} required aria-required="true">
                   <option value="CASH">Cash</option>
                   <option value="ONLINE">Online</option>
                   <option value="CHEQUE">Cheque</option>
@@ -157,8 +161,8 @@ export default function CollectFeePage() {
                 </select>
               </label>
               <label className="space-y-1 text-sm">
-                <span className="block text-slate-500">Collected By</span>
-                <input className="w-full rounded-lg border px-3 py-2" value={collectedBy} onChange={(e) => setCollectedBy(e.target.value)} />
+                <span className="block text-slate-500">Collected By <span className="text-red-500">*</span></span>
+                <input className="w-full rounded-lg border px-3 py-2" value={collectedBy} onChange={(e) => setCollectedBy(e.target.value)} required aria-required="true" />
               </label>
               <label className="space-y-1 text-sm">
                 <span className="block text-slate-500">Notes</span>
@@ -184,6 +188,7 @@ export default function CollectFeePage() {
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
+                          aria-label={`Select fee record for ${record.student.firstName} ${record.student.lastName}`}
                           className="cursor-pointer disabled:cursor-not-allowed h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           checked={selectedIds.includes(record.id)}
                           onChange={(e) => {
@@ -207,7 +212,7 @@ export default function CollectFeePage() {
               </table>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="text-sm text-slate-500">Selected pending: ₹{selectedPending.toFixed(2)}</div>
               <button disabled={saving} onClick={submit} className="rounded-xl bg-blue-600 px-4 py-2 text-white disabled:opacity-50">
                 {saving ? "Saving..." : "Collect Payment"}

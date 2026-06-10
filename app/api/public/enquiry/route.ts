@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { enquiryCreateSchema } from "@/lib/validations/enquiry";
 import { generateEnquiryNumber, notifySuperAdmins, sendEnquiryWhatsAppAcknowledgement } from "@/lib/enquiry";
 import { prisma } from "@/lib/prisma";
+import { applyCorsHeaders, corsOptionsResponse } from "@/lib/cors";
 
 export const runtime = "nodejs";
 
@@ -15,8 +16,7 @@ export async function POST(request: NextRequest) {
 
     if (!parsed.success) {
       const response = NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 400 });
-      response.headers.set("Access-Control-Allow-Origin", "*");
-      return response;
+      return applyCorsHeaders(request, response, "POST, OPTIONS");
     }
 
     const data = parsed.data;
@@ -48,24 +48,15 @@ export async function POST(request: NextRequest) {
     await notifySuperAdmins("New website enquiry", `${data.studentName} submitted the public enquiry form.`, "/admin/enquiries");
 
     const response = NextResponse.json({ enquiry, message: "Thank you for your enquiry. We will contact you within 24 hours." }, { status: 201 });
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    return response;
+    return applyCorsHeaders(request, response, "POST, OPTIONS");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
     const response = NextResponse.json({ error: message }, { status: 500 });
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    return response;
+    return applyCorsHeaders(request, response, "POST, OPTIONS");
   }
 }
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  });
+export async function OPTIONS(request: NextRequest) {
+  return corsOptionsResponse(request, "POST, OPTIONS");
 }
 

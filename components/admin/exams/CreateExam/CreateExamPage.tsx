@@ -88,7 +88,7 @@ export default function CreateExamPage({
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div>
-        <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Create Exam</h2>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Create Exam</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">Multi-step wizard for exam and result configuration.</p>
       </div>
 

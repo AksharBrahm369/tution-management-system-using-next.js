@@ -6,13 +6,13 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMeasuredChartSize } from './useMeasuredChartSize';
 
 interface ChartData {
   monthlyFeeCollection: Array<{
@@ -25,6 +25,7 @@ interface ChartData {
 const FeeBarChart: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [period, setPeriod] = useState<'6' | '12'>('6');
+  const [chartRef, chartSize] = useMeasuredChartSize(320);
 
   React.useEffect(() => {
     setMounted(true);
@@ -76,9 +77,11 @@ const FeeBarChart: React.FC = () => {
         </select>
       </div>
 
-      <div className="h-[320px] min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
+      <div ref={chartRef} className="h-[320px] min-h-[320px] w-full min-w-0 overflow-hidden">
+        {chartSize.isReady ? (
           <BarChart
+            width={chartSize.width}
+            height={chartSize.height}
             data={data?.monthlyFeeCollection || []}
             margin={{ top: 10, right: 16, left: 0, bottom: 0 }}
           >
@@ -99,7 +102,7 @@ const FeeBarChart: React.FC = () => {
             <Bar dataKey="collected" fill="#10b981" name="Collected" radius={[6, 6, 0, 0]} />
             <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[6, 6, 0, 0]} />
           </BarChart>
-        </ResponsiveContainer>
+        ) : null}
       </div>
     </section>
   );

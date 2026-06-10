@@ -54,7 +54,7 @@ export default function AttendanceOverviewPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">Attendance</h2>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-slate-50">Attendance</h1>
           <p className="text-slate-600 dark:text-slate-300">
             Track and manage student attendance
           </p>

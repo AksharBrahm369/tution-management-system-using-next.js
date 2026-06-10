@@ -239,6 +239,14 @@ export default function CommunicationPage() {
     e.preventDefault();
     setActionMessage(null);
     setError(null);
+    if (!title.trim()) {
+      setError("Announcement title is required.");
+      return;
+    }
+    if (!message.trim()) {
+      setError("Announcement message is required.");
+      return;
+    }
     const audience = targetMode === "BATCH" && selectedBatchId ? `BATCH:${selectedBatchId}` : "STUDENT";
     console.log("[communication] handleCreate clicked", { title, message, audience, channels: selectedChannels });
     setLoading(true);
@@ -332,7 +340,7 @@ export default function CommunicationPage() {
             <div className="mb-2 inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs font-medium tracking-wide text-cyan-200">
               Admin Communication
             </div>
-            <h2 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Announcements</h2>
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Communication</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               Create, publish, and resend institution-wide updates from a single place.
             </p>
@@ -367,29 +375,35 @@ export default function CommunicationPage() {
 
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">Title</label>
+                <label htmlFor="announcement-title" className="mb-2 block text-sm font-medium text-slate-300">Title <span className="text-rose-300">*</span></label>
                 <input
+                  id="announcement-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter announcement title"
                   className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
+                  required
+                  aria-required="true"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-300">Message</label>
+                <label htmlFor="announcement-message" className="mb-2 block text-sm font-medium text-slate-300">Message <span className="text-rose-300">*</span></label>
                 <textarea
+                  id="announcement-message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Write the announcement details"
                   rows={7}
                   className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
+                  required
+                  aria-required="true"
                 />
               </div>
 
               <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">Send to</label>
+                  <label htmlFor="announcement-batch" className="mb-2 block text-sm font-medium text-slate-300">Send to</label>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button
                       type="button"
@@ -417,6 +431,7 @@ export default function CommunicationPage() {
 
                   {targetMode === "BATCH" ? (
                     <select
+                      id="announcement-batch"
                       value={selectedBatchId}
                       onChange={(e) => setSelectedBatchId(e.target.value)}
                       className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"

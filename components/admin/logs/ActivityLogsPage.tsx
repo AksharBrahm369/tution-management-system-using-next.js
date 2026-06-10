@@ -142,7 +142,7 @@ export default function ActivityLogsPage() {
             <Label htmlFor="live-mode" className="text-sm font-medium">
               Live Mode
             </Label>
-            <Switch checked={liveMode} onCheckedChange={setLiveMode} />
+            <Switch id="live-mode" checked={liveMode} onCheckedChange={setLiveMode} />
           </div>
           <Button type="button" onClick={() => handleExport("excel")}>
             <Download className="h-4 w-4" />

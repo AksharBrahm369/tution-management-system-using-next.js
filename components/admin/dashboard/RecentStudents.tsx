@@ -83,7 +83,44 @@ const RecentStudents: React.FC = () => {
           No students enrolled yet.
         </div>
       ) : (
-        <div className="tp-table-wrap rounded-none border-x-0 border-b-0 shadow-none">
+        <>
+        <div className="space-y-3 px-5 pb-5 sm:hidden">
+          {students.map((student) => (
+            <article
+              key={student.id}
+              className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-950 dark:text-white">{student.name}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{student.email}</p>
+                </div>
+                <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-medium ${feeStatusClasses[student.feeStatus] ?? feeStatusClasses.Pending}`}>
+                  {student.feeStatus}
+                </span>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Batch</dt>
+                  <dd className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">{student.batch}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Joined</dt>
+                  <dd className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">
+                    {formatDistanceToNow(new Date(student.joinDate), { addSuffix: true })}
+                  </dd>
+                </div>
+              </dl>
+              <Link
+                href={`/admin/students/${student.id}`}
+                className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:border-blue-900/50 dark:bg-slate-900 dark:text-blue-300 dark:hover:text-blue-200"
+              >
+                View <ChevronRight size={14} />
+              </Link>
+            </article>
+          ))}
+        </div>
+        <div className="tp-table-wrap hidden rounded-none border-x-0 border-b-0 shadow-none sm:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -123,6 +160,7 @@ const RecentStudents: React.FC = () => {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
     </section>
   );

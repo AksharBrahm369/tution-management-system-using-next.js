@@ -5,7 +5,6 @@ import { MoreHorizontal, Calendar, Clock, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
 import { Progress } from "@/components/ui/progress";
 
 export default function ExamCard({ exam, onView, onEnterMarks }: any) {
@@ -64,7 +63,7 @@ export default function ExamCard({ exam, onView, onEnterMarks }: any) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="-mr-2 -mt-2">
+              <Button variant="ghost" size="icon" className="-mr-2 -mt-2" aria-label={`Open actions for ${exam.title}`}>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

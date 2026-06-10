@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useMemo, useState } from "react";
 import { Upload, Trash2, Eye } from "lucide-react";
 import type { InstituteSettingsRecord } from "./types";
 
@@ -140,5 +140,19 @@ export default function InstituteProfile({ settings, onSaved }: Props) {
 }
 
 function Field({ label, full, children }: { label: string; full?: boolean; children: React.ReactNode }) {
-  return <div className={full ? "md:col-span-2" : ""}><label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>{children}</div>;
+  const fieldId = useId();
+  const labelledChild = isValidElement<{ id?: string; "aria-required"?: boolean; required?: boolean }>(children)
+    ? cloneElement(children, {
+        id: children.props.id ?? fieldId,
+        "aria-required": label.includes("*") || children.props.required ? true : children.props["aria-required"],
+        required: label.includes("*") || children.props.required,
+      })
+    : children;
+
+  return (
+    <div className={full ? "md:col-span-2" : ""}>
+      <label htmlFor={fieldId} className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+      {labelledChild}
+    </div>
+  );
 }

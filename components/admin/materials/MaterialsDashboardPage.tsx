@@ -8,7 +8,6 @@ import {
   BookMarked,
   FileText,
   FolderOpen,
-  GraduationCap,
   LibraryBig,
   Search,
   ShieldCheck,
@@ -20,9 +19,7 @@ import {
   ExternalLink,
   AlertTriangle
 } from "lucide-react";
-import WelcomeHeader from "@/components/admin/dashboard/WelcomeHeader";
 import StatsCard from "@/components/admin/dashboard/StatsCard";
-import QuickActions from "@/components/admin/dashboard/QuickActions";
 
 type MaterialItem = {
   id: string;
@@ -248,8 +245,6 @@ export default function MaterialsDashboardPage({
 
   return (
     <div className="space-y-6">
-      <WelcomeHeader />
-
       {(!isCloudinaryConfigured || !isGeminiConfigured) && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
           <div className="flex items-center gap-2 font-semibold">
@@ -271,19 +266,19 @@ export default function MaterialsDashboardPage({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Study Material</p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Study Material` : "Manage notes, worksheets, and downloads"}</h2>
+            <h1 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Study Material` : "Study Material"}</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-              This page is now live and reachable from the admin sidebar. Create AI-generated resources, upload files, and control which batches or standards can access each material.
+              Manage notes, worksheets, AI-generated resources, and downloads.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             {!standardId && (
               <select
                 aria-label="Filter materials by standard"
                 value={standardFilter}
                 onChange={(event) => setStandardFilter(event.target.value)}
-                className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:w-auto"
               >
                 <option value="">All Standards</option>
                 {standards.map((standard) => (
@@ -293,18 +288,18 @@ export default function MaterialsDashboardPage({
             )}
             <button
               onClick={() => setIsAiModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 shadow-md active:scale-95"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-md transition hover:opacity-90 active:scale-95 sm:w-auto"
             >
               <Sparkles className="h-4 w-4" />
               Generate with AI
             </button>
             <Link
               href={createHref}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
             >
               Create resource <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href={createHref} className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500">
+            <Link href={createHref} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 sm:w-auto">
               <Upload className="h-4 w-4" />
               Upload file
             </Link>
@@ -347,7 +342,64 @@ export default function MaterialsDashboardPage({
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-            <div className="overflow-x-auto">
+            {loading && (
+              <div className="p-6 text-sm text-slate-500 dark:text-slate-400">Loading study materials...</div>
+            )}
+
+            {!loading && filteredMaterials.length > 0 && (
+              <div className="space-y-3 p-4 md:hidden">
+                {filteredMaterials.map((item) => (
+                  <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">{item.title}</h3>
+                      <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{item.subject}</p>
+                    </div>
+                    <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Batch</dt>
+                        <dd className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">{item.batch}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Type</dt>
+                        <dd className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">{item.type}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Access</dt>
+                        <dd className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">{String(item.access).replaceAll("_", " ")}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Updated</dt>
+                        <dd className="mt-0.5 font-medium text-slate-700 dark:text-slate-200">{item.updatedAt}</dd>
+                      </div>
+                    </dl>
+                    <div className="mt-4 flex flex-col gap-2">
+                      {item.resourceUrl && (
+                        <a
+                          href={item.resourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-cyan-600 px-3 py-2 text-sm font-medium text-white hover:bg-cyan-500"
+                        >
+                          {item.resourceUrl.startsWith("http") ? "Open Website" : "Open File"}
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={`View options for ${item.title}`}
+                        onClick={() => setSelectedMaterial(item)}
+                        className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        Options
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                   <tr>
@@ -402,6 +454,8 @@ export default function MaterialsDashboardPage({
                             return (
                               <div className="flex flex-col gap-2 animate-fade-in">
                                 <button
+                                  type="button"
+                                  aria-label={`${isOpen ? "Hide" : "Show"} website options for ${item.title}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setActiveDropdownId(isOpen ? null : item.id);
@@ -446,6 +500,8 @@ export default function MaterialsDashboardPage({
                         })()}
 
                         <button
+                          type="button"
+                          aria-label={`View options for ${item.title}`}
                           onClick={() => setSelectedMaterial(item)}
                           className="whitespace-nowrap inline-flex items-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 active:scale-95 animate-fade-in"
                           title="View all recommended platforms & directory"
@@ -485,17 +541,6 @@ export default function MaterialsDashboardPage({
               <p>2. Upload locally stored worksheets or attachments for specific subjects.</p>
               <p>3. Choose whether content is public, batch only, or private.</p>
             </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Shortcuts</p>
-                <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">Related admin tasks</h2>
-              </div>
-              <GraduationCap className="h-5 w-5 text-slate-400" />
-            </div>
-            <QuickActions />
           </div>
         </div>
       </section>

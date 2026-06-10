@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { Cell, Pie, PieChart, Tooltip } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMeasuredChartSize } from './useMeasuredChartSize';
 
 interface ChartData {
   attendanceOverview: {
@@ -15,6 +16,7 @@ interface ChartData {
 
 const AttendanceDonutChart: React.FC = () => {
   const [mounted, setMounted] = React.useState(false);
+  const [chartRef, chartSize] = useMeasuredChartSize(300);
 
   React.useEffect(() => {
     setMounted(true);
@@ -65,9 +67,9 @@ const AttendanceDonutChart: React.FC = () => {
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Today's marked attendance</p>
       </div>
 
-      <div className="relative h-[300px] min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+      <div ref={chartRef} className="relative h-[300px] min-h-[300px] w-full min-w-0 overflow-hidden">
+        {chartSize.isReady ? (
+          <PieChart width={chartSize.width} height={chartSize.height}>
             <Pie
               data={chartData}
               cx="50%"
@@ -91,7 +93,7 @@ const AttendanceDonutChart: React.FC = () => {
               }}
             />
           </PieChart>
-        </ResponsiveContainer>
+        ) : null}
 
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
           <p className="text-3xl font-semibold text-slate-950 dark:text-white">{presentPercentage}%</p>

@@ -49,6 +49,15 @@ export default function CreateMaterialPage({
   };
 
   const handleSubmit = async () => {
+    if (!form.title.trim()) {
+      setError("Material title is required.");
+      return;
+    }
+    if (!form.resourceType.trim()) {
+      setError("Resource type is required.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -91,7 +100,7 @@ export default function CreateMaterialPage({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Study Material</p>
-            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Create resource</h2>
+            <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Create resource</h1>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Save notes, worksheets, links, or uploaded files for batches and subjects.</p>
           </div>
 
@@ -114,12 +123,14 @@ export default function CreateMaterialPage({
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <label className="space-y-2 md:col-span-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Title</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Title <span className="text-red-500">*</span></span>
             <input
               value={form.title}
               onChange={(event) => handleChange("title", event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-white"
               placeholder="Enter resource title"
+              required
+              aria-required="true"
             />
           </label>
 
@@ -166,12 +177,14 @@ export default function CreateMaterialPage({
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Resource type</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Resource type <span className="text-red-500">*</span></span>
             <input
               value={form.resourceType}
               onChange={(event) => handleChange("resourceType", event.target.value)}
               className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-950/40 dark:text-white"
               placeholder="PDF Notes, Worksheet, Video, Link"
+              required
+              aria-required="true"
             />
           </label>
 

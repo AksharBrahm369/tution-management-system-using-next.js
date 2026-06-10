@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { cloneElement, isValidElement, useEffect, useId, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import type { InstituteSettingsRecord } from "./types";
 
@@ -61,5 +61,17 @@ export default function SecuritySettings({ settings, onSaved }: Props) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div><label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>{children}</div>; }
-function Toggle({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: () => void; disabled?: boolean }) { return <button type="button" aria-pressed={checked} disabled={disabled} onClick={onChange} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:border-slate-800 dark:text-slate-300 disabled:opacity-60"><span>{label}</span><span className={`h-5 w-10 rounded-full p-0.5 ${checked ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"}`}><span className={`block h-4 w-4 rounded-full bg-white transition ${checked ? "translate-x-5" : "translate-x-0"}`} /></span></button>; }
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const fieldId = useId();
+  const labelledChild = isValidElement<{ id?: string }>(children)
+    ? cloneElement(children, { id: children.props.id ?? fieldId })
+    : children;
+
+  return (
+    <div>
+      <label htmlFor={fieldId} className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+      {labelledChild}
+    </div>
+  );
+}
+function Toggle({ label, checked, onChange, disabled }: { label: string; checked: boolean; onChange: () => void; disabled?: boolean }) { return <button type="button" aria-label={label} aria-pressed={checked} disabled={disabled} onClick={onChange} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-700 dark:border-slate-800 dark:text-slate-300 disabled:opacity-60"><span>{label}</span><span className={`h-5 w-10 rounded-full p-0.5 ${checked ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"}`}><span className={`block h-4 w-4 rounded-full bg-white transition ${checked ? "translate-x-5" : "translate-x-0"}`} /></span></button>; }

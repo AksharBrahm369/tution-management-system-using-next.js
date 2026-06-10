@@ -1,5 +1,9 @@
 import * as React from "react";
 
-export function Switch({ checked, onCheckedChange }: { checked?: boolean; onCheckedChange?: (next: boolean) => void }) {
-  return <input type="checkbox" checked={checked} onChange={(e) => onCheckedChange?.(e.target.checked)} />;
+type SwitchProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "onChange"> & {
+  onCheckedChange?: (next: boolean) => void;
+};
+
+export function Switch({ checked, onCheckedChange, ...props }: SwitchProps) {
+  return <input {...props} type="checkbox" checked={checked} onChange={(e) => onCheckedChange?.(e.target.checked)} />;
 }

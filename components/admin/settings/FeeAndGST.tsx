@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CreditCard, ShieldCheck, Plug } from "lucide-react";
+import { cloneElement, isValidElement, useEffect, useId, useState } from "react";
+import { CreditCard, Plug } from "lucide-react";
 import type { InstituteSettingsRecord } from "./types";
 
 interface Props {
@@ -89,5 +89,15 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 function Field({ label, full, children }: { label: string; full?: boolean; children: React.ReactNode }) {
-  return <div className={full ? "md:col-span-2" : ""}><label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>{children}</div>;
+  const fieldId = useId();
+  const labelledChild = isValidElement<{ id?: string }>(children)
+    ? cloneElement(children, { id: children.props.id ?? fieldId })
+    : children;
+
+  return (
+    <div className={full ? "md:col-span-2" : ""}>
+      <label htmlFor={fieldId} className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
+      {labelledChild}
+    </div>
+  );
 }

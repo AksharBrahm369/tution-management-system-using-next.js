@@ -105,7 +105,7 @@ export default function ParentListPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900 dark:text-white">Parents</h2>
+          <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Parents</h1>
           <p className="mt-2 text-sm text-slate-500">Manage all parent accounts</p>
         </div>
         <div className="flex gap-2">
