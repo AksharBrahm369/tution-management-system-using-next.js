@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShieldAlert } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, ShieldAlert, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<"UNAUTHORIZED" | "FORBIDDEN" | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -110,6 +111,16 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       {/* Desktop Header */}
       <header className="hidden md:flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-8">
+          {pathname !== "/teacher/dashboard" && pathname !== "/teacher" && (
+            <button
+              onClick={() => router.back()}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-white"
+              title="Go Back"
+              type="button"
+            >
+              <ArrowLeft size={14} />
+            </button>
+          )}
           <Link href="/teacher/dashboard" className="text-xl font-semibold text-blue-700 dark:text-blue-300">
             TuitionPro Teacher
           </Link>
@@ -128,8 +139,21 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       </header>
 
       {/* Mobile Header */}
-      <header className="md:hidden flex items-center justify-center border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 sticky top-0 z-10">
-        <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">TuitionPro Teacher</div>
+      <header className="md:hidden flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900 sticky top-0 z-10">
+        <div className="flex w-9 items-center justify-start">
+          {pathname !== "/teacher/dashboard" && pathname !== "/teacher" && (
+            <button
+              onClick={() => router.back()}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+              title="Go Back"
+              type="button"
+            >
+              <ArrowLeft size={14} />
+            </button>
+          )}
+        </div>
+        <div className="text-base font-semibold text-blue-700 dark:text-blue-300">TuitionPro Teacher</div>
+        <div className="w-9" />
       </header>
 
       {/* Main Content */}

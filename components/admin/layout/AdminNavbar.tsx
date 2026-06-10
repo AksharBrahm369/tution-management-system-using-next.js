@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { Search, Bell, Moon, Sun, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Search, Bell, Moon, Sun, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import GlobalSearchModal from '@/components/admin/shared/GlobalSearchModal';
 import NotificationDropdown from '@/components/admin/shared/NotificationDropdown';
@@ -55,6 +55,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string }>(initialUser);
   const pathname = usePathname();
+  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -85,6 +86,17 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-3 shadow-sm md:px-5 xl:px-6 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex min-w-0 items-center gap-3 md:gap-4">
           <SidebarTrigger className="h-10 w-10 rounded-lg p-2.5 text-slate-700 hover:bg-slate-100 hover:text-slate-950 md:hidden dark:text-slate-100 dark:hover:bg-slate-800" />
+
+          {pathname !== '/admin/dashboard' && pathname !== '/admin' && (
+            <button
+              onClick={() => router.back()}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-white"
+              title="Go Back"
+              type="button"
+            >
+              <ArrowLeft size={16} />
+            </button>
+          )}
 
           <div className="min-w-0">
             <p className="truncate text-base font-semibold tracking-normal text-slate-900 md:text-lg dark:text-white">
