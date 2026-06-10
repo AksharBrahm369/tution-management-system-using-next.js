@@ -3,13 +3,14 @@
 import React from 'react';
 import {
   AlertCircle,
+  AlertTriangle,
+  HelpCircle,
   TrendingDown,
   Users,
-  HelpCircle,
-  AlertTriangle,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Alert {
   id: string;
@@ -18,6 +19,13 @@ interface Alert {
   severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   createdAt: Date | string;
 }
+
+const severityClasses: Record<string, string> = {
+  LOW: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-300',
+  MEDIUM: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300',
+  HIGH: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800/70 dark:bg-amber-950/40 dark:text-amber-200',
+  CRITICAL: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300',
+};
 
 const AlertsPanel: React.FC = () => {
   const { data: alerts, isLoading, isError } = useQuery<Alert[]>({
@@ -41,25 +49,13 @@ const AlertsPanel: React.FC = () => {
     return icons[type] || icons.SYSTEM;
   };
 
-  const getSeverityColor = (severity: string) => {
-    const colors: Record<string, string> = {
-      LOW: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-      MEDIUM: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-      HIGH: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
-      CRITICAL: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-    };
-    return colors[severity] || colors.LOW;
-  };
-
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm h-full">
-        <h3 className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-4">
-          Alerts
-        </h3>
+      <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">Alerts</h2>
         <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg animate-pulse"></div>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-16 rounded-lg" />
           ))}
         </div>
       </div>
@@ -68,40 +64,31 @@ const AlertsPanel: React.FC = () => {
 
   if (isError) {
     return (
-      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg h-full">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Alerts</h3>
+      <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-base font-semibold text-slate-950 dark:text-white">Alerts</h2>
         <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load alerts.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm h-full">
-      <h3 className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-4">
-        Alerts
-      </h3>
+    <section className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h2 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">Alerts</h2>
 
       {alerts && alerts.length > 0 ? (
         <div className="space-y-3">
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800 border border-l-4"
-              style={{
-                borderLeftColor: alert.severity === 'CRITICAL' ? '#ef4444' :
-                                alert.severity === 'HIGH' ? '#f59e0b' :
-                                alert.severity === 'MEDIUM' ? '#eab308' : '#3b82f6'
-              }}
+              className={`rounded-lg border p-3 ${severityClasses[alert.severity] ?? severityClasses.LOW}`}
             >
               <div className="flex items-start gap-3">
-                <div className={`flex-shrink-0 p-2 rounded-lg ${getSeverityColor(alert.severity)}`}>
+                <div className="shrink-0 rounded-lg bg-white/65 p-2 dark:bg-slate-950/35">
                   {getAlertIcon(alert.type)}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 dark:text-white text-sm">
-                    {alert.message}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{alert.message}</p>
+                  <p className="mt-2 text-xs opacity-75">
                     {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}
                   </p>
                 </div>
@@ -110,11 +97,11 @@ const AlertsPanel: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="py-8 text-center text-slate-500 dark:text-slate-400">
+        <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
           No active alerts
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

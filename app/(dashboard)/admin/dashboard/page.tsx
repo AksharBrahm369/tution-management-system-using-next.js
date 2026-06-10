@@ -18,12 +18,16 @@ export default async function DashboardPage() {
   const user = await getCurrentAdminUser();
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-5">
       <WelcomeHeader adminName={user?.name ?? 'Admin'} />
 
       <Suspense fallback={<div className="text-slate-500">Loading stats...</div>}>
         <StatsGrid />
       </Suspense>
+
+      <div className="w-full">
+        <QuickActions />
+      </div>
 
       <section className="grid grid-cols-1 gap-4 lg:gap-6 xl:grid-cols-5">
         <div className="min-w-0 xl:col-span-3">
@@ -49,10 +53,6 @@ export default async function DashboardPage() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <FollowUpReminderWidget />
       </section>
-
-      <div className="w-full">
-        <QuickActions />
-      </div>
 
       <div className="w-full">
         <RecentStudents />

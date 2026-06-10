@@ -84,12 +84,12 @@ export default function StudentDashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center p-8 text-slate-500">Loading your dashboard...</div>;
+    return <div className="rounded-lg border border-slate-200 bg-white p-5 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">Loading your dashboard...</div>;
   }
 
   if (error || !data) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-600 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-5 text-red-600 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-400">
         <h2 className="text-lg font-semibold">Error</h2>
         <p className="mt-2 text-sm">{error || "Failed to load dashboard."}</p>
       </div>
@@ -99,14 +99,14 @@ export default function StudentDashboardPage() {
   const { student, summary } = data;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="space-y-5">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyan-100 text-cyan-600 dark:bg-cyan-900/50 dark:text-cyan-400">
-            <User size={32} />
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/50">
+            <User size={24} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome, {student.firstName}!</h1>
+            <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">Welcome, {student.firstName}</h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {student.studentCode} | Year {student.academicYear}
             </p>
@@ -115,8 +115,8 @@ export default function StudentDashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400">
+        <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-3 text-blue-600 dark:text-blue-300">
             <BookOpen size={24} />
             <h2 className="font-semibold text-slate-900 dark:text-white">Current Batch</h2>
           </div>
@@ -125,7 +125,7 @@ export default function StudentDashboardPage() {
               student.batchEnrollments.map((enrollment) => (
                 <div
                   key={enrollment.id}
-                  className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                  className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40"
                 >
                   <div className="font-medium text-slate-900 dark:text-white">{enrollment.batch.name}</div>
                   <div className="mt-1 text-xs">
@@ -141,7 +141,7 @@ export default function StudentDashboardPage() {
                       href={enrollment.batch.meetingLink}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1 inline-block text-xs font-medium text-cyan-600 hover:text-cyan-500 dark:text-cyan-400 dark:hover:text-cyan-300"
+                      className="mt-1 inline-block text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-300 dark:hover:text-blue-200"
                     >
                       Join class: {enrollment.batch.meetingLink}
                     </a>
@@ -149,20 +149,20 @@ export default function StudentDashboardPage() {
                 </div>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-4 text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <div className="rounded-lg border border-dashed border-slate-300 p-4 text-slate-500 dark:border-slate-700 dark:text-slate-400">
                 Not enrolled in any batch.
               </div>
             )}
           </div>
         </div>
 
-        <div className="h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+        <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
             <Clock size={24} />
             <h2 className="font-semibold text-slate-900 dark:text-white">Attendance</h2>
           </div>
-          <div className="mt-4 flex h-[calc(100%-2rem)] min-h-[140px] flex-col justify-center rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <div className="text-3xl font-bold text-slate-900 dark:text-white">
+          <div className="mt-4 flex h-[calc(100%-2rem)] min-h-[140px] flex-col justify-center rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <div className="text-3xl font-semibold text-slate-950 dark:text-white">
               {summary.attendancePercent ?? 0}%
             </div>
             <p className="mt-1 text-sm text-slate-500">Overall Attendance</p>

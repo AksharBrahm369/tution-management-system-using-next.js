@@ -11,9 +11,9 @@ function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide transition-colors",
+        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium tracking-normal transition-colors",
         variant === "default" &&
-          "bg-linear-to-r from-indigo-500 to-violet-500 text-white shadow-sm",
+          "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900",
         variant === "secondary" &&
           "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
         variant === "success" &&

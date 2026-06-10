@@ -76,15 +76,15 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
   const addTeacherHref = standardId ? `${basePath}/add` : "/admin/teachers/add";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Teachers` : "Teachers"}</h2>
+          <h1 className="text-2xl font-semibold text-slate-950 dark:text-white">{standardName ? `${standardName} Teachers` : "Teachers"}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">{standardName ? `Teachers assigned to ${standardName}` : "Manage teaching staff and assignments"}</p>
         </div>
         <Link href={addTeacherHref}>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-md transition-all text-sm font-medium">
+          <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700">
             <Plus className="h-4 w-4" />
             Add Teacher
           </button>
@@ -92,19 +92,19 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row dark:border-slate-800 dark:bg-slate-900">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             aria-label="Search teachers"
             type="text"
             placeholder="Search teachers by name, code or email..." 
-            className="w-full pl-9 pr-4 py-2 rounded-md border bg-white text-slate-900 dark:text-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            className="w-full rounded-lg border border-slate-200 bg-white py-2 pr-4 pl-9 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-300 transition-all">
+        <button className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800">
           <Filter className="h-4 w-4 text-slate-500" />
           Filters
         </button>
@@ -113,7 +113,7 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
             aria-label="Filter teachers by standard"
             value={standardFilter}
             onChange={(event) => setStandardFilter(event.target.value)}
-            className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-white"
           >
             <option value="">All Standards</option>
             {standards.map((standard) => (
@@ -125,14 +125,14 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
 
       {/* Content */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="animate-pulse bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-100 dark:border-slate-800 h-64"></div>
+            <div key={i} className="h-64 animate-pulse rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"></div>
           ))}
         </div>
       ) : filteredTeachers.length === 0 ? (
-        <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="rounded-lg border border-slate-200 bg-white py-16 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800">
             <Search className="h-8 w-8 text-slate-400" />
           </div>
           <h3 className="text-lg font-medium text-slate-900 dark:text-white">No teachers found</h3>
@@ -141,15 +141,12 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredTeachers.map(teacher => (
-            <div key={teacher.id} className="group relative bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col h-full">
-              {/* Card top gradient line */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/60 to-primary/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              
+            <div key={teacher.id} className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-200 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-900/70">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg font-bold">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-base font-semibold text-blue-700 ring-1 ring-inset ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/50">
                     {teacher.firstName.charAt(0)}{teacher.lastName.charAt(0)}
                   </div>
                   <div>
@@ -174,7 +171,7 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
                 </div>
                 
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3">
-                  <p className="text-xs text-slate-500 mb-2 font-medium">SUBJECTS</p>
+                  <p className="mb-2 text-xs font-medium text-slate-500">Subjects</p>
                   <div className="flex flex-wrap gap-1.5">
                     {teacher.subjects.map((sub, idx) => (
                       <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-md">
@@ -190,14 +187,14 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
 
               <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex gap-2">
-                  <span className={`px-2.5 py-1 text-xs rounded-full font-medium ${
+                  <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${
                     teacher.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
                     teacher.status === 'ON_LEAVE' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                     'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
                   }`}>
                     {teacher.status}
                   </span>
-                  <span className="px-2.5 py-1 text-xs rounded-full bg-primary/10 text-primary font-medium">
+                  <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
                     {teacher.employmentType.replace('_', ' ')}
                   </span>
                 </div>

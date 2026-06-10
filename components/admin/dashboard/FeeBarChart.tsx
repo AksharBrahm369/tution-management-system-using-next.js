@@ -2,16 +2,17 @@
 
 import React, { useState } from 'react';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
 } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ChartData {
   monthlyFeeCollection: Array<{
@@ -23,11 +24,12 @@ interface ChartData {
 
 const FeeBarChart: React.FC = () => {
   const [mounted, setMounted] = useState(false);
+  const [period, setPeriod] = useState<'6' | '12'>('6');
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  const [period, setPeriod] = useState<'6' | '12'>('6');
   const { data, isLoading, isError } = useQuery<ChartData>({
     queryKey: ['dashboard-charts'],
     queryFn: async () => {
@@ -40,70 +42,66 @@ const FeeBarChart: React.FC = () => {
 
   if (!mounted || isLoading) {
     return (
-      <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 h-80 flex flex-col items-center justify-center shadow-lg">
-        <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-blue-500 animate-spin mb-4"></div>
-        <div className="text-slate-500 dark:text-slate-400 font-medium">Loading chart...</div>
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Skeleton className="mb-5 h-5 w-48" />
+        <Skeleton className="h-[320px] w-full rounded-lg" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Monthly Fee Collection</h3>
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-base font-semibold text-slate-950 dark:text-white">Monthly Fee Collection</h2>
         <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load chart data.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-linear-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-          Monthly Fee Collection
-        </h3>
+    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950 dark:text-white">Monthly Fee Collection</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Collected and pending amounts</p>
+        </div>
         <select
           aria-label="Fee collection period"
           value={period}
-          onChange={(e) => setPeriod(e.target.value as '6' | '12')}
-          className="text-sm px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white border border-slate-300 dark:border-slate-600 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          onChange={(event) => setPeriod(event.target.value as '6' | '12')}
+          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors hover:bg-slate-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
         >
           <option value="6">Last 6 months</option>
           <option value="12">Last 12 months</option>
         </select>
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart
-          data={data?.monthlyFeeCollection || []}
-          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="#cbd5e1"
-            className="dark:stroke-slate-700"
-          />
-          <XAxis
-            dataKey="month"
-            stroke="#475569"
-            className="dark:stroke-slate-600"
-          />
-          <YAxis stroke="#475569" className="dark:stroke-slate-600" />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#1e293b',
-              border: '1px solid #475569',
-              borderRadius: '8px',
-              color: '#f1f5f9',
-            }}
-            formatter={(value) => `₹ ${Number(value ?? 0).toLocaleString('en-IN')}`}
-          />
-          <Legend />
-          <Bar dataKey="collected" fill="#3b82f6" name="Collected" radius={8} />
-          <Bar dataKey="pending" fill="#ef4444" name="Pending" radius={8} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+      <div className="h-[320px] min-w-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data?.monthlyFeeCollection || []}
+            margin={{ top: 10, right: 16, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis dataKey="month" stroke="#64748b" tickLine={false} axisLine={false} />
+            <YAxis stroke="#64748b" tickLine={false} axisLine={false} width={48} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                color: '#0f172a',
+                boxShadow: '0 8px 20px -16px rgba(15, 23, 42, 0.35)',
+              }}
+              formatter={(value) => `Rs. ${Number(value ?? 0).toLocaleString('en-IN')}`}
+            />
+            <Legend />
+            <Bar dataKey="collected" fill="#10b981" name="Collected" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </section>
   );
 };
 

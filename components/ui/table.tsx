@@ -20,7 +20,7 @@ export function TableRow({
   return (
     <tr
       className={cn(
-        "transition-colors duration-150 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20",
+        "transition-colors duration-150 hover:bg-slate-50 dark:hover:bg-slate-800/70",
         className
       )}
       {...props}
@@ -35,7 +35,7 @@ export function TableHead({
   return (
     <th
       className={cn(
-        "px-4 py-3.5 text-left text-[0.6875rem] font-bold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400",
+        "px-4 py-3 text-left text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-slate-500 dark:text-slate-400",
         className
       )}
       {...props}
@@ -49,7 +49,7 @@ export function TableCell({
 }: React.ComponentPropsWithoutRef<"td">) {
   return (
     <td
-      className={cn("px-4 py-3.5 text-sm text-slate-700 dark:text-slate-200", className)}
+      className={cn("px-4 py-3 text-sm text-slate-700 dark:text-slate-200", className)}
       {...props}
     />
   );

@@ -3,15 +3,16 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Users,
-  GraduationCap,
+  AlertCircle,
   BookOpen,
   CheckCircle,
+  GraduationCap,
   IndianRupee,
-  AlertCircle,
+  Users,
 } from 'lucide-react';
 import StatsCard from './StatsCard';
 import { useAdminStats } from '@/hooks/useAdminStats';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const StatsGrid: React.FC = () => {
   const router = useRouter();
@@ -19,7 +20,7 @@ const StatsGrid: React.FC = () => {
 
   if (isError) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
         Could not load dashboard stats. Please refresh or sign in again.
       </div>
     );
@@ -27,15 +28,18 @@ const StatsGrid: React.FC = () => {
 
   if (isLoading || !stats) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, index) => (
           <div
-            key={i}
-            className="bg-white dark:bg-slate-900 rounded-xl p-6 animate-pulse"
+            key={index}
+            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900"
           >
-            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24 mb-4"></div>
-            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-32 mb-3"></div>
-            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-40"></div>
+            <div className="mb-4 flex items-start justify-between">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-10 rounded-lg" />
+            </div>
+            <Skeleton className="mb-3 h-8 w-24" />
+            <Skeleton className="h-4 w-36" />
           </div>
         ))}
       </div>
@@ -43,7 +47,7 @@ const StatsGrid: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <StatsCard
         label="Total Students"
         value={stats.totalStudents}
@@ -55,7 +59,7 @@ const StatsGrid: React.FC = () => {
       />
 
       <StatsCard
-        label="Total Teachers"
+        label="Active Teachers"
         icon={<GraduationCap />}
         value={stats.totalTeachers}
         color="purple"
@@ -82,8 +86,7 @@ const StatsGrid: React.FC = () => {
 
       <StatsCard
         label="Fee Collected"
-        value={`₹ ${(stats.feeCollected || stats.monthlyCollection)
-          .toLocaleString('en-IN')}`}
+        value={`Rs. ${(stats.feeCollected || stats.monthlyCollection).toLocaleString('en-IN')}`}
         icon={<IndianRupee />}
         color="green"
         change={8}
@@ -93,7 +96,7 @@ const StatsGrid: React.FC = () => {
 
       <StatsCard
         label="Pending Fees"
-        value={`₹ ${(stats.pendingFees ?? 0).toLocaleString('en-IN')}`}
+        value={`Rs. ${(stats.pendingFees ?? 0).toLocaleString('en-IN')}`}
         icon={<AlertCircle />}
         color="red"
         changeLabel="outstanding amount"

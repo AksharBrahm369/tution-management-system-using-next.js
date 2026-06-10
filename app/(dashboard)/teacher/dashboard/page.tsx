@@ -1,61 +1,72 @@
 import type { Metadata } from "next";
-import { GraduationCap, BookOpen, Users, Clock, Calendar, CheckCircle } from "lucide-react";
+import { BookOpen, Calendar, CheckCircle, Clock, GraduationCap, Users } from "lucide-react";
 
 export const metadata: Metadata = { title: "Teacher Dashboard" };
 
+const summaryCards = [
+  { icon: BookOpen, label: "My Batches", value: "-", tone: "blue" },
+  { icon: Calendar, label: "Today's Classes", value: "-", tone: "emerald" },
+  { icon: Users, label: "Students", value: "-", tone: "slate" },
+  { icon: CheckCircle, label: "Pending Attendance", value: "-", tone: "amber" },
+];
+
+const toneClasses: Record<string, string> = {
+  blue: "bg-blue-50 text-blue-700 ring-blue-100",
+  emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+  slate: "bg-slate-100 text-slate-700 ring-slate-200",
+  amber: "bg-amber-50 text-amber-700 ring-amber-100",
+};
+
 export default function TeacherDashboardPage() {
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <GraduationCap className="h-6 w-6 text-emerald-600" />
-          <h1 className="text-2xl font-bold text-slate-900">Teacher Dashboard</h1>
-        </div>
-        <p className="text-sm text-slate-500">Manage your classes, students, and schedules</p>
-      </div>
-
-      {/* Setup in Progress Banner */}
-      <div className="overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-600 to-indigo-700 p-8 text-white shadow-lg shadow-indigo-600/20">
-        <div className="flex items-center gap-3">
-          <Clock className="h-8 w-8 text-indigo-200" />
+    <div className="space-y-5">
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-blue-50 p-2.5 text-blue-700 ring-1 ring-inset ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/50">
+            <GraduationCap className="h-5 w-5" />
+          </div>
           <div>
-            <h2 className="text-xl font-bold">Teacher Portal Setup in Progress</h2>
-            <p className="mt-1 text-sm text-indigo-100">
-              Your teacher portal is currently being configured by the administration. Class management, attendance tools, and lesson planning features will be available soon.
-            </p>
+            <h1 className="text-2xl font-semibold tracking-normal text-slate-950 dark:text-white">Teacher Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">A focused workspace for classes, students, exams, and attendance.</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Quick Access Cards */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-        {[
-          { icon: BookOpen, label: "My Classes", count: "—", color: "emerald" },
-          { icon: Users, label: "My Students", count: "—", color: "blue" },
-          { icon: Calendar, label: "Today's Schedule", count: "—", color: "violet" },
-        ].map(({ icon: Icon, label, count, color }) => (
-          <div key={label} className="dashboard-card rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-            <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-${color}-100`}>
-              <Icon className={`h-5 w-5 text-${color}-600`} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {summaryCards.map(({ icon: Icon, label, value, tone }) => (
+          <div key={label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg ring-1 ring-inset ${toneClasses[tone]}`}>
+              <Icon className="h-5 w-5" />
             </div>
-            <p className="text-2xl font-bold text-slate-900">{count}</p>
-            <p className="text-sm text-slate-500">{label}</p>
+            <p className="text-2xl font-semibold text-slate-950 dark:text-white">{value}</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 font-semibold text-slate-900">Upcoming Features</h3>
-        <div className="space-y-3">
-          {["Class Management", "Attendance Marking", "Assignment Creation", "Student Progress Tracking", "Lesson Planning"].map((f) => (
-            <div key={f} className="flex items-center gap-3 text-sm text-slate-600">
-              <CheckCircle className="h-4 w-4 text-emerald-400" />
-              {f}
-            </div>
-          ))}
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+            <h2 className="font-semibold text-slate-950 dark:text-white">Today&apos;s Classes</h2>
+          </div>
+          <div className="mt-4 rounded-lg border border-dashed border-slate-300 p-5 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            Class assignments will appear here after batches are linked to this teacher account.
+          </div>
         </div>
-      </div>
+
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <h2 className="font-semibold text-slate-950 dark:text-white">Available Workspace</h2>
+          <div className="mt-4 space-y-3">
+            {["My batches", "Students", "Upcoming exams", "Attendance follow-up"].map((item) => (
+              <div key={item} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
+                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

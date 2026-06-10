@@ -59,7 +59,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-500">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
           <span className="text-sm font-medium">Verifying access...</span>
         </div>
       </div>
@@ -69,10 +69,9 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
   if (authError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        <div className="w-full max-w-md transform overflow-hidden rounded-3xl bg-white p-6 text-center shadow-xl dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-col items-center">
-            {/* Warning Icon */}
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 dark:bg-amber-950/40 dark:text-amber-400 mb-4 shadow-inner animate-pulse">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
               <ShieldAlert size={28} />
             </div>
             
@@ -88,17 +87,15 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
               )}
             </p>
 
-            {/* Hint Box */}
-            <div className="mt-4 text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800/85">
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
               Need parent access? Contact your administrator to get credentials.
             </div>
 
-            {/* Action Buttons */}
             <div className="mt-6 flex flex-col gap-2.5 w-full">
               <button
                 onClick={handleLogInAsParent}
                 disabled={loggingOut}
-                className="flex w-full items-center justify-center rounded-2xl bg-cyan-600 px-4 py-3 text-sm font-semibold text-white hover:bg-cyan-700 transition-all shadow-md active:scale-[0.98] disabled:opacity-75"
+                className="flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-75"
               >
                 {loggingOut ? "Signing out..." : "Log In as Parent"}
               </button>
@@ -115,7 +112,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
       {/* Desktop Header */}
       <header className="hidden md:flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-8">
-          <Link href="/parent/dashboard" className="text-xl font-bold text-cyan-600 dark:text-cyan-500">
+          <Link href="/parent/dashboard" className="text-xl font-semibold text-blue-700 dark:text-blue-300">
             TuitionPro Parent
           </Link>
           <nav className="flex gap-6">
@@ -123,7 +120,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-sm font-medium ${pathname === item.href || pathname.startsWith(item.href) ? "text-cyan-600 dark:text-cyan-500" : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
+                className={`text-sm font-medium ${pathname === item.href || pathname.startsWith(item.href) ? "text-blue-700 dark:text-blue-300" : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"}`}
               >
                 {item.name}
               </Link>
@@ -134,7 +131,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
 
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-center border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 sticky top-0 z-10">
-        <div className="text-lg font-bold text-cyan-600 dark:text-cyan-500">TuitionPro Parent</div>
+        <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">TuitionPro Parent</div>
       </header>
 
       {/* Main Content */}
@@ -149,7 +146,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 ${isActive ? "text-cyan-600 dark:text-cyan-500" : "text-slate-500 dark:text-slate-400"}`}
+              className={`flex flex-col items-center gap-1 ${isActive ? "text-blue-700 dark:text-blue-300" : "text-slate-500 dark:text-slate-400"}`}
             >
               <Icon className="h-6 w-6" />
               <span className="text-xs font-medium">{item.name}</span>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Search, Bell, Moon, Sun, ChevronDown, Menu } from 'lucide-react';
+import { Search, Bell, Moon, Sun, ChevronDown } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import GlobalSearchModal from '@/components/admin/shared/GlobalSearchModal';
 import NotificationDropdown from '@/components/admin/shared/NotificationDropdown';
@@ -82,12 +82,12 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
 
   return (
     <>
-      <header className="tp-glass sticky top-0 z-30 flex h-[4.25rem] items-center justify-between border-b border-slate-300 bg-white px-3 md:px-5 xl:px-8 dark:border-slate-800 dark:bg-slate-950">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-3 shadow-sm md:px-5 xl:px-6 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex min-w-0 items-center gap-3 md:gap-4">
-          <SidebarTrigger className="md:hidden rounded-xl p-2.5 h-11 w-11 text-slate-850 hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50" />
+          <SidebarTrigger className="h-10 w-10 rounded-lg p-2.5 text-slate-700 hover:bg-slate-100 hover:text-slate-950 md:hidden dark:text-slate-100 dark:hover:bg-slate-800" />
 
           <div className="min-w-0">
-            <p className="truncate text-lg font-bold tracking-tight text-slate-900 md:text-xl dark:text-white">
+            <p className="truncate text-base font-semibold tracking-normal text-slate-900 md:text-lg dark:text-white">
               {pageTitle}
             </p>
             {breadcrumbItems.length > 1 && (
@@ -98,7 +98,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
                     <span
                       className={
                         idx === breadcrumbItems.length - 1
-                          ? 'font-semibold text-indigo-600 dark:text-indigo-400'
+                          ? 'font-semibold text-slate-800 dark:text-slate-200'
                           : ''
                       }
                     >
@@ -116,7 +116,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
             type="button"
             onClick={() => setIsSearchOpen(true)}
             aria-label="Open global search"
-            className="rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50"
+            className="rounded-lg p-2.5 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
             title="Search"
           >
             <Search size={20} />
@@ -127,7 +127,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
               type="button"
               onClick={() => setIsNotificationOpen(!isNotificationOpen)}
               aria-label="Open notifications"
-              className="relative rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50"
+              className="relative rounded-lg p-2.5 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
               title="Notifications"
             >
               <Bell size={20} />
@@ -142,7 +142,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
             type="button"
             onClick={() => setTheme(isDarkMode ? 'light' : 'dark')}
             aria-label="Toggle theme"
-            className="rounded-xl p-2.5 text-slate-800 transition-all hover:bg-indigo-50 hover:text-indigo-700 dark:text-slate-100 dark:hover:bg-indigo-950/50"
+              className="rounded-lg p-2.5 text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-100 dark:hover:bg-slate-800"
             title="Toggle theme"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
@@ -153,9 +153,9 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMe
               type="button"
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               aria-label="Open user menu"
-              className="flex items-center gap-2 rounded-xl py-1.5 pr-2 pl-1.5 transition-all hover:bg-indigo-50/80 dark:hover:bg-indigo-950/40"
+              className="flex items-center gap-2 rounded-lg py-1.5 pr-2 pl-1.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 text-sm font-bold text-white shadow-md shadow-indigo-500/30">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white dark:bg-slate-700">
                 {userInitial}
               </div>
               <ChevronDown size={16} className="hidden text-slate-500 md:block dark:text-slate-400" />

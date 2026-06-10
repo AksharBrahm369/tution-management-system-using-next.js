@@ -52,22 +52,22 @@ const TodaysClasses: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      upcoming: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-      ongoing: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-      completed: 'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400',
+      upcoming: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-900/50',
+      ongoing: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900/50',
+      completed: 'bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700',
     };
     return colors[status] || colors.upcoming;
   };
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
           Today&apos;s Classes
         </h3>
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+            <div key={i} className="h-20 animate-pulse rounded-lg bg-slate-100 dark:bg-slate-800"></div>
           ))}
         </div>
       </div>
@@ -76,16 +76,16 @@ const TodaysClasses: React.FC = () => {
 
   if (isError) {
     return (
-      <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg h-full">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Today&apos;s Classes</h3>
+      <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h3 className="text-base font-semibold text-slate-950 dark:text-white">Today&apos;s Classes</h3>
         <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load today&apos;s classes.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/50 dark:to-slate-800/50 rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 shadow-lg backdrop-blur-sm h-full">
-      <h3 className="text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent mb-4">
+    <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
         Today&apos;s Classes
       </h3>
 
@@ -94,7 +94,7 @@ const TodaysClasses: React.FC = () => {
           {classes.map((classItem) => (
             <div
               key={classItem.id}
-              className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow"
+              className="rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-800/70"
             >
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -109,7 +109,7 @@ const TodaysClasses: React.FC = () => {
                   ) : null}
                 </div>
                 <span
-                  className={`text-xs px-3 py-1 rounded-full font-medium capitalize ${getStatusColor(
+                  className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${getStatusColor(
                     classItem.status
                   )}`}
                 >

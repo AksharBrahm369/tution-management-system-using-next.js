@@ -161,19 +161,18 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ standardId, standardN
   };
 
   const pageContent = (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900/60 dark:to-slate-950/60 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Student Management</p>
-          <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{standardName ? `${standardName} Students` : "Students"}</h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{standardName ? `Manage students assigned to ${standardName}` : "Manage all enrolled students"}</p>
+          <h1 className="text-2xl font-semibold tracking-normal text-slate-950 dark:text-white">{standardName ? `${standardName} Students` : "Students"}</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{standardName ? `Manage students assigned to ${standardName}` : "Manage all enrolled students"}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
             <Download size={18} /> Import Excel
           </button>
-          <Link href={addStudentHref} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700">
+          <Link href={addStudentHref} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700">
             <Plus size={18} /> Add Student
           </Link>
         </div>
@@ -188,19 +187,19 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ standardId, standardN
 
       <StudentFilters filters={filters} onChange={setFilters} onReset={resetFilters} batchOptions={batchOptions} standardOptions={standardsData?.standards ?? []} hideStandardFilter={Boolean(standardId)} />
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2">
-          <button onClick={() => setViewMode("grid")} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${viewMode === "grid" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
+          <button onClick={() => setViewMode("grid")} aria-label="Show student grid view" className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${viewMode === "grid" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
             <LayoutGrid size={16} /> Grid View
           </button>
-          <button onClick={() => setViewMode("table")} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${viewMode === "table" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
+          <button onClick={() => setViewMode("table")} aria-label="Show student table view" className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${viewMode === "table" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200"}`}>
             <List size={16} /> Table View
           </button>
         </div>
 
         <div className="flex items-center gap-2">
           {selectedIds.length > 0 && viewMode === "table" && (
-            <div className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+            <div className="rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
               {selectedIds.length} selected
             </div>
           )}
@@ -210,7 +209,7 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ standardId, standardN
       {isLoading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: viewMode === "grid" ? 6 : 4 }).map((_, index) => (
-            <div key={index} className="h-64 animate-pulse rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60" />
+            <div key={index} className="h-64 animate-pulse rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60" />
           ))}
         </div>
       ) : hasStudents ? (
@@ -235,13 +234,13 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ standardId, standardN
           />
         )
       ) : (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900/60">
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900">
           <div className="mx-auto max-w-md">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-white">No students found</h3>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Try clearing filters or add your first student to get started.</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <button onClick={resetFilters} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Clear Search</button>
-              <Link href={addStudentHref} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Add First Student</Link>
+              <button onClick={resetFilters} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Clear Search</button>
+              <Link href={addStudentHref} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white">Add First Student</Link>
             </div>
           </div>
         </div>

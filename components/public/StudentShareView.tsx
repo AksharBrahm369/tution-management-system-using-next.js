@@ -32,7 +32,7 @@ interface StudentShareViewProps {
   initialData?: StudentData | null;
 }
 
-const STUDENT_PORTAL_URL = "https://tution-management-system-using-next-one.vercel.app/student/login";
+
 
 function money(amount: number) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount || 0);
@@ -40,7 +40,7 @@ function money(amount: number) {
 
 const getMonthName = (month: number) => {
   const date = new Date(2000, month - 1, 1);
-  return date.toLocaleString("default", { month: "long" });
+  return date.toLocaleString("en-IN", { month: "long" });
 };
 
 export default function StudentShareView({ studentId, initialData = null }: StudentShareViewProps) {
@@ -48,6 +48,13 @@ export default function StudentShareView({ studentId, initialData = null }: Stud
   const [loading, setLoading] = useState<boolean>(!initialData);
   const [error, setError] = useState<string | null>(null);
   const [debugState, setDebugState] = useState<string>("Initializing...");
+  const [portalUrl, setPortalUrl] = useState<string>("https://tution-management-system-using-next-one.vercel.app/student/login");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setPortalUrl(`${window.location.origin}/student/login`);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -135,7 +142,7 @@ export default function StudentShareView({ studentId, initialData = null }: Stud
   }
 
   // Formatting date
-  const formattedJoinDate = new Date(data.joiningDate).toLocaleDateString(undefined, {
+  const formattedJoinDate = new Date(data.joiningDate).toLocaleDateString("en-IN", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -232,12 +239,12 @@ export default function StudentShareView({ studentId, initialData = null }: Stud
                         Open this link to sign in and check daily updates, attendance, fees, exams, and notices.
                       </p>
                       <a
-                        href={STUDENT_PORTAL_URL}
+                        href={portalUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="mt-2 block break-all text-xs font-semibold text-indigo-700 hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-200"
                       >
-                        {STUDENT_PORTAL_URL}
+                        {portalUrl}
                       </a>
                     </div>
                   </div>
@@ -432,7 +439,7 @@ export default function StudentShareView({ studentId, initialData = null }: Stud
                           </div>
                           <div>
                             <span className="font-semibold text-slate-800 dark:text-white text-sm">
-                              {new Date(att.date).toLocaleDateString(undefined, {
+                              {new Date(att.date).toLocaleDateString("en-IN", {
                                 weekday: "long",
                                 year: "numeric",
                                 month: "short",
@@ -507,7 +514,7 @@ export default function StudentShareView({ studentId, initialData = null }: Stud
                             </span>
                             <span className="text-[10px] text-slate-400 block mt-0.5">
                               Due by: {fee.dueDate
-                                ? new Date(fee.dueDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                                ? new Date(fee.dueDate).toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric' })
                                 : "N/A"}
                             </span>
                           </div>
@@ -576,7 +583,7 @@ export default function StudentShareView({ studentId, initialData = null }: Stud
                               Subject: <span className="font-semibold text-slate-600 dark:text-slate-300">{exam.subject}</span>
                             </span>
                             <span className="text-[9px] text-slate-400 block mt-0.5">
-                              Date: {new Date(exam.examDate).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                              Date: {new Date(exam.examDate).toLocaleDateString("en-IN", { year: 'numeric', month: 'short', day: 'numeric' })}
                             </span>
                           </div>
 

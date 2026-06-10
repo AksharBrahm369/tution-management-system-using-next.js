@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useSyncExternalStore } from 'react';
-import { Sparkles } from 'lucide-react';
 
 interface WelcomeHeaderProps {
   adminName?: string;
@@ -42,29 +41,21 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ adminName = 'Admin' }) =>
   const formattedDate = useSyncExternalStore(subscribeToTimeChanges, getDateSnapshot, () => '');
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-indigo-200/50 bg-linear-to-r from-indigo-600 via-violet-600 to-indigo-700 p-6 shadow-lg shadow-indigo-500/20 md:p-8 dark:border-indigo-500/30">
-      <div className="blob absolute -right-10 -top-10 h-40 w-40 bg-white/20" />
-      <div className="blob absolute bottom-0 left-1/4 h-32 w-32 bg-cyan-400/20" style={{ animationDelay: '-5s' }} />
-
-      <div className="relative z-10 flex items-start justify-between gap-4 md:gap-6">
+    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex-1">
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-indigo-100 backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-            Dashboard Overview
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-            {greeting}, {adminName}
-          </h2>
+          <h1 className="text-2xl font-semibold tracking-normal text-slate-950 dark:text-white">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Overview of today's institute activity</p>
           {formattedDate ? (
-            <p className="mt-2 text-sm font-medium text-indigo-100">{formattedDate}</p>
+            <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">{formattedDate}</p>
           ) : null}
-          <p className="mt-1 text-sm text-indigo-200/80">Here is what is happening at your institute today.</p>
         </div>
 
-        <div className="hidden items-center md:flex">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-xl font-bold text-white ring-2 ring-white/30 backdrop-blur-sm">
-            A
-          </div>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-950/60">
+          <p className="font-medium text-slate-900 dark:text-white">{greeting}, {adminName}</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Signed in as administrator</p>
         </div>
       </div>
     </section>

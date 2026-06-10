@@ -19,7 +19,7 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
+const SIDEBAR_WIDTH = "16.5rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "4rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
@@ -201,7 +201,7 @@ export const Sidebar = React.forwardRef<
             data-sidebar="sidebar"
             data-mobile="true"
             className={cn(
-              "w-[var(--sidebar-width)] bg-slate-900 p-0 text-white dark:bg-slate-950 [&>button]:text-white/70 [&>button]:hover:text-white [&>button]:hover:bg-white/10 [&>button]:border-none [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0",
+              "w-[var(--sidebar-width)] bg-slate-950 p-0 text-white dark:bg-slate-950 [&>button]:text-white/70 [&>button]:hover:text-white [&>button]:hover:bg-white/10 [&>button]:border-none [&>button]:focus:ring-0 [&>button]:focus:ring-offset-0",
               className
             )}
             side={side}
@@ -238,7 +238,7 @@ export const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh w-[var(--sidebar-width)] transition-[width,left,right] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex flex-col bg-slate-900 text-white dark:bg-slate-950",
+            "fixed inset-y-0 z-10 hidden h-svh w-[var(--sidebar-width)] transition-[width,left,right] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] md:flex flex-col bg-slate-950 text-white dark:bg-slate-950",
             side === "left" ? "left-0" : "right-0",
             state === "collapsed" && "w-[var(--sidebar-width-icon)]",
             variant === "floating"
@@ -416,12 +416,12 @@ export const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 outline-none select-none disabled:pointer-events-none disabled:opacity-50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2.5",
+  "peer/menu-button flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150 outline-none select-none disabled:pointer-events-none disabled:opacity-50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2.5",
   {
     variants: {
       variant: {
-        default: "text-slate-400 hover:bg-white/8 hover:text-white active:bg-white/12",
-        active: "bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-650/20",
+        default: "text-slate-300 hover:bg-white/8 hover:text-white active:bg-white/12",
+        active: "bg-white/10 text-white ring-1 ring-inset ring-white/12",
         outline: "bg-transparent border border-white/10 text-white hover:bg-white/5",
       },
     },
