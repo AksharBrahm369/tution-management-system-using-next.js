@@ -303,7 +303,7 @@ Return raw JSON only in this shape:
   ]
 }`;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v 1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

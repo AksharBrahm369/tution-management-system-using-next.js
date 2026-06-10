@@ -16,108 +16,170 @@ function getMaterialBackupDir() {
 }
 
 // Premium local AI simulation engine in case real AI credentials are not provided
-function compileLocalAIResource(title: string, subjectName: string, batchName: string, type: string, topic: string) {
-  const isMath = /math/i.test(topic + " " + subjectName);
-  const isPhysics = /physic/i.test(topic + " " + subjectName);
-  const isChemistry = /chem/i.test(topic + " " + subjectName);
+function compileLocalAIResource(
+  title: string,
+  subjectName: string,
+  batchName: string,
+  type: string,
+  topic: string,
+  scrapedWebContent?: string
+) {
+  let sites: Array<{ url: string; title: string; category: string; description: string }> = [];
   
+  if (scrapedWebContent) {
+    const sourceRegex = /### Source:\s*(.*?)\s*\((https?:\/\/.*?)\)/g;
+    let match;
+    while ((match = sourceRegex.exec(scrapedWebContent)) !== null && sites.length < 3) {
+      const siteTitle = match[1].trim();
+      const siteUrl = match[2].trim();
+      
+      let category = "Web Reference";
+      if (siteUrl.toLowerCase().endsWith(".pdf")) {
+        category = "PDF Textbook / Document";
+      } else if (/video|youtube|khan/i.test(siteUrl + " " + siteTitle)) {
+        category = "Video Lecture / Tutorial";
+      } else if (/course|class|learn/i.test(siteUrl + " " + siteTitle)) {
+        category = "Online Course";
+      }
+      
+      let description = `Online academic study resources for ${topic} (${subjectName}).`;
+      
+      const blockStart = scrapedWebContent.indexOf(match[0]);
+      if (blockStart !== -1) {
+        const nextBlock = scrapedWebContent.indexOf("=========================================", blockStart);
+        const blockText = nextBlock !== -1 
+          ? scrapedWebContent.substring(blockStart + match[0].length, nextBlock).trim()
+          : scrapedWebContent.substring(blockStart + match[0].length).trim();
+        
+        const cleanSnippet = blockText
+          .replace(/%[A-Fa-f0-9]{2}/g, " ")
+          .replace(/[\uFFFD]/g, " ")
+          .replace(/[^a-zA-Z0-9\s.,;:!?@#()'"\-\[\]]/g, " ")
+          .replace(/\s+/g, " ")
+          .substring(0, 200)
+          .trim();
+          
+        if (cleanSnippet.length > 50) {
+          description = cleanSnippet + "...";
+        }
+      }
+      
+      sites.push({
+        url: siteUrl,
+        title: siteTitle,
+        category,
+        description
+      });
+    }
+  }
+
   let primaryUrl = "https://ncert.nic.in/textbook.php";
   let primaryUrlTitle = "NCERT Official Textbook Portal";
   let primaryUrlDescription = "Official government publication website offering access to complete digital textbooks and materials.";
-  
-  let sites = [
-    {
-      url: "https://ncert.nic.in/textbook.php",
-      title: "NCERT Official Textbook Portal",
-      category: "Official Textbook PDFs",
-      description: "Direct download links for official grade-specific textbooks across all subjects."
-    },
-    {
-      url: "https://www.khanacademy.org",
-      title: "Khan Academy Interactive Lessons",
-      category: "Online Video Courses",
-      description: "Free online courses, lessons, and practice worksheets with instant progress tracking."
-    },
-    {
-      url: "https://openstax.org",
-      title: "OpenStax College Textbooks",
-      category: "Peer-Reviewed Textbooks",
-      description: "High-quality, peer-reviewed textbook library for secondary and higher education."
-    }
-  ];
 
-  if (isMath) {
-    primaryUrl = "https://ncert.nic.in/textbook.php?emmh1=0-14";
-    primaryUrlTitle = "NCERT Class 12 Mathematics Textbook Portal";
-    primaryUrlDescription = "Direct access to official NCERT Class 12 mathematics textbook parts and chapters.";
+  if (sites.length > 0) {
+    primaryUrl = sites[0].url;
+    primaryUrlTitle = sites[0].title;
+    primaryUrlDescription = sites[0].description;
+  } else {
+    const isMath = /math/i.test(topic + " " + subjectName);
+    const isPhysics = /physic/i.test(topic + " " + subjectName);
+    const isChemistry = /chem/i.test(topic + " " + subjectName);
+    
     sites = [
       {
-        url: "https://ncert.nic.in/textbook.php?emmh1=0-14",
-        title: "NCERT Class 12 Mathematics Textbook Portal",
+        url: "https://ncert.nic.in/textbook.php",
+        title: "NCERT Official Textbook Portal",
         category: "Official Textbook PDFs",
-        description: "Official NCERT Class 12 Math digital textbook download link by chapters."
+        description: "Direct download links for official grade-specific textbooks across all subjects."
       },
       {
-        url: "https://www.khanacademy.org/math/class-12-in-in",
-        title: "Khan Academy Class 12 Mathematics",
-        category: "Interactive Practice",
-        description: "Structured video lectures and practice questions aligned with the high school curriculum."
+        url: "https://www.khanacademy.org",
+        title: "Khan Academy Interactive Lessons",
+        category: "Online Video Courses",
+        description: "Free online courses, lessons, and practice worksheets with instant progress tracking."
       },
       {
-        url: "https://www.vedantu.com/ncert-solutions/ncert-solutions-class-12-maths",
-        title: "Vedantu Class 12 Maths Solutions & Revision Notes",
-        category: "Study Notes",
-        description: "Free solved revision exercises, formula cheat sheets, and topic breakdown guides."
+        url: "https://openstax.org",
+        title: "OpenStax College Textbooks",
+        category: "Peer-Reviewed Textbooks",
+        description: "High-quality, peer-reviewed textbook library for secondary and higher education."
       }
     ];
-  } else if (isPhysics) {
-    primaryUrl = "https://ncert.nic.in/textbook.php?eph1=0-8";
-    primaryUrlTitle = "NCERT Class 12 Physics Textbook Portal";
-    primaryUrlDescription = "Direct access to official NCERT Class 12 physics textbook chapters.";
-    sites = [
-      {
-        url: "https://ncert.nic.in/textbook.php?eph1=0-8",
-        title: "NCERT Class 12 Physics Textbook Portal",
-        category: "Official Textbook PDFs",
-        description: "Official NCERT Class 12 Physics digital textbook download link by chapters."
-      },
-      {
-        url: "https://www.khanacademy.org/science/in-in-class12-physics",
-        title: "Khan Academy Class 12 Physics",
-        category: "Interactive Practice",
-        description: "Exhaustive lectures covering mechanics, electricity, magnetism, and wave optics."
-      },
-      {
-        url: "https://www.vedantu.com/ncert-solutions/ncert-solutions-class-12-physics",
-        title: "Vedantu Class 12 Physics revision notes",
-        category: "Revision Guides",
-        description: "Chapter-wise formula sheets, core derivations, and solved textbook exercises."
-      }
-    ];
-  } else if (isChemistry) {
-    primaryUrl = "https://ncert.nic.in/textbook.php?ech1=0-9";
-    primaryUrlTitle = "NCERT Class 12 Chemistry Textbook Portal";
-    primaryUrlDescription = "Direct access to official NCERT Class 12 chemistry textbook chapters.";
-    sites = [
-      {
-        url: "https://ncert.nic.in/textbook.php?ech1=0-9",
-        title: "NCERT Class 12 Chemistry Textbook Portal",
-        category: "Official Textbook PDFs",
-        description: "Official NCERT Class 12 Chemistry digital textbook download link by chapters."
-      },
-      {
-        url: "https://www.khanacademy.org/science/class-12-chemistry",
-        title: "Khan Academy Class 12 Chemistry",
-        category: "Interactive Practice",
-        description: "Exhaustive video lectures covering solution states, kinetics, organic compounds, and polymers."
-      },
-      {
-        url: "https://www.vedantu.com/ncert-solutions/ncert-solutions-class-12-chemistry",
-        title: "Vedantu Class 12 Chemistry Revision Notes",
-        category: "Revision Guides",
-        description: "Core chemistry formulas, step-by-step chemical equations, and organic reactions."
-      }
-    ];
+
+    if (isMath) {
+      primaryUrl = "https://ncert.nic.in/textbook.php?emmh1=0-14";
+      primaryUrlTitle = "NCERT Class 12 Mathematics Textbook Portal";
+      primaryUrlDescription = "Direct access to official NCERT Class 12 mathematics textbook parts and chapters.";
+      sites = [
+        {
+          url: "https://ncert.nic.in/textbook.php?emmh1=0-14",
+          title: "NCERT Class 12 Mathematics Textbook Portal",
+          category: "Official Textbook PDFs",
+          description: "Official NCERT Class 12 Math digital textbook download link by chapters."
+        },
+        {
+          url: "https://www.khanacademy.org/math/class-12-in-in",
+          title: "Khan Academy Class 12 Mathematics",
+          category: "Interactive Practice",
+          description: "Structured video lectures and practice questions aligned with the high school curriculum."
+        },
+        {
+          url: "https://www.vedantu.com/ncert-solutions/ncert-solutions-class-12-maths",
+          title: "Vedantu Class 12 Maths Solutions & Revision Notes",
+          category: "Study Notes",
+          description: "Free solved revision exercises, formula cheat sheets, and topic breakdown guides."
+        }
+      ];
+    } else if (isPhysics) {
+      primaryUrl = "https://ncert.nic.in/textbook.php?eph1=0-8";
+      primaryUrlTitle = "NCERT Class 12 Physics Textbook Portal";
+      primaryUrlDescription = "Direct access to official NCERT Class 12 physics textbook chapters.";
+      sites = [
+        {
+          url: "https://ncert.nic.in/textbook.php?eph1=0-8",
+          title: "NCERT Class 12 Physics Textbook Portal",
+          category: "Official Textbook PDFs",
+          description: "Official NCERT Class 12 Physics digital textbook download link by chapters."
+        },
+        {
+          url: "https://www.khanacademy.org/science/in-in-class12-physics",
+          title: "Khan Academy Class 12 Physics",
+          category: "Interactive Practice",
+          description: "Exhaustive lectures covering mechanics, electricity, magnetism, and wave optics."
+        },
+        {
+          url: "https://www.vedantu.com/ncert-solutions/ncert-solutions-class-12-physics",
+          title: "Vedantu Class 12 Physics revision notes",
+          category: "Revision Guides",
+          description: "Chapter-wise formula sheets, core derivations, and solved textbook exercises."
+        }
+      ];
+    } else if (isChemistry) {
+      primaryUrl = "https://ncert.nic.in/textbook.php?ech1=0-9";
+      primaryUrlTitle = "NCERT Class 12 Chemistry Textbook Portal";
+      primaryUrlDescription = "Direct access to official NCERT Class 12 chemistry textbook chapters.";
+      sites = [
+        {
+          url: "https://ncert.nic.in/textbook.php?ech1=0-9",
+          title: "NCERT Class 12 Chemistry Textbook Portal",
+          category: "Official Textbook PDFs",
+          description: "Official NCERT Class 12 Chemistry digital textbook download link by chapters."
+        },
+        {
+          url: "https://www.khanacademy.org/science/class-12-chemistry",
+          title: "Khan Academy Class 12 Chemistry",
+          category: "Interactive Practice",
+          description: "Exhaustive video lectures covering solution states, kinetics, organic compounds, and polymers."
+        },
+        {
+          url: "https://www.vedantu.com/ncert-solutions/ncert-solutions-class-12-chemistry",
+          title: "Vedantu Class 12 Chemistry Revision Notes",
+          category: "Revision Guides",
+          description: "Core chemistry formulas, step-by-step chemical equations, and organic reactions."
+        }
+      ];
+    }
   }
 
   const markdownSummary = `# Curated Online Resources: ${title}
@@ -536,7 +598,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
 
     // Use high-fidelity local AI engine if real API failed or was not selected
     if (!generatedContent) {
-      generatedContent = compileLocalAIResource(title, subjectName, batchName, resourceType, topic);
+      generatedContent = compileLocalAIResource(title, subjectName, batchName, resourceType, topic, scrapedWebContent);
     }
 
     // Parse the generated JSON response
