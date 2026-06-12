@@ -1,30 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback, useRef } from "react";
 
 export function useMeasuredChartSize(height: number) {
-  const ref = React.useRef<HTMLDivElement | null>(null);
-  const [width, setWidth] = React.useState(0);
+  const [width, setWidth] = useState(0);
+  const observerRef = useRef<ResizeObserver | null>(null);
 
-  React.useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+  const ref = useCallback((element: HTMLDivElement | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
 
-    const updateWidth = () => {
-      const nextWidth = Math.floor(element.getBoundingClientRect().width);
-      setWidth(nextWidth > 0 ? nextWidth : 0);
-    };
+    if (element) {
+      const updateWidth = () => {
+        const nextWidth = Math.floor(element.getBoundingClientRect().width);
+        setWidth(nextWidth > 0 ? nextWidth : 0);
+      };
 
-    updateWidth();
-    const observer = new ResizeObserver(updateWidth);
-    observer.observe(element);
-    window.addEventListener("resize", updateWidth);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateWidth);
-    };
+      updateWidth();
+      const observer = new ResizeObserver(updateWidth);
+      observer.observe(element);
+      observerRef.current = observer;
+    }
   }, []);
 
   return [ref, { width, height, isReady: width > 0 }] as const;
 }
+

@@ -25,7 +25,7 @@ interface ChartData {
 const FeeBarChart: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [period, setPeriod] = useState<'6' | '12'>('6');
-  const [chartRef, chartSize] = useMeasuredChartSize(320);
+  const [chartRef, chartSize] = useMeasuredChartSize(240);
 
   React.useEffect(() => {
     setMounted(true);
@@ -43,64 +43,63 @@ const FeeBarChart: React.FC = () => {
 
   if (!mounted || isLoading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <Skeleton className="mb-5 h-5 w-48" />
-        <Skeleton className="h-[320px] w-full rounded-lg" />
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Skeleton className="mb-4 h-4 w-44" />
+        <Skeleton className="h-[240px] w-full rounded-lg" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-base font-semibold text-slate-950 dark:text-white">Monthly Fee Collection</h2>
-        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load chart data.</p>
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Monthly Fee Collection</h2>
+        <p className="mt-4 text-xs text-red-600 dark:text-red-300">Could not load chart data.</p>
       </div>
     );
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-slate-950 dark:text-white">Monthly Fee Collection</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Collected and pending amounts</p>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Monthly Fee Collection</h2>
         </div>
         <select
           aria-label="Fee collection period"
           value={period}
           onChange={(event) => setPeriod(event.target.value as '6' | '12')}
-          className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors hover:bg-slate-50 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
+          className="h-8 rounded border border-slate-200 bg-white px-2.5 text-xs text-slate-700 shadow-none outline-none transition-colors hover:bg-slate-50 focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white dark:hover:bg-slate-900"
         >
           <option value="6">Last 6 months</option>
           <option value="12">Last 12 months</option>
         </select>
       </div>
 
-      <div ref={chartRef} className="h-[320px] min-h-[320px] w-full min-w-0 overflow-hidden">
+      <div ref={chartRef} className="h-[240px] min-h-[240px] w-full min-w-0 overflow-hidden">
         {chartSize.isReady ? (
           <BarChart
             width={chartSize.width}
             height={chartSize.height}
             data={data?.monthlyFeeCollection || []}
-            margin={{ top: 10, right: 16, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-            <XAxis dataKey="month" stroke="#64748b" tickLine={false} axisLine={false} />
-            <YAxis stroke="#64748b" tickLine={false} axisLine={false} width={48} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} className="dark:stroke-slate-800" />
+            <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} width={40} />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                color: '#0f172a',
-                boxShadow: '0 8px 20px -16px rgba(15, 23, 42, 0.35)',
+                backgroundColor: '#0f172a',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#ffffff',
+                fontSize: '11px',
               }}
+              itemStyle={{ color: '#ffffff' }}
               formatter={(value) => `Rs. ${Number(value ?? 0).toLocaleString('en-IN')}`}
             />
-            <Legend />
-            <Bar dataKey="collected" fill="#10b981" name="Collected" radius={[6, 6, 0, 0]} />
-            <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="collected" fill="#10b981" name="Collected" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[4, 4, 0, 0]} />
           </BarChart>
         ) : null}
       </div>

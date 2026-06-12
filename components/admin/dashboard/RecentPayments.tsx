@@ -54,45 +54,47 @@ const RecentPayments: React.FC = () => {
   }
 
   return (
-    <section className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">Recent Payments</h2>
+    <div className="flex flex-col h-full">
+      <div className="mb-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Recent Collections</h3>
+      </div>
 
-      <div className="space-y-3">
-        {payments && payments.length > 0 ? (
-          payments.map((payment) => (
+      {payments && payments.length > 0 ? (
+        <div className="space-y-3 overflow-y-auto max-h-[300px] pr-1">
+          {payments.map((payment) => (
             <div
               key={payment.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/40"
+              className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-2.5 dark:border-slate-800/40 dark:bg-slate-950/20"
             >
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white dark:bg-slate-700">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white dark:bg-slate-800 dark:text-slate-200">
                   {payment.avatar}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-950 dark:text-white">{payment.studentName}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="truncate text-xs font-semibold text-slate-900 dark:text-white">{payment.studentName}</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
                     {formatDistanceToNow(new Date(payment.date), { addSuffix: true })}
                   </p>
                 </div>
               </div>
 
               <div className="shrink-0 text-right">
-                <p className="font-semibold text-slate-950 dark:text-white">
-                  Rs. {payment.amount.toLocaleString('en-IN')}
+                <p className="text-xs font-bold text-slate-900 dark:text-white">
+                  ₹{payment.amount.toLocaleString('en-IN')}
                 </p>
-                <span className={`mt-1 inline-block rounded-md px-2 py-0.5 text-xs font-medium ${methodClasses[payment.method] ?? methodClasses.Online}`}>
+                <span className={`inline-block rounded border px-1 py-0.25 text-[9px] font-semibold ${methodClasses[payment.method] ?? methodClasses.Online}`}>
                   {payment.method}
                 </span>
               </div>
             </div>
-          ))
-        ) : (
-          <div className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            No payments recorded yet.
-          </div>
-        )}
-      </div>
-    </section>
+          ))}
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center py-8 text-center text-xs text-slate-400">
+          No payments recorded yet
+        </div>
+      )}
+    </div>
   );
 };
 

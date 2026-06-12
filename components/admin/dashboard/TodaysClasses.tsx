@@ -84,32 +84,34 @@ const TodaysClasses: React.FC = () => {
   }
 
   return (
-    <div className="h-full rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h3 className="mb-4 text-base font-semibold text-slate-950 dark:text-white">
-        Today&apos;s Classes
-      </h3>
+    <div className="flex flex-col h-full">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Today&apos;s Classes
+        </h3>
+      </div>
 
       {classes && classes.length > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-3 overflow-y-auto max-h-[300px] pr-1">
           {classes.map((classItem) => (
             <div
               key={classItem.id}
-              className="rounded-lg border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:hover:bg-slate-800/70"
+              className="rounded-lg border border-slate-100 bg-slate-50/50 p-3.5 transition-colors hover:bg-slate-100/30 dark:border-slate-800/40 dark:bg-slate-950/20 dark:hover:bg-slate-900/40"
             >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-medium text-slate-900 dark:text-white">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                     {classItem.name}
                   </p>
                   {hasRealTeacherName(classItem.teacher) ? (
-                    <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
-                      <User size={14} />
+                    <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                      <User size={12} className="text-slate-400" />
                       {classItem.teacher}
                     </p>
                   ) : null}
                 </div>
                 <span
-                  className={`rounded-md px-2 py-0.5 text-xs font-medium capitalize ${getStatusColor(
+                  className={`shrink-0 rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${getStatusColor(
                     classItem.status
                   )}`}
                 >
@@ -117,18 +119,18 @@ const TodaysClasses: React.FC = () => {
                 </span>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
+              <div className="mt-3.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10px] text-slate-400 dark:text-slate-500 font-medium">
                 <div className="flex items-center gap-1">
-                  <Clock size={16} />
-                  {formatTimeTo12Hour(classItem.startTime)} - {formatTimeTo12Hour(classItem.endTime)} IST
+                  <Clock size={12} />
+                  {formatTimeTo12Hour(classItem.startTime)} - {formatTimeTo12Hour(classItem.endTime)}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Video size={16} />
+                  <Video size={12} />
                   {classItem.isOnline ? 'Online' : 'Offline'}
                 </div>
                 {!classItem.isOnline && classItem.room ? (
                   <div className="flex items-center gap-1">
-                    <MapPin size={16} />
+                    <MapPin size={12} />
                     {classItem.room}
                   </div>
                 ) : null}
@@ -137,7 +139,7 @@ const TodaysClasses: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="py-8 text-center text-slate-500 dark:text-slate-400">
+        <div className="flex-1 flex items-center justify-center py-8 text-center text-xs text-slate-400">
           No classes scheduled today
         </div>
       )}

@@ -36,13 +36,13 @@ export default function FollowUpReminderWidget() {
   });
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-base font-semibold text-slate-950 dark:text-white">Follow-up Reminders</h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Enquiries that need attention today.</p>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Follow-up Reminders</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Enquiries that need attention today.</p>
         </div>
-        <Clock3 className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+        <Clock3 className="h-4 w-4 text-slate-400 dark:text-slate-500" />
       </div>
 
       <div className="mt-4 space-y-3">

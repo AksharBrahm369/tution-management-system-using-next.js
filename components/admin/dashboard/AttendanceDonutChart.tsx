@@ -16,7 +16,7 @@ interface ChartData {
 
 const AttendanceDonutChart: React.FC = () => {
   const [mounted, setMounted] = React.useState(false);
-  const [chartRef, chartSize] = useMeasuredChartSize(300);
+  const [chartRef, chartSize] = useMeasuredChartSize(200);
 
   React.useEffect(() => {
     setMounted(true);
@@ -34,18 +34,18 @@ const AttendanceDonutChart: React.FC = () => {
 
   if (!mounted || isLoading) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <Skeleton className="mb-5 h-5 w-44" />
-        <Skeleton className="h-[320px] w-full rounded-lg" />
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Skeleton className="mb-4 h-4 w-44" />
+        <Skeleton className="h-[240px] w-full rounded-lg" />
       </div>
     );
   }
 
   if (isError || !data?.attendanceOverview) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-base font-semibold text-slate-950 dark:text-white">Attendance Overview</h2>
-        <p className="mt-4 text-sm text-red-600 dark:text-red-300">Could not load attendance chart.</p>
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Attendance Overview</h2>
+        <p className="mt-4 text-xs text-red-600 dark:text-red-300">Could not load attendance chart.</p>
       </div>
     );
   }
@@ -61,58 +61,70 @@ const AttendanceDonutChart: React.FC = () => {
   ];
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-5">
-        <h2 className="text-base font-semibold text-slate-950 dark:text-white">Attendance Overview</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Today's marked attendance</p>
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-2">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Attendance Overview</h2>
       </div>
 
-      <div ref={chartRef} className="relative h-[300px] min-h-[300px] w-full min-w-0 overflow-hidden">
-        {chartSize.isReady ? (
-          <PieChart width={chartSize.width} height={chartSize.height}>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={72}
-              outerRadius={110}
-              paddingAngle={2}
-              dataKey="value"
-            >
-              {chartData.map((entry) => (
-                <Cell key={entry.name} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value) => value}
-              contentStyle={{
-                backgroundColor: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                color: '#0f172a',
-              }}
-            />
-          </PieChart>
-        ) : null}
+      <div className="flex flex-col items-center gap-2">
+        {/* Chart View */}
+        <div ref={chartRef} className="relative h-[200px] min-h-[200px] w-[200px] overflow-hidden shrink-0 mx-auto">
+          {chartSize.isReady ? (
+            <PieChart width={chartSize.width} height={chartSize.height}>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {chartData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value) => value}
+                contentStyle={{
+                  backgroundColor: '#0f172a',
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                }}
+              />
+            </PieChart>
+          ) : null}
 
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-3xl font-semibold text-slate-950 dark:text-white">{presentPercentage}%</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Present</p>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-        {chartData.map((item) => (
-          <div key={item.name} className="min-w-0 text-center">
-            <div className="mb-1 flex items-center justify-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
-              <span className="truncate text-xs font-medium text-slate-600 dark:text-slate-400">
-                {item.name}
-              </span>
-            </div>
-            <p className="text-base font-semibold text-slate-950 dark:text-white">{item.value}</p>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <p className="text-2xl font-bold text-slate-950 dark:text-white">{presentPercentage}%</p>
+            <p className="text-xs uppercase font-bold text-slate-400 dark:text-slate-500">Present</p>
           </div>
-        ))}
+        </div>
+
+        {/* Legend / Metrics below chart */}
+        <div className="w-full border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {chartData.map((item) => (
+              <div key={item.name} className="min-w-0">
+                <div className="mb-1.5 flex items-center justify-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }} />
+                  <span className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    {item.name}
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-slate-900 dark:text-white leading-none">
+                  {item.value} <span className="text-[10px] text-slate-400 font-medium">{item.value === 1 ? 'student' : 'students'}</span>
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 border-t border-slate-100/60 pt-2.5 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-400 font-semibold">
+            <span>Total Tracked</span>
+            <span className="text-slate-750 dark:text-slate-300 font-bold">{total} students</span>
+          </div>
+        </div>
       </div>
     </section>
   );

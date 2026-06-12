@@ -66,7 +66,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId, base
       case "fees":
         return <FeesTab student={data} onChanged={() => { setRefreshKey((value) => value + 1); refetch(); }} />;
       case "exams":
-        return <ExamsTab />;
+        return <ExamsTab student={data} />;
       case "documents":
         return <DocumentsTab student={data} onChanged={() => { setRefreshKey((value) => value + 1); refetch(); }} />;
       case "timeline":
@@ -180,7 +180,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId, base
         onResetStudentPassword={handleResetPassword}
         isResettingStudentPassword={isResettingPassword}
       />
-      <QuickStatsBar attendancePercent={data.attendancePercent} feesPaid={data.feesPaid} pendingFees={data.pendingFees} examsTaken={data.examResults.length} />
+      <QuickStatsBar student={data} />
       <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       {tabsContent}
 
