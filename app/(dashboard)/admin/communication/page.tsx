@@ -24,6 +24,16 @@ type AnnouncementItem = {
 
 type AnnouncementChannel = "IN_APP" | "WHATSAPP" | "SMS" | "EMAIL";
 
+type DeliveryResult = {
+  notificationCount?: number;
+  delivery?: {
+    whatsapp?: number;
+    sms?: number;
+    email?: number;
+    skipped?: string[];
+  };
+};
+
 type BatchOption = {
   id: string;
   name: string;
@@ -47,6 +57,8 @@ const channelOptions: Array<{ value: AnnouncementChannel; label: string; hint: s
   { value: "EMAIL", label: "Email", hint: "Student emails" },
   { value: "SMS", label: "SMS", hint: "Student phones" },
 ];
+
+const allChannels = channelOptions.map((option) => option.value);
 
 function statusTone(status?: string) {
   switch ((status || "").toUpperCase()) {
@@ -94,13 +106,30 @@ function announcementText(item: AnnouncementItem) {
   return `${item.title}\n\n${item.message}\n\n- TuitionPro`;
 }
 
+function deliveryMessage(prefix: string, result?: DeliveryResult | null) {
+  if (!result) return prefix;
+
+  const delivery = result.delivery ?? {};
+  const parts = [
+    `${result.notificationCount ?? 0} in-app`,
+    `${delivery.whatsapp ?? 0} WhatsApp`,
+    `${delivery.email ?? 0} email`,
+    `${delivery.sms ?? 0} SMS`,
+  ];
+  const skipped = delivery.skipped?.length
+    ? ` Skipped: ${delivery.skipped.join(" ")}`
+    : "";
+
+  return `${prefix} Sent ${parts.join(", ")}.${skipped}`;
+}
+
 export default function CommunicationPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [batches, setBatches] = useState<BatchOption[]>([]);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [targetMode, setTargetMode] = useState<"ALL_STUDENTS" | "BATCH">("ALL_STUDENTS");
+  const [targetMode, setTargetMode] = useState<"EVERYONE" | "ALL_STUDENTS" | "BATCH">("ALL_STUDENTS");
   const [selectedBatchId, setSelectedBatchId] = useState("");
   const [selectedChannels, setSelectedChannels] = useState<AnnouncementChannel[]>(["IN_APP"]);
   const [loading, setLoading] = useState(false);
@@ -158,6 +187,10 @@ export default function CommunicationPage() {
       }
       return [...current, channel];
     });
+  }
+
+  function selectAllChannels() {
+    setSelectedChannels(allChannels);
   }
 
   async function fetchContacts(item: AnnouncementItem) {
@@ -247,7 +280,12 @@ export default function CommunicationPage() {
       setError("Announcement message is required.");
       return;
     }
-    const audience = targetMode === "BATCH" && selectedBatchId ? `BATCH:${selectedBatchId}` : "STUDENT";
+    const audience =
+      targetMode === "BATCH" && selectedBatchId
+        ? `BATCH:${selectedBatchId}`
+        : targetMode === "EVERYONE"
+          ? "ALL"
+          : "STUDENT";
     console.log("[communication] handleCreate clicked", { title, message, audience, channels: selectedChannels });
     setLoading(true);
 
@@ -260,12 +298,13 @@ export default function CommunicationPage() {
       });
 
       if (res.ok) {
+        const payload = await res.json();
         setTitle("");
         setMessage("");
         setTargetMode("ALL_STUDENTS");
         setSelectedBatchId("");
         setSelectedChannels(["IN_APP"]);
-        setActionMessage("Announcement created successfully.");
+        setActionMessage(deliveryMessage("Announcement created successfully.", payload.publishResult));
         await load();
         return;
       }
@@ -296,7 +335,8 @@ export default function CommunicationPage() {
         throw new Error(`Publish failed (${res.status}): ${text}`);
       }
 
-      setActionMessage("Announcement published.");
+      const payload = await res.json();
+      setActionMessage(deliveryMessage("Announcement published.", payload));
       await load();
     } catch (err) {
       console.error("Publish failed", err);
@@ -322,7 +362,8 @@ export default function CommunicationPage() {
         throw new Error(`Resend failed (${res.status}): ${text}`);
       }
 
-      setActionMessage("Announcement resent.");
+      const payload = await res.json();
+      setActionMessage(deliveryMessage("Announcement resent.", payload));
       await load();
     } catch (err) {
       console.error("Resend failed", err);
@@ -404,7 +445,18 @@ export default function CommunicationPage() {
               <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                 <div>
                   <label htmlFor="announcement-batch" className="mb-2 block text-sm font-medium text-slate-300">Send to</label>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <button
+                      type="button"
+                      onClick={() => setTargetMode("EVERYONE")}
+                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
+                        targetMode === "EVERYONE"
+                          ? "border-cyan-400/50 bg-cyan-400/10 text-cyan-100"
+                          : "border-white/10 bg-slate-950/70 text-slate-300 hover:border-white/20"
+                      }`}
+                    >
+                      Everyone
+                    </button>
                     <button
                       type="button"
                       onClick={() => setTargetMode("ALL_STUDENTS")}
@@ -447,7 +499,16 @@ export default function CommunicationPage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-300">Channels</label>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label className="block text-sm font-medium text-slate-300">Channels</label>
+                    <button
+                      type="button"
+                      onClick={selectAllChannels}
+                      className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/15"
+                    >
+                      All channels
+                    </button>
+                  </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {channelOptions.map((option) => {
                       const checked = selectedChannels.includes(option.value);

@@ -5,7 +5,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
   Tooltip,
   XAxis,
   YAxis,
@@ -25,7 +24,7 @@ interface ChartData {
 const FeeBarChart: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [period, setPeriod] = useState<'6' | '12'>('6');
-  const [chartRef, chartSize] = useMeasuredChartSize(240);
+  const [chartRef, chartSize] = useMeasuredChartSize(250);
 
   React.useEffect(() => {
     setMounted(true);
@@ -43,16 +42,16 @@ const FeeBarChart: React.FC = () => {
 
   if (!mounted || isLoading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <Skeleton className="mb-4 h-4 w-44" />
-        <Skeleton className="h-[240px] w-full rounded-lg" />
+      <div className="h-full min-h-[330px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Skeleton className="mb-3 h-4 w-44" />
+        <Skeleton className="h-[250px] w-full rounded-lg" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="h-full min-h-[330px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Monthly Fee Collection</h2>
         <p className="mt-4 text-xs text-red-600 dark:text-red-300">Could not load chart data.</p>
       </div>
@@ -60,8 +59,8 @@ const FeeBarChart: React.FC = () => {
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex h-full min-h-[330px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-3 flex min-h-8 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Monthly Fee Collection</h2>
         </div>
@@ -76,13 +75,13 @@ const FeeBarChart: React.FC = () => {
         </select>
       </div>
 
-      <div ref={chartRef} className="h-[240px] min-h-[240px] w-full min-w-0 overflow-hidden">
+      <div ref={chartRef} className="min-h-0 flex-1 w-full min-w-0 overflow-hidden">
         {chartSize.isReady ? (
           <BarChart
             width={chartSize.width}
             height={chartSize.height}
             data={data?.monthlyFeeCollection || []}
-            margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+            margin={{ top: 8, right: 8, left: -25, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} className="dark:stroke-slate-800" />
             <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />

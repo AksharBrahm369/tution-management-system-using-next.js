@@ -13,13 +13,31 @@ interface Props {
 export default function Integrations({ settings, integrations, onSaved }: Props) {
   const [form, setForm] = useState(settings);
   const [status, setStatus] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => setForm(settings), [settings]);
 
   const save = async () => {
-    const response = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || "Failed to save integrations");
-    onSaved();
+    setSaving(true);
+    setStatus(null);
+    try {
+      const response = await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const fieldErrors = payload.issues?.fieldErrors
+          ? Object.entries(payload.issues.fieldErrors)
+              .flatMap(([field, messages]) => Array.isArray(messages) ? messages.map((message) => `${field}: ${message}`) : [])
+              .join(" ")
+          : "";
+        throw new Error(fieldErrors || payload.error || "Failed to save integrations");
+      }
+      setStatus("Integration settings saved.");
+      onSaved();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Failed to save integrations");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const test = async (integration: "twilio" | "razorpay") => {
@@ -53,8 +71,8 @@ export default function Integrations({ settings, integrations, onSaved }: Props)
 
       <div className="grid gap-4 lg:grid-cols-2">
         {card("Twilio", <MessageCircle size={18} />, integrations.twilio.connected, <div className="space-y-3"><p>Account SID: {integrations.twilio.maskedAccountSid ?? "Not configured"}</p><p>WhatsApp Number: {form.twilioWhatsAppNumber ?? "Not configured"}</p><button onClick={() => test("twilio")} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Test SMS</button></div>)}
-        {card("Cloudinary", <Cloud size={18} />, integrations.cloudinary.connected, <div className="space-y-3"><p>Cloud Name: {integrations.cloudinary.cloudName ?? "Not configured"}</p><button onClick={save} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Edit Credentials</button></div>)}
-        {card("Firebase", <PlugZap size={18} />, integrations.firebase.connected, <div className="space-y-3"><p>Project ID: {integrations.firebase.projectId ?? "Not configured"}</p><button onClick={save} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Edit Credentials</button></div>)}
+        {card("Cloudinary", <Cloud size={18} />, integrations.cloudinary.connected, <div className="space-y-3"><p>Cloud Name: {integrations.cloudinary.cloudName ?? "Not configured"}</p><button onClick={save} disabled={saving} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{saving ? "Saving..." : "Edit Credentials"}</button></div>)}
+        {card("Firebase", <PlugZap size={18} />, integrations.firebase.connected, <div className="space-y-3"><p>Project ID: {integrations.firebase.projectId ?? "Not configured"}</p><button onClick={save} disabled={saving} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:text-slate-200">{saving ? "Saving..." : "Edit Credentials"}</button></div>)}
         {card("Razorpay", <RefreshCcw size={18} />, integrations.razorpay.connected, <div className="space-y-3"><p>Mode: {form.razorpayMode}</p><button onClick={() => test("razorpay")} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-700 dark:text-slate-200">Test Connection</button></div>)}
       </div>
 

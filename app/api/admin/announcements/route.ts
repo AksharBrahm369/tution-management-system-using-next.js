@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 import {
   createAnnouncementNotifications,
@@ -10,9 +9,9 @@ import {
   serializeAnnouncementChannels,
 } from '@/lib/announcementDelivery';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
-
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
+
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,16 +55,17 @@ export async function POST(request: NextRequest) {
     const created = Array.isArray(inserted) ? inserted[0] : inserted;
 
     // If immediate publish, create notifications for audience
+    let publishResult = null;
     if (!scheduleAt) {
       try {
-        await publishAnnouncement(created.id);
+        publishResult = await publishAnnouncement(created.id);
       } catch (err) {
         console.error('[announcements] publish failed:', err);
         return NextResponse.json({ error: 'Publish failed', detail: err instanceof Error ? err.message : String(err) }, { status: 500 });
       }
     }
 
-    return NextResponse.json(created, { status: 201 });
+    return NextResponse.json({ ...created, publishResult }, { status: 201 });
   } catch (error) {
     console.error('Create announcement error:', error);
     const { message, status } = getRouteErrorStatus(error);
@@ -80,9 +80,20 @@ async function publishAnnouncement(announcementId: string) {
 
   const channels = parseAnnouncementChannels(ann.channels);
   const recipients = await resolveAnnouncementRecipients(ann);
-  await createAnnouncementNotifications(ann, recipients.userIds);
-  await deliverAnnouncementToContacts(ann, channels, recipients.contacts);
+  const notificationCount = channels.includes("IN_APP")
+    ? await createAnnouncementNotifications(ann, recipients.userIds)
+    : 0;
+  const delivery = await deliverAnnouncementToContacts(ann, channels, recipients.contacts);
 
   // mark announcement as published via raw SQL
   await prisma.$queryRaw`UPDATE announcements SET status = 'PUBLISHED', "updatedAt" = ${new Date()} WHERE id = ${announcementId}`;
+  return {
+    channels,
+    notificationCount,
+    recipients: {
+      users: recipients.userIds.length,
+      contacts: recipients.contacts.length,
+    },
+    delivery,
+  };
 }

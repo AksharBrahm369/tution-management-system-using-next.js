@@ -53,29 +53,29 @@ export default async function DashboardPage() {
       </section>
 
       {/* STORY 3 & 4: "Is attendance healthy?" & "Is revenue healthy?" (SECTION 4: Analytics & SECTION 6: Financial Health) */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-3">
         {/* Attendance Analytics */}
-        <div className="min-w-0">
+        <div className="min-w-0 h-full">
           <AttendanceDonutChart />
         </div>
         {/* Fee Bar Chart */}
-        <div className="min-w-0">
+        <div className="min-w-0 h-full">
           <FeeBarChart />
         </div>
         {/* Financial Health Widget */}
-        <div className="min-w-0">
+        <div className="min-w-0 h-full">
           <FinancialHealth />
         </div>
       </div>
 
       {/* STORY 5: "What requires action?" (SECTION 5: Action Center & reminders) */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
         {/* Command Center Quick Actions */}
-        <div className="min-w-0 lg:col-span-2">
+        <div className="min-w-0 lg:col-span-2 h-full">
           <QuickActions />
         </div>
         {/* Follow Up Reminders */}
-        <div className="min-w-0">
+        <div className="min-w-0 h-full">
           <FollowUpReminderWidget />
         </div>
       </div>

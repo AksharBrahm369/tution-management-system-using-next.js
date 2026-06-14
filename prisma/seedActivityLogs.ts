@@ -1,4 +1,6 @@
-import type { LogCategory, LogSeverity, PrismaClient, Role } from "@prisma/client";
+import type { LogCategory, LogSeverity, Role } from "@prisma/client";
+
+type ActivityLogClient = { activityLog: any };
 
 const ACTIONS: Array<{
   action: string;
@@ -62,7 +64,7 @@ function randomDateWithinDays(days: number): Date {
 }
 
 export async function seedActivityLogs(
-  prisma: PrismaClient,
+  prisma: ActivityLogClient,
   admin: { id: string; name: string; role: Role },
   teachers: Array<{ userId: string | null; name: string }>
 ): Promise<void> {

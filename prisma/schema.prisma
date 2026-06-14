@@ -436,8 +436,24 @@ enum OrderStatus {
 
 // ─── Models ──────────────────────────────────────────────────────────────────
 
+model Institute {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String?  @unique
+  ownerId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User? @relation("InstituteOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  users User[] @relation("InstituteUsers")
+
+  @@index([ownerId])
+  @@map("institutes")
+}
+
 model User {
   id         String    @id @default(cuid())
+  instituteId String?
   name       String
   email      String    @unique
   password   String
@@ -459,14 +475,18 @@ model User {
   parents           Parent[]
   teacher           Teacher?
   studentActivities StudentActivity[] @relation("StudentActivityPerformedBy")
+  institute         Institute? @relation("InstituteUsers", fields: [instituteId], references: [id], onDelete: Restrict)
+  ownedInstitutes   Institute[] @relation("InstituteOwner")
 
   @@index([email])
   @@index([role])
+  @@index([instituteId])
   @@map("users")
 }
 
 model Session {
   id        String   @id @default(cuid())
+  instituteId String?
   userId    String
   token     String   @unique
   expiresAt DateTime
@@ -477,11 +497,13 @@ model Session {
 
   @@index([userId])
   @@index([token])
+  @@index([instituteId])
   @@map("sessions")
 }
 
 model OTPVerification {
   id        String   @id @default(cuid())
+  instituteId String?
   email     String
   otp       String
   expiresAt DateTime
@@ -489,11 +511,13 @@ model OTPVerification {
   createdAt DateTime @default(now())
 
   @@index([email])
+  @@index([instituteId])
   @@map("otp_verifications")
 }
 
 model ActivityLog {
   id String @id @default(cuid())
+  instituteId String?
 
   // Who
   userId    String?
@@ -532,12 +556,14 @@ model ActivityLog {
   @@index([createdAt])
   @@index([entityType, entityId])
   @@index([severity])
+  @@index([instituteId])
   @@map("activity_logs")
 }
 
 // Password reset tokens stored separately for security
 model PasswordResetToken {
   id        String   @id @default(cuid())
+  instituteId String?
   email     String
   token     String   @unique
   expiresAt DateTime
@@ -546,6 +572,7 @@ model PasswordResetToken {
 
   @@index([email])
   @@index([token])
+  @@index([instituteId])
   @@map("password_reset_tokens")
 }
 
@@ -553,6 +580,7 @@ model PasswordResetToken {
 
 model Notification {
   id        String           @id @default(cuid())
+  instituteId String?
   userId    String
   studentId String?
   title     String
@@ -571,11 +599,13 @@ model Notification {
   @@index([studentId])
   @@index([isRead])
   @@index([createdAt])
+  @@index([instituteId])
   @@map("notifications")
 }
 
 model Enquiry {
   id            String @id @default(cuid())
+  instituteId String?
   enquiryNumber String @unique
 
   studentName  String
@@ -617,11 +647,13 @@ model Enquiry {
   @@index([priority])
   @@index([assignedTo])
   @@index([createdAt])
+  @@index([instituteId])
   @@map("enquiries")
 }
 
 model FollowUp {
   id             String         @id @default(cuid())
+  instituteId String?
   enquiryId      String
   type           FollowUpType
   scheduledAt    DateTime
@@ -639,11 +671,13 @@ model FollowUp {
   @@index([enquiryId])
   @@index([status])
   @@index([scheduledAt])
+  @@index([instituteId])
   @@map("follow_ups")
 }
 
 model DemoClass {
   id             String     @id @default(cuid())
+  instituteId String?
   enquiryId      String
   batchId        String?
   scheduledDate  DateTime
@@ -661,11 +695,13 @@ model DemoClass {
   @@index([enquiryId])
   @@index([status])
   @@index([scheduledDate])
+  @@index([instituteId])
   @@map("demo_classes")
 }
 
 model DashboardAlert {
   id         String    @id @default(cuid())
+  instituteId String?
   type       AlertType
   message    String
   severity   Severity
@@ -676,11 +712,13 @@ model DashboardAlert {
   @@index([severity])
   @@index([isResolved])
   @@index([createdAt])
+  @@index([instituteId])
   @@map("dashboard_alerts")
 }
 
 model InstituteSettings {
   id String @id @default(cuid())
+  instituteId String?
 
   name        String
   tagline     String?
@@ -761,12 +799,14 @@ model InstituteSettings {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("institute_settings")
 }
 
 model AcademicYear {
   id        String   @id @default(cuid())
+  instituteId String?
   name      String   @unique
   startDate DateTime
   endDate   DateTime
@@ -778,11 +818,13 @@ model AcademicYear {
 
   @@index([isCurrent])
   @@index([isActive])
+  @@index([instituteId])
   @@map("academic_years")
 }
 
 model BackupRecord {
   id          String       @id @default(cuid())
+  instituteId String?
   fileName    String
   fileUrl     String?
   fileSize    String?
@@ -797,6 +839,7 @@ model BackupRecord {
   @@index([type])
   @@index([status])
   @@index([createdAt])
+  @@index([instituteId])
   @@map("backup_records")
 }
 
@@ -848,6 +891,7 @@ enum DocumentType {
 
 model Student {
   id String @id @default(cuid())
+  instituteId String?
 
   studentCode  String      @unique
   firstName    String
@@ -918,11 +962,13 @@ model Student {
   @@index([category])
   @@index([academicYear])
   @@index([standardId])
+  @@index([instituteId])
   @@map("students")
 }
 
 model Standard {
   id       String  @id @default(cuid())
+  instituteId String?
   name     String  @unique
   order    Int     @unique
   isActive Boolean @default(true)
@@ -938,11 +984,13 @@ model Standard {
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
+  @@index([instituteId])
   @@map("standards")
 }
 
 model Parent {
   id             String  @id @default(cuid())
+  instituteId String?
   parentCode     String? @unique
   fatherName     String?
   fatherPhone    String?
@@ -967,12 +1015,14 @@ model Parent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("parents")
 }
 
 model EmergencyContact {
   id           String  @id @default(cuid())
+  instituteId String?
   studentId    String
   name         String
   relationship String
@@ -983,11 +1033,13 @@ model EmergencyContact {
   createdAt DateTime @default(now())
 
   @@index([studentId])
+  @@index([instituteId])
   @@map("emergency_contacts")
 }
 
 model MedicalInfo {
   id            String  @id @default(cuid())
+  instituteId String?
   studentId     String  @unique
   allergies     String?
   medications   String?
@@ -1000,12 +1052,14 @@ model MedicalInfo {
   student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("medical_info")
 }
 
 model StudentDocument {
   id         String       @id @default(cuid())
+  instituteId String?
   studentId  String
   name       String
   type       DocumentType
@@ -1016,11 +1070,13 @@ model StudentDocument {
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([studentId])
+  @@index([instituteId])
   @@map("student_documents")
 }
 
 model SiblingLink {
   id        String @id @default(cuid())
+  instituteId String?
   studentId String
   siblingId String
 
@@ -1030,11 +1086,13 @@ model SiblingLink {
   @@unique([studentId, siblingId])
   @@index([studentId])
   @@index([siblingId])
+  @@index([instituteId])
   @@map("sibling_links")
 }
 
 model Attendance {
   id               String            @id @default(cuid())
+  instituteId String?
   studentId        String
   batchId          String
   sessionId        String?
@@ -1065,11 +1123,13 @@ model Attendance {
   @@unique([studentId, batchId, date])
   @@index([batchId, date])
   @@index([studentId, date])
+  @@index([instituteId])
   @@map("attendance")
 }
 
 model AttendanceSession {
   id            String    @id @default(cuid())
+  instituteId String?
   batchId       String
   sessionId     String?
   date          DateTime
@@ -1092,11 +1152,13 @@ model AttendanceSession {
 
   @@unique([batchId, date])
   @@index([batchId, date])
+  @@index([instituteId])
   @@map("attendance_sessions")
 }
 
 model AttendanceAlert {
   id             String    @id @default(cuid())
+  instituteId String?
   studentId      String
   batchId        String
   alertType      AlertType
@@ -1114,11 +1176,13 @@ model AttendanceAlert {
   @@index([studentId])
   @@index([batchId])
   @@index([isResolved])
+  @@index([instituteId])
   @@map("attendance_alerts")
 }
 
 model AttendanceNotification {
   id         String           @id @default(cuid())
+  instituteId String?
   studentId  String
   batchId    String
   date       DateTime
@@ -1137,6 +1201,7 @@ model AttendanceNotification {
   @@index([studentId])
   @@index([batchId])
   @@index([isSent])
+  @@index([instituteId])
   @@map("attendance_notifications")
 }
 
@@ -1144,6 +1209,7 @@ model AttendanceNotification {
 
 model FeeStructure {
   id String @id @default(cuid())
+  instituteId String?
 
   name         String
   description  String?
@@ -1175,12 +1241,14 @@ model FeeStructure {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("fee_structures")
 }
 
 model FeeRecord {
   id String @id @default(cuid())
+  instituteId String?
 
   receiptNumber  String  @unique
   studentId      String
@@ -1221,11 +1289,13 @@ model FeeRecord {
   @@unique([studentId, batchId, month, year])
   @@index([studentId, status])
   @@index([batchId, month, year])
+  @@index([instituteId])
   @@map("fee_records")
 }
 
 model FeePayment {
   id String @id @default(cuid())
+  instituteId String?
 
   paymentNumber String @unique
   feeRecordId   String
@@ -1261,12 +1331,14 @@ model FeePayment {
   paidAt    DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("fee_payments")
 }
 
 model Discount {
   id String @id @default(cuid())
+  instituteId String?
 
   studentId  String
   batchId    String?
@@ -1283,12 +1355,14 @@ model Discount {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("discounts")
 }
 
 model Scholarship {
   id String @id @default(cuid())
+  instituteId String?
 
   studentId   String
   name        String
@@ -1305,12 +1379,14 @@ model Scholarship {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("scholarships")
 }
 
 model FeeReminder {
   id String @id @default(cuid())
+  instituteId String?
 
   feeRecordId String
   studentId   String
@@ -1324,12 +1400,14 @@ model FeeReminder {
   feeRecord FeeRecord @relation(fields: [feeRecordId], references: [id])
 
   createdAt DateTime @default(now())
+  @@index([instituteId])
 
   @@map("fee_reminders")
 }
 
 model Refund {
   id String @id @default(cuid())
+  instituteId String?
 
   paymentId     String
   studentId     String
@@ -1346,12 +1424,14 @@ model Refund {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("refunds")
 }
 
 model OnlinePaymentOrder {
   id String @id @default(cuid())
+  instituteId String?
 
   orderId          String      @unique
   feeRecordId      String
@@ -1369,6 +1449,7 @@ model OnlinePaymentOrder {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("online_payment_orders")
 }
@@ -1383,6 +1464,7 @@ enum AnnouncementStatus {
 
 model Announcement {
   id         String             @id @default(cuid())
+  instituteId String?
   userId     String
   title      String
   message    String
@@ -1396,6 +1478,7 @@ model Announcement {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([instituteId])
   @@map("announcements")
 }
 
@@ -1449,6 +1532,7 @@ enum SnapshotType {
 // Reports & Analytics Models
 model Report {
   id String @id @default(cuid())
+  instituteId String?
 
   // Identity
   name        String
@@ -1486,12 +1570,14 @@ model Report {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("reports")
 }
 
 model ReportRun {
   id String @id @default(cuid())
+  instituteId String?
 
   reportId String
   runBy    String
@@ -1516,12 +1602,14 @@ model ReportRun {
   report Report @relation(fields: [reportId], references: [id])
 
   createdAt DateTime @default(now())
+  @@index([instituteId])
 
   @@map("report_runs")
 }
 
 model AnalyticsSnapshot {
   id String @id @default(cuid())
+  instituteId String?
 
   date DateTime
   type SnapshotType
@@ -1555,11 +1643,13 @@ model AnalyticsSnapshot {
   createdAt DateTime @default(now())
 
   @@unique([date, type])
+  @@index([instituteId])
   @@map("analytics_snapshots")
 }
 
 model StudentProgressReport {
   id String @id @default(cuid())
+  instituteId String?
 
   studentId String
   batchId   String
@@ -1597,11 +1687,13 @@ model StudentProgressReport {
   generatedAt DateTime @default(now())
 
   @@unique([studentId, batchId, month, year])
+  @@index([instituteId])
   @@map("student_progress_reports")
 }
 
 model PTMMeeting {
   id          String    @id @default(cuid())
+  instituteId String?
   title       String
   description String?
   meetingDate DateTime
@@ -1622,11 +1714,13 @@ model PTMMeeting {
 
   @@index([meetingDate])
   @@index([batchId])
+  @@index([instituteId])
   @@map("ptm_meetings")
 }
 
 model PTMSlot {
   id             String     @id @default(cuid())
+  instituteId String?
   meetingId      String
   parentId       String
   studentId      String
@@ -1650,11 +1744,13 @@ model PTMSlot {
   @@index([meetingId])
   @@index([parentId])
   @@index([studentId])
+  @@index([instituteId])
   @@map("ptm_slots")
 }
 
 model ParentFeedback {
   id            String         @id @default(cuid())
+  instituteId String?
   parentId      String
   studentId     String
   teacherId     String?
@@ -1678,11 +1774,13 @@ model ParentFeedback {
   @@index([parentId])
   @@index([studentId])
   @@index([status])
+  @@index([instituteId])
   @@map("parent_feedbacks")
 }
 
 model TeacherPerformanceReport {
   id String @id @default(cuid())
+  instituteId String?
 
   teacherId String
   month     Int
@@ -1715,11 +1813,13 @@ model TeacherPerformanceReport {
   generatedAt DateTime @default(now())
 
   @@unique([teacherId, month, year])
+  @@index([instituteId])
   @@map("teacher_performance_reports")
 }
 
 model Exam {
   id String @id @default(cuid())
+  instituteId String?
 
   title       String
   code        String   @unique
@@ -1765,11 +1865,13 @@ model Exam {
   @@index([standardId])
   @@index([status])
   @@index([examDate])
+  @@index([instituteId])
   @@map("exams")
 }
 
 model ExamResult {
   id String @id @default(cuid())
+  instituteId String?
 
   examId    String
   studentId String
@@ -1810,11 +1912,13 @@ model ExamResult {
   @@unique([examId, studentId])
   @@index([batchId, examId])
   @@index([studentId])
+  @@index([instituteId])
   @@map("exam_results")
 }
 
 model ExamQuestion {
   id String @id @default(cuid())
+  instituteId String?
 
   examId         String
   questionNumber Int
@@ -1842,11 +1946,13 @@ model ExamQuestion {
   updatedAt DateTime @updatedAt
 
   @@unique([examId, questionNumber])
+  @@index([instituteId])
   @@map("exam_questions")
 }
 
 model StudentAnswer {
   id String @id @default(cuid())
+  instituteId String?
 
   questionId String
   studentId  String
@@ -1866,11 +1972,13 @@ model StudentAnswer {
   @@index([questionId])
   @@index([studentId])
   @@index([attemptId])
+  @@index([instituteId])
   @@map("student_answers")
 }
 
 model OnlineAttempt {
   id String @id @default(cuid())
+  instituteId String?
 
   examId    String
   studentId String
@@ -1897,11 +2005,13 @@ model OnlineAttempt {
 
   @@unique([examId, studentId])
   @@index([studentId])
+  @@index([instituteId])
   @@map("online_attempts")
 }
 
 model GradeConfig {
   id String @id @default(cuid())
+  instituteId String?
 
   name        String
   description String?
@@ -1911,12 +2021,14 @@ model GradeConfig {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("grade_configs")
 }
 
 model GradeRange {
   id String @id @default(cuid())
+  instituteId String?
 
   configId      String
   grade         String
@@ -1931,11 +2043,13 @@ model GradeRange {
   createdAt DateTime @default(now())
 
   @@index([configId])
+  @@index([instituteId])
   @@map("grade_ranges")
 }
 
 model ReportCard {
   id String @id @default(cuid())
+  instituteId String?
 
   studentId    String
   batchId      String
@@ -1951,11 +2065,13 @@ model ReportCard {
 
   @@unique([studentId, batchId, academicYear, term])
   @@index([batchId])
+  @@index([instituteId])
   @@map("report_cards")
 }
 
 model PerformanceAnalysis {
   id String @id @default(cuid())
+  instituteId String?
 
   studentId String
   batchId   String
@@ -1980,11 +2096,13 @@ model PerformanceAnalysis {
 
   @@unique([studentId, batchId, month, year])
   @@index([subjectId])
+  @@index([instituteId])
   @@map("performance_analysis")
 }
 
 model StudentActivity {
   id            String  @id @default(cuid())
+  instituteId String?
   studentId     String
   type          String
   title         String
@@ -1998,6 +2116,7 @@ model StudentActivity {
 
   @@index([studentId])
   @@index([createdAt])
+  @@index([instituteId])
   @@map("student_activities")
 }
 
@@ -2005,6 +2124,7 @@ model StudentActivity {
 
 model Teacher {
   id String @id @default(cuid())
+  instituteId String?
 
   // Basic Info
   teacherCode    String      @unique
@@ -2067,12 +2187,14 @@ model Teacher {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("teachers")
 }
 
 model Subject {
   id          String  @id @default(cuid())
+  instituteId String?
   name        String
   code        String  @unique
   description String?
@@ -2086,12 +2208,14 @@ model Subject {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("subjects")
 }
 
 model StudyMaterial {
   id String @id @default(cuid())
+  instituteId String?
 
   title        String
   description  String?
@@ -2116,11 +2240,13 @@ model StudyMaterial {
   @@index([batchId])
   @@index([standardId])
   @@index([accessLevel])
+  @@index([instituteId])
   @@map("study_materials")
 }
 
 model TeacherSubject {
   id        String  @id @default(cuid())
+  instituteId String?
   teacherId String
   subjectId String
   isPrimary Boolean @default(false)
@@ -2130,11 +2256,13 @@ model TeacherSubject {
   createdAt DateTime @default(now())
 
   @@unique([teacherId, subjectId])
+  @@index([instituteId])
   @@map("teacher_subjects")
 }
 
 model TeacherStandardSubject {
   id         String @id @default(cuid())
+  instituteId String?
   teacherId  String
   standardId String
   subjectId  String
@@ -2148,11 +2276,13 @@ model TeacherStandardSubject {
   @@unique([teacherId, standardId, subjectId])
   @@index([standardId])
   @@index([subjectId])
+  @@index([instituteId])
   @@map("teacher_standard_subjects")
 }
 
 model TeacherAttendance {
   id        String            @id @default(cuid())
+  instituteId String?
   teacherId String
   date      DateTime
   status    TeacherAttdStatus @default(PRESENT)
@@ -2165,11 +2295,13 @@ model TeacherAttendance {
   createdAt DateTime @default(now())
 
   @@unique([teacherId, date])
+  @@index([instituteId])
   @@map("teacher_attendance")
 }
 
 model TeacherLeave {
   id           String      @id @default(cuid())
+  instituteId String?
   teacherId    String
   leaveType    LeaveType
   fromDate     DateTime
@@ -2185,12 +2317,14 @@ model TeacherLeave {
   teacher   Teacher  @relation(fields: [teacherId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("teacher_leaves")
 }
 
 model SalaryRecord {
   id        String @id @default(cuid())
+  instituteId String?
   teacherId String
   month     Int
   year      Int
@@ -2218,11 +2352,13 @@ model SalaryRecord {
   updatedAt DateTime @updatedAt
 
   @@unique([teacherId, month, year])
+  @@index([instituteId])
   @@map("salary_records")
 }
 
 model TeacherDocument {
   id         String         @id @default(cuid())
+  instituteId String?
   teacherId  String
   name       String
   type       TeacherDocType
@@ -2232,12 +2368,14 @@ model TeacherDocument {
   uploadedAt DateTime       @default(now())
 
   teacher Teacher @relation(fields: [teacherId], references: [id])
+  @@index([instituteId])
 
   @@map("teacher_documents")
 }
 
 model TeacherPerformance {
   id        String @id @default(cuid())
+  instituteId String?
   teacherId String
   month     Int
   year      Int
@@ -2253,6 +2391,7 @@ model TeacherPerformance {
   createdAt DateTime @default(now())
 
   @@unique([teacherId, month, year])
+  @@index([instituteId])
   @@map("teacher_performance")
 }
 
@@ -2260,6 +2399,7 @@ model TeacherPerformance {
 
 model Room {
   id         String   @id @default(cuid())
+  instituteId String?
   name       String
   code       String   @unique
   capacity   Int
@@ -2273,12 +2413,14 @@ model Room {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("rooms")
 }
 
 model Batch {
   id String @id @default(cuid())
+  instituteId String?
 
   // Identity
   name        String
@@ -2341,11 +2483,13 @@ model Batch {
   @@index([teacherId])
   @@index([subjectId])
   @@index([standardId])
+  @@index([instituteId])
   @@map("batches")
 }
 
 model BatchEnrollment {
   id         String    @id @default(cuid())
+  instituteId String?
   studentId  String
   batchId    String
   enrollDate DateTime  @default(now())
@@ -2363,11 +2507,13 @@ model BatchEnrollment {
   @@unique([studentId, batchId])
   @@index([studentId])
   @@index([batchId])
+  @@index([instituteId])
   @@map("batch_enrollments")
 }
 
 model TimetableSlot {
   id        String    @id @default(cuid())
+  instituteId String?
   batchId   String
   day       DayOfWeek
   startTime String
@@ -2381,11 +2527,13 @@ model TimetableSlot {
   updatedAt DateTime @updatedAt
 
   @@index([batchId])
+  @@index([instituteId])
   @@map("timetable_slots")
 }
 
 model ClassSession {
   id String @id @default(cuid())
+  instituteId String?
 
   batchId    String
   teacherId  String
@@ -2433,11 +2581,13 @@ model ClassSession {
   @@index([standardId])
   @@index([date])
   @@index([status])
+  @@index([instituteId])
   @@map("class_sessions")
 }
 
 model Holiday {
   id          String      @id @default(cuid())
+  instituteId String?
   name        String
   date        DateTime
   type        HolidayType
@@ -2450,11 +2600,13 @@ model Holiday {
   updatedAt DateTime @updatedAt
 
   @@index([date])
+  @@index([instituteId])
   @@map("holidays")
 }
 
 model AcademicCalendar {
   id          String            @id @default(cuid())
+  instituteId String?
   title       String
   description String?
   startDate   DateTime
@@ -2469,11 +2621,13 @@ model AcademicCalendar {
   updatedAt DateTime @updatedAt
 
   @@index([startDate])
+  @@index([instituteId])
   @@map("academic_calendar")
 }
 
 model ConflictLog {
   id          String       @id @default(cuid())
+  instituteId String?
   type        ConflictType
   description String
   batchId     String?
@@ -2488,6 +2642,7 @@ model ConflictLog {
   createdAt DateTime @default(now())
 
   @@index([isResolved])
+  @@index([instituteId])
   @@map("conflict_logs")
 }
 
@@ -2495,6 +2650,7 @@ model ConflictLog {
 
 model ClassSchedule {
   id           String      @id @default(cuid())
+  instituteId String?
   batchId      String
   date         DateTime
   startTime    String
@@ -2506,6 +2662,7 @@ model ClassSchedule {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([instituteId])
 
   @@map("class_schedules")
 }

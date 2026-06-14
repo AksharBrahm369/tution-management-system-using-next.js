@@ -400,9 +400,9 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Amount</label>
               <div className="relative">
-                <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-bold">₹</span>
+                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 dark:text-slate-300">₹</span>
                 <input
-                  className="w-full rounded-md border border-slate-200 bg-white pl-6 pr-3 py-2 text-xs font-bold text-slate-900 dark:border-slate-700 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-slate-200 bg-white py-2 pl-7 pr-3 text-sm font-bold text-slate-950 caret-blue-500 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   max={selectedPending || undefined}
                   min={0}
                   type="number"
@@ -415,7 +415,7 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Payment Mode</label>
               <select
-                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-805 dark:border-slate-700 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={paymentMode}
                 onChange={(event) => setPaymentMode(event.target.value)}
               >
@@ -428,9 +428,9 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Collected / Recorded By</label>
               <div className="relative">
-                <span className="absolute left-2.5 top-2.5 text-slate-400"><User size={13} /></span>
+                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"><User size={13} /></span>
                 <input
-                  className="w-full rounded-md border border-slate-200 bg-white pl-7.5 pr-3 py-2 text-xs font-medium text-slate-905 dark:border-slate-700 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-slate-200 bg-white py-2 pl-8 pr-3 text-xs font-medium text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={collectedBy}
                   onChange={(event) => setCollectedBy(event.target.value)}
                   placeholder="Staff member name"
@@ -441,7 +441,7 @@ const FeesTab: React.FC<FeesTabProps> = ({ student, onChanged }) => {
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Notes</label>
               <textarea
-                className="min-h-16 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-905 dark:border-slate-700 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="min-h-16 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-900 placeholder:text-slate-400 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Optional notes or check/transaction reference"

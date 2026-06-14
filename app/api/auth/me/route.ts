@@ -9,6 +9,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { errorResponse, successResponse } from "@/lib/utils";
+import { setRequestInstitute } from "@/lib/institute";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,11 +37,18 @@ export async function GET(request: NextRequest) {
       return errorResponse("Session expired. Please login again", 401);
     }
 
+    if (!payload.instituteId || session.instituteId !== payload.instituteId) {
+      return errorResponse("Session expired. Please login again", 401);
+    }
+
+    setRequestInstitute(payload.instituteId);
+
     // ── 4. Fetch fresh user data ───────────────────────────────────────────────
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {
         id: true,
+        instituteId: true,
         name: true,
         email: true,
         phone: true,
@@ -60,6 +68,10 @@ export async function GET(request: NextRequest) {
 
     if (!user.isActive) {
       return errorResponse("Your account has been deactivated", 403);
+    }
+
+    if (user.instituteId !== payload.instituteId) {
+      return errorResponse("Session expired. Please login again", 401);
     }
 
     return successResponse({ user }, "User fetched successfully");

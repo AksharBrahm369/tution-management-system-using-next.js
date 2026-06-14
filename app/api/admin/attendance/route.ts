@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { validateJWT } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 import { validateAttendanceFilters } from "@/lib/validations/attendance";
 
 export async function GET(req: NextRequest) {
   try {
-    const payload = await validateJWT(req);
-    if (!payload || payload.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    await requireSuperAdmin(req);
 
     const searchParams = req.nextUrl.searchParams;
     const batchId = searchParams.get("batchId");

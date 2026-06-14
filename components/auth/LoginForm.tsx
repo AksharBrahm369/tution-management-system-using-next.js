@@ -29,7 +29,11 @@ const ROLE_REDIRECT: Record<string, string> = {
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl");
+  const redirectUrl = searchParams.get("redirect") ?? searchParams.get("callbackUrl");
+  const safeRedirectUrl =
+    redirectUrl?.startsWith("/") && !redirectUrl.startsWith("//")
+      ? redirectUrl
+      : null;
   const sessionExpired = searchParams.get("error") === "session_expired";
 
   const [showPassword, setShowPassword] = useState(false);
@@ -64,7 +68,7 @@ export function LoginForm() {
 
       const user: SafeUser = json.data.user;
       const destination =
-        callbackUrl ?? ROLE_REDIRECT[user.role] ?? "/admin/dashboard";
+        safeRedirectUrl ?? ROLE_REDIRECT[user.role] ?? "/admin/dashboard";
 
       router.push(destination);
       router.refresh();

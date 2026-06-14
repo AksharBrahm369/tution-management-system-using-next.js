@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 import {
   createAnnouncementNotifications,
@@ -9,6 +8,8 @@ import {
 } from '@/lib/announcementDelivery';
 
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,7 +21,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const channels = parseAnnouncementChannels(ann.channels);
     const recipients = await resolveAnnouncementRecipients(ann);
-    const notificationCount = await createAnnouncementNotifications(ann, recipients.userIds);
+    const notificationCount = channels.includes("IN_APP")
+      ? await createAnnouncementNotifications(ann, recipients.userIds)
+      : 0;
     const delivery = await deliverAnnouncementToContacts(ann, channels, recipients.contacts);
 
     return NextResponse.json({ message: 'Resent', count: notificationCount, delivery }, { status: 200 });

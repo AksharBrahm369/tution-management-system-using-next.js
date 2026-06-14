@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { setRequestInstitute } from "@/lib/institute";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "fallback-secret-for-dev-only-replace-in-production"
@@ -10,11 +11,13 @@ const JWT_SECRET = new TextEncoder().encode(
 
 export interface AdminAuthContext {
   userId: string;
+  instituteId: string;
   role: Role;
 }
 
 export interface CurrentAdminUser {
   id: string;
+  instituteId: string;
   name: string;
   email: string;
   role: Role;
@@ -23,6 +26,7 @@ export interface CurrentAdminUser {
 
 const ADMIN_USER_SELECT = {
   id: true,
+  instituteId: true,
   name: true,
   email: true,
   role: true,
@@ -44,7 +48,7 @@ export async function requireSuperAdmin(request: NextRequest): Promise<AdminAuth
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { role: true },
+    select: { role: true, instituteId: true },
   });
 
   if (!user) {
@@ -55,8 +59,12 @@ export async function requireSuperAdmin(request: NextRequest): Promise<AdminAuth
   if (user.role !== "SUPER_ADMIN") {
     throw new Error(`Forbidden: User role is ${user.role}, but expected SUPER_ADMIN`);
   }
+  if (!user.instituteId || user.instituteId !== payload.instituteId) {
+    throw new Error("Unauthorized: Invalid institute session");
+  }
+  setRequestInstitute(user.instituteId);
 
-  return { userId, role: user.role };
+  return { userId, instituteId: user.instituteId, role: user.role };
 }
 
 export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
@@ -76,9 +84,12 @@ export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
 
     if (!session || session.expiresAt < new Date()) return null;
     if (!user?.isActive || user.role !== "SUPER_ADMIN") return null;
+    if (!user.instituteId || user.instituteId !== payload.instituteId) return null;
+    setRequestInstitute(user.instituteId);
 
     return {
       id: user.id,
+      instituteId: user.instituteId,
       name: user.name,
       email: user.email,
       role: user.role,

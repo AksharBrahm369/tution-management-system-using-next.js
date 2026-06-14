@@ -3,9 +3,11 @@ import { ZodError } from "zod";
 import { Role } from "@prisma/client";
 import { validateJWT } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { setRequestInstitute } from "@/lib/institute";
 
 export interface RoleAuthContext {
   userId: string;
+  instituteId: string;
   role: Role;
   teacherId?: string;
   studentId?: string;
@@ -22,6 +24,7 @@ export async function requireRole(request: NextRequest, roles: Role[]): Promise<
     where: { id: payload.userId },
     select: {
       id: true,
+      instituteId: true,
       role: true,
       teacher: { select: { id: true } },
       students: { select: { id: true }, take: 1 },
@@ -30,10 +33,15 @@ export async function requireRole(request: NextRequest, roles: Role[]): Promise<
   });
 
   if (!user) throw new Error("Unauthorized");
+  if (!user.instituteId || user.instituteId !== payload.instituteId) {
+    throw new Error("Unauthorized: Invalid institute session");
+  }
   if (!roles.includes(user.role)) throw new Error("Forbidden");
+  setRequestInstitute(user.instituteId);
 
   return {
     userId: user.id,
+    instituteId: user.instituteId,
     role: user.role,
     teacherId: user.teacher?.id,
     studentId: user.students?.[0]?.id,

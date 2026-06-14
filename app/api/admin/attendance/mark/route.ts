@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { validateJWT } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 import { validateMarkAttendance } from "@/lib/validations/attendance";
 import {
   notifyAbsentParents,
@@ -12,13 +12,7 @@ import { logActivityFromRequest } from "@/lib/activityLogger";
 
 export async function POST(req: NextRequest) {
   try {
-    const payload = await validateJWT(req);
-    if (!payload || payload.role !== "SUPER_ADMIN") {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireSuperAdmin(req);
 
     const body = await req.json();
     const validation = validateMarkAttendance(body);
@@ -108,7 +102,7 @@ export async function POST(req: NextRequest) {
           date: attendanceDate,
           status: record.status as any,
           markedAt: new Date(),
-          markedBy: payload.userId,
+          markedBy: auth.userId,
           lateMinutes: record.lateMinutes,
           arrivalTime: record.arrivalTime,
           leaveReason: record.leaveReason,
@@ -116,7 +110,7 @@ export async function POST(req: NextRequest) {
         update: {
           status: record.status as any,
           markedAt: new Date(),
-          markedBy: payload.userId,
+          markedBy: auth.userId,
           lateMinutes: record.lateMinutes,
           arrivalTime: record.arrivalTime,
           leaveReason: record.leaveReason,
@@ -147,7 +141,7 @@ export async function POST(req: NextRequest) {
       create: {
         batchId,
         date: attendanceDate,
-        markedBy: payload.userId,
+        markedBy: auth.userId,
         isComplete: true,
         completedAt: new Date(),
         totalStudents: attendance.length,
@@ -159,7 +153,7 @@ export async function POST(req: NextRequest) {
         leaveCount: attendance.filter((a) => a.status === "ON_LEAVE").length,
       },
       update: {
-        markedBy: payload.userId,
+        markedBy: auth.userId,
         markedAt: new Date(),
         isComplete: true,
         completedAt: new Date(),
@@ -223,7 +217,7 @@ export async function POST(req: NextRequest) {
     }
 
     await logActivityFromRequest(req, {
-      userId: payload.userId,
+      userId: auth.userId,
       action: "ATTENDANCE_MARKED",
       category: "ATTENDANCE",
       severity: "INFO",

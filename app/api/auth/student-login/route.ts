@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, generateToken, setAuthCookie } from "@/lib/auth";
 import { errorResponse } from "@/lib/utils";
+import { setRequestInstitute } from "@/lib/institute";
 
 function normalizeStudentCode(value: string): string {
   return value
@@ -38,6 +39,10 @@ export async function POST(request: NextRequest) {
     if (!student.user) {
       return errorResponse("No login account exists for this student. Please contact the administrator.", 401);
     }
+    const instituteId = student.user.instituteId ?? student.instituteId;
+    if (!instituteId) {
+      return errorResponse("This student account is not linked to a tuition. Please contact the administrator.", 403);
+    }
 
     if (!student.user.isActive) {
       return errorResponse("Your account has been deactivated", 403);
@@ -48,7 +53,15 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid Student Code or password", 401);
     }
 
-    const token = await generateToken(student.user.id, "STUDENT", student.user.email, rememberMe);
+    if (!student.user.instituteId) {
+      await prisma.user.update({
+        where: { id: student.user.id },
+        data: { instituteId },
+      });
+    }
+
+    setRequestInstitute(instituteId);
+    const token = await generateToken(student.user.id, instituteId, "STUDENT", student.user.email, rememberMe);
 
     const sessionExpiry = new Date(
       Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000
@@ -57,6 +70,7 @@ export async function POST(request: NextRequest) {
     await prisma.session.create({
       data: {
         userId: student.user.id,
+        instituteId,
         token,
         expiresAt: sessionExpiry,
       },

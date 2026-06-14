@@ -16,7 +16,7 @@ interface ChartData {
 
 const AttendanceDonutChart: React.FC = () => {
   const [mounted, setMounted] = React.useState(false);
-  const [chartRef, chartSize] = useMeasuredChartSize(200);
+  const [chartRef, chartSize] = useMeasuredChartSize(170);
 
   React.useEffect(() => {
     setMounted(true);
@@ -34,16 +34,16 @@ const AttendanceDonutChart: React.FC = () => {
 
   if (!mounted || isLoading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <Skeleton className="mb-4 h-4 w-44" />
-        <Skeleton className="h-[240px] w-full rounded-lg" />
+      <div className="h-full min-h-[330px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <Skeleton className="mb-3 h-4 w-44" />
+        <Skeleton className="h-[250px] w-full rounded-lg" />
       </div>
     );
   }
 
   if (isError || !data?.attendanceOverview) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="h-full min-h-[330px] rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Attendance Overview</h2>
         <p className="mt-4 text-xs text-red-600 dark:text-red-300">Could not load attendance chart.</p>
       </div>
@@ -61,22 +61,22 @@ const AttendanceDonutChart: React.FC = () => {
   ];
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-2">
+    <section className="flex h-full min-h-[330px] flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-3">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Attendance Overview</h2>
       </div>
 
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-1 flex-col items-center justify-between gap-3">
         {/* Chart View */}
-        <div ref={chartRef} className="relative h-[200px] min-h-[200px] w-[200px] overflow-hidden shrink-0 mx-auto">
+        <div ref={chartRef} className="relative mx-auto h-[170px] min-h-[170px] w-[170px] shrink-0 overflow-hidden">
           {chartSize.isReady ? (
             <PieChart width={chartSize.width} height={chartSize.height}>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                innerRadius={55}
-                outerRadius={80}
+                innerRadius={48}
+                outerRadius={68}
                 paddingAngle={2}
                 dataKey="value"
               >
@@ -104,7 +104,7 @@ const AttendanceDonutChart: React.FC = () => {
         </div>
 
         {/* Legend / Metrics below chart */}
-        <div className="w-full border-t border-slate-100 pt-4 dark:border-slate-800">
+        <div className="w-full border-t border-slate-100 pt-3 dark:border-slate-800">
           <div className="grid grid-cols-3 gap-2 text-center">
             {chartData.map((item) => (
               <div key={item.name} className="min-w-0">
@@ -120,9 +120,9 @@ const AttendanceDonutChart: React.FC = () => {
               </div>
             ))}
           </div>
-          <div className="mt-4 border-t border-slate-100/60 pt-2.5 dark:border-slate-800/60 flex items-center justify-between text-xs text-slate-400 font-semibold">
+          <div className="mt-3 flex items-center justify-between border-t border-slate-100/60 pt-2.5 text-xs font-semibold text-slate-400 dark:border-slate-800/60">
             <span>Total Tracked</span>
-            <span className="text-slate-750 dark:text-slate-300 font-bold">{total} students</span>
+            <span className="font-bold text-slate-700 dark:text-slate-300">{total} students</span>
           </div>
         </div>
       </div>

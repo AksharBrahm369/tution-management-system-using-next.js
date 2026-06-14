@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateJWT } from "@/lib/auth";
+import { requireRole } from "@/lib/roleAuth";
 import { validateQRScan } from "@/lib/validations/attendance";
 import { markAttendanceViaQR } from "@/lib/qrGenerator";
 
 export async function POST(req: NextRequest) {
   try {
-    const payload = await validateJWT(req);
-    if (!payload) {
-      return NextResponse.json({ error: "You must be logged in to mark attendance." }, { status: 401 });
-    }
-
-    if (payload.role !== "STUDENT" && payload.role !== "TEACHER") {
-      return NextResponse.json(
-        { error: `Only students can mark their attendance via QR code. You are currently logged in as ${payload.role}.` },
-        { status: 403 }
-      );
-    }
+    const auth = await requireRole(req, ["STUDENT", "TEACHER"]);
 
     const body = await req.json();
     const validation = validateQRScan(body);
@@ -33,7 +23,7 @@ export async function POST(req: NextRequest) {
     const { qrToken } = validation.data;
 
     // Mark attendance via QR
-    const result = await markAttendanceViaQR(qrToken, payload.userId);
+    const result = await markAttendanceViaQR(qrToken, auth.userId);
 
     if (!result.success) {
       return NextResponse.json(

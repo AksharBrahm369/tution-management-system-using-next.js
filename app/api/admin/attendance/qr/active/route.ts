@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateJWT } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 import { getActiveQRSession } from "@/lib/qrGenerator";
 
 export async function GET(req: NextRequest) {
   try {
-    const payload = await validateJWT(req);
-    if (!payload || payload.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    await requireSuperAdmin(req);
 
     const batchId = req.nextUrl.searchParams.get("batchId") ?? undefined;
     if (!batchId) return NextResponse.json({ data: null });

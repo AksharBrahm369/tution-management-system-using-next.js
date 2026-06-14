@@ -1,7 +1,7 @@
 import os from "node:os";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { validateJWT } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 import { validateGenerateQR } from "@/lib/validations/attendance";
 import { generateQRToken } from "@/lib/qrGenerator";
 import { logActivityFromRequest } from "@/lib/activityLogger";
@@ -9,10 +9,7 @@ import { getAppUrl } from "@/lib/appUrl";
 
 export async function POST(req: NextRequest) {
   try {
-    const payload = await validateJWT(req);
-    if (!payload || payload.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    const auth = await requireSuperAdmin(req);
 
     const body = await req.json();
     const validation = validateGenerateQR(body);
@@ -86,7 +83,7 @@ export async function POST(req: NextRequest) {
     });
 
     await logActivityFromRequest(req, {
-      userId: payload.userId,
+      userId: auth.userId,
       action: "QR_CODE_GENERATED",
       category: "ATTENDANCE",
       severity: "INFO",

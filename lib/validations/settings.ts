@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const nullableString = z.string().optional().or(z.literal(""));
+const nullableString = z.string().nullable().optional().or(z.literal(""));
 
 export const backupTypeSchema = z.enum(["MANUAL", "SCHEDULED", "AUTO"]);
 

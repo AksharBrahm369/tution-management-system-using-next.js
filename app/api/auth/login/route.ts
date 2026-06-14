@@ -9,6 +9,8 @@ import {
   generateToken,
   setAuthCookie,
 } from "@/lib/auth";
+import { ensureUserInstitute } from "@/lib/instituteProvisioning";
+import { setRequestInstitute } from "@/lib/institute";
 import { loginApiSchema } from "@/lib/validations/auth";
 import { errorResponse, getClientIp } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
@@ -145,7 +147,9 @@ export async function POST(request: NextRequest) {
     }
 
     clearFailedAttempts(ip);
-    const token = await generateToken(user.id, user.role, user.email, rememberMe);
+    const instituteId = await ensureUserInstitute(user);
+    setRequestInstitute(instituteId);
+    const token = await generateToken(user.id, instituteId, user.role, user.email, rememberMe);
 
     const sessionExpiry = new Date(
       Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000
@@ -154,6 +158,7 @@ export async function POST(request: NextRequest) {
     await prisma.session.create({
       data: {
         userId: user.id,
+        instituteId,
         token,
         expiresAt: sessionExpiry,
       },
@@ -175,6 +180,7 @@ export async function POST(request: NextRequest) {
 
     const safeUser = {
       id: user.id,
+      instituteId,
       name: user.name,
       email: user.email,
       phone: user.phone,

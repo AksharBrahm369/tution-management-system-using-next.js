@@ -3,6 +3,8 @@ import { enquiryCreateSchema } from "@/lib/validations/enquiry";
 import { generateEnquiryNumber, notifySuperAdmins, sendEnquiryWhatsAppAcknowledgement } from "@/lib/enquiry";
 import { prisma } from "@/lib/prisma";
 import { applyCorsHeaders, corsOptionsResponse } from "@/lib/cors";
+import { resolvePublicInstituteId } from "@/lib/instituteProvisioning";
+import { withRequestInstitute } from "@/lib/institute";
 
 export const runtime = "nodejs";
 
@@ -19,33 +21,43 @@ export async function POST(request: NextRequest) {
       return applyCorsHeaders(request, response, "POST, OPTIONS");
     }
 
+    const instituteId = await resolvePublicInstituteId();
+    if (!instituteId) {
+      const response = NextResponse.json({ error: "Public enquiry is not configured for this institute." }, { status: 404 });
+      return applyCorsHeaders(request, response, "POST, OPTIONS");
+    }
+
     const data = parsed.data;
-    const enquiry = await prisma.enquiry.create({
-      data: {
-        enquiryNumber: generateEnquiryNumber(),
-        studentName: data.studentName.trim(),
-        studentAge: data.studentAge ?? null,
-        studentClass: data.studentClass || null,
-        parentName: data.parentName.trim(),
-        parentPhone: data.parentPhone.trim(),
-        parentEmail: data.parentEmail || null,
-        address: data.address || null,
-        interestedIn: data.interestedIn,
-        preferredBatch: data.preferredBatch || null,
-        preferredTime: data.preferredTime || null,
-        source: "WEBSITE",
-        sourceDetail: data.sourceDetail || null,
-        referredBy: data.referredBy || null,
-        status: "NEW",
-        priority: data.priority ?? "NORMAL",
-        assignedTo: null,
-        assignedAt: null,
-        notes: data.notes || null,
-      },
+    const enquiry = await withRequestInstitute(instituteId, async () => {
+      const created = await prisma.enquiry.create({
+        data: {
+          enquiryNumber: generateEnquiryNumber(),
+          studentName: data.studentName.trim(),
+          studentAge: data.studentAge ?? null,
+          studentClass: data.studentClass || null,
+          parentName: data.parentName.trim(),
+          parentPhone: data.parentPhone.trim(),
+          parentEmail: data.parentEmail || null,
+          address: data.address || null,
+          interestedIn: data.interestedIn,
+          preferredBatch: data.preferredBatch || null,
+          preferredTime: data.preferredTime || null,
+          source: "WEBSITE",
+          sourceDetail: data.sourceDetail || null,
+          referredBy: data.referredBy || null,
+          status: "NEW",
+          priority: data.priority ?? "NORMAL",
+          assignedTo: null,
+          assignedAt: null,
+          notes: data.notes || null,
+        },
+      });
+
+      await notifySuperAdmins("New website enquiry", `${data.studentName} submitted the public enquiry form.`, "/admin/enquiries");
+      return created;
     });
 
     await sendEnquiryWhatsAppAcknowledgement(data.parentName.trim(), data.parentPhone.trim());
-    await notifySuperAdmins("New website enquiry", `${data.studentName} submitted the public enquiry form.`, "/admin/enquiries");
 
     const response = NextResponse.json({ enquiry, message: "Thank you for your enquiry. We will contact you within 24 hours." }, { status: 201 });
     return applyCorsHeaders(request, response, "POST, OPTIONS");

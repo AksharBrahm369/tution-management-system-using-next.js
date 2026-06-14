@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, generateToken, setAuthCookie } from "@/lib/auth";
 import { errorResponse } from "@/lib/utils";
+import { setRequestInstitute } from "@/lib/institute";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,10 @@ export async function POST(request: NextRequest) {
     if (!parent || !parent.user) {
       return errorResponse("Invalid Parent Code or password", 401);
     }
+    const instituteId = parent.user.instituteId ?? parent.instituteId;
+    if (!instituteId) {
+      return errorResponse("This parent account is not linked to a tuition. Please contact the administrator.", 403);
+    }
 
     if (!parent.user.isActive) {
       return errorResponse("Your account has been deactivated", 403);
@@ -29,7 +34,15 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid Parent Code or password", 401);
     }
 
-    const token = await generateToken(parent.user.id, "PARENT", parent.user.email, rememberMe);
+    if (!parent.user.instituteId) {
+      await prisma.user.update({
+        where: { id: parent.user.id },
+        data: { instituteId },
+      });
+    }
+
+    setRequestInstitute(instituteId);
+    const token = await generateToken(parent.user.id, instituteId, "PARENT", parent.user.email, rememberMe);
 
     const sessionExpiry = new Date(
       Date.now() + (rememberMe ? 30 : 7) * 24 * 60 * 60 * 1000
@@ -38,6 +51,7 @@ export async function POST(request: NextRequest) {
     await prisma.session.create({
       data: {
         userId: parent.user.id,
+        instituteId,
         token,
         expiresAt: sessionExpiry,
       },

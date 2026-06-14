@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { validateJWT } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 import { getTodayAttendanceSummary, getBatchWiseAttendancePercentage } from "@/lib/attendanceCalculator";
 import { DayOfWeek } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
   try {
-    const payload = await validateJWT(req);
-    if (!payload || payload.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    await requireSuperAdmin(req);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);

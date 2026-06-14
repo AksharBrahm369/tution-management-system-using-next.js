@@ -10,6 +10,8 @@ import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { setRequestInstitute } from "@/lib/institute";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -26,6 +28,7 @@ const RESET_TOKEN_BYTES = 32;
 
 export interface TokenPayload extends JWTPayload {
   userId: string;
+  instituteId: string;
   role: Role;
   email: string;
 }
@@ -41,13 +44,14 @@ export interface AuthCookieOptions {
  */
 export async function generateToken(
   userId: string,
+  instituteId: string,
   role: Role,
   email: string,
   rememberMe = false
 ): Promise<string> {
   const expiresIn = rememberMe ? REMEMBER_ME_EXPIRES_IN : JWT_EXPIRES_IN;
 
-  const token = await new SignJWT({ userId, role, email })
+  const token = await new SignJWT({ userId, instituteId, role, email })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(expiresIn)
@@ -93,15 +97,27 @@ export async function validateJWT(
  */
 export async function verifyAuth(
   request: NextRequest
-): Promise<{ id: string; userId: string; role: Role; email: string } | null> {
+): Promise<{ id: string; userId: string; instituteId: string; role: Role; email: string } | null> {
   const payload = await validateJWT(request);
-  if (!payload) return null;
+  if (!payload?.userId || !payload.instituteId) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    select: { id: true, role: true, email: true, instituteId: true, isActive: true },
+  });
+
+  if (!user?.isActive || !user.instituteId || user.instituteId !== payload.instituteId) {
+    return null;
+  }
+
+  setRequestInstitute(user.instituteId);
 
   return {
-    id: payload.userId,
-    userId: payload.userId,
-    role: payload.role,
-    email: payload.email,
+    id: user.id,
+    userId: user.id,
+    instituteId: user.instituteId,
+    role: user.role,
+    email: user.email,
   };
 }
 
@@ -179,7 +195,20 @@ export async function getCurrentSession(): Promise<TokenPayload | null> {
   try {
     const token = await getTokenFromCookies();
     if (!token) return null;
-    return await verifyToken(token);
+    const payload = await verifyToken(token);
+    if (!payload?.userId || !payload.instituteId) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { instituteId: true, isActive: true },
+    });
+
+    if (!user?.isActive || user.instituteId !== payload.instituteId) {
+      return null;
+    }
+
+    setRequestInstitute(payload.instituteId);
+    return payload;
   } catch {
     return null;
   }

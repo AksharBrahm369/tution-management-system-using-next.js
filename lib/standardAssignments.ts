@@ -1,6 +1,16 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+type DbClient = {
+  batch: any;
+  student: any;
+  teacherStandardSubject: any;
+};
 
-type DbClient = PrismaClient | Prisma.TransactionClient;
+type StandardBatch = { standardId: string | null };
+type StandardStudent = {
+  firstName: string;
+  lastName: string;
+  studentCode: string;
+  standardId: string | null;
+};
 
 function getDistinctStandardIds(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
@@ -16,7 +26,7 @@ export async function inferStandardIdFromBatchIds(db: DbClient, batchIds: string
     select: { id: true, standardId: true },
   });
 
-  const standardIds = getDistinctStandardIds(batches.map((batch) => batch.standardId));
+  const standardIds = getDistinctStandardIds(batches.map((batch: StandardBatch) => batch.standardId));
   if (standardIds.length > 1) {
     throw new Error("Selected batches belong to multiple standards. Please select batches from only one standard.");
   }
@@ -40,9 +50,9 @@ export async function validateStudentsForBatchStandard(db: DbClient, studentIds:
     },
   });
 
-  const conflicts = students.filter((student) => student.standardId && student.standardId !== batchStandardId);
+  const conflicts = students.filter((student: StandardStudent) => student.standardId && student.standardId !== batchStandardId);
   if (conflicts.length > 0) {
-    const labels = conflicts.map((student) => `${student.firstName} ${student.lastName} (${student.studentCode})`).join(", ");
+    const labels = conflicts.map((student: StandardStudent) => `${student.firstName} ${student.lastName} (${student.studentCode})`).join(", ");
     throw new Error(`These students belong to another standard and cannot be enrolled in this batch: ${labels}`);
   }
 }

@@ -7,6 +7,7 @@ import { createDefaultSettings } from "../lib/settings";
 const connectionString = process.env.DATABASE_URL;
 const pool = connectionString ? new Pool({ connectionString }) : new Pool();
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+const SEED_INSTITUTE_ID = "seed-default-institute";
 
 type Gender = "MALE" | "FEMALE" | "OTHER";
 type StudentStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "GRADUATED" | "TRANSFERRED" | "ON_LEAVE";
@@ -54,9 +55,25 @@ const students: SeedStudent[] = [
   { code: "STU-2025-005", firstName: "Vihaan", lastName: "Mehta", gender: "MALE", phone: "9876543250", city: "Rajkot", fatherName: "Nilesh Mehta", fatherPhone: "9876543251", status: "SUSPENDED", category: "WEAK" },
 ];
 
-async function ensureAdminUser() {
+async function ensureSeedInstitute() {
+  return prisma.institute.upsert({
+    where: { id: SEED_INSTITUTE_ID },
+    update: {
+      name: "TuitionPro Demo Institute",
+      slug: "tuitionpro-demo",
+    },
+    create: {
+      id: SEED_INSTITUTE_ID,
+      name: "TuitionPro Demo Institute",
+      slug: "tuitionpro-demo",
+    },
+  });
+}
+
+async function ensureAdminUser(instituteId: string) {
   const password = await bcryptjs.hash("Darshan@369", 12);
   const adminData = {
+    instituteId,
     name: "Darshan Zala",
     email: "darshanzala369@gmail.com",
     password,
@@ -66,18 +83,106 @@ async function ensureAdminUser() {
   };
 
   const existing = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
-  if (existing) {
-    return prisma.user.update({
+  const admin = existing
+    ? await prisma.user.update({
       where: { id: existing.id },
-      data: { email: adminData.email, password: adminData.password, name: adminData.name },
-    });
-  }
+      data: { email: adminData.email, password: adminData.password, name: adminData.name, instituteId },
+    })
+    : await prisma.user.create({ data: adminData });
 
-  return prisma.user.create({ data: adminData });
+  await prisma.institute.update({
+    where: { id: instituteId },
+    data: { ownerId: admin.id },
+  });
+
+  return admin;
+}
+
+async function backfillSeedInstitute(instituteId: string) {
+  const scopedModels = [
+    "session",
+    "oTPVerification",
+    "activityLog",
+    "passwordResetToken",
+    "notification",
+    "enquiry",
+    "followUp",
+    "demoClass",
+    "dashboardAlert",
+    "instituteSettings",
+    "academicYear",
+    "backupRecord",
+    "student",
+    "standard",
+    "parent",
+    "emergencyContact",
+    "medicalInfo",
+    "studentDocument",
+    "siblingLink",
+    "attendance",
+    "attendanceSession",
+    "attendanceAlert",
+    "attendanceNotification",
+    "feeStructure",
+    "feeRecord",
+    "feePayment",
+    "discount",
+    "scholarship",
+    "feeReminder",
+    "refund",
+    "onlinePaymentOrder",
+    "announcement",
+    "report",
+    "reportRun",
+    "analyticsSnapshot",
+    "studentProgressReport",
+    "pTMMeeting",
+    "pTMSlot",
+    "parentFeedback",
+    "teacherPerformanceReport",
+    "exam",
+    "examResult",
+    "examQuestion",
+    "studentAnswer",
+    "onlineAttempt",
+    "gradeConfig",
+    "gradeRange",
+    "reportCard",
+    "performanceAnalysis",
+    "studentActivity",
+    "teacher",
+    "subject",
+    "studyMaterial",
+    "teacherSubject",
+    "teacherStandardSubject",
+    "teacherAttendance",
+    "teacherLeave",
+    "salaryRecord",
+    "teacherDocument",
+    "teacherPerformance",
+    "room",
+    "batch",
+    "batchEnrollment",
+    "timetableSlot",
+    "classSession",
+    "holiday",
+    "academicCalendar",
+    "conflictLog",
+    "classSchedule",
+  ];
+
+  await prisma.user.updateMany({ where: { instituteId: null }, data: { instituteId } });
+
+  for (const modelName of scopedModels) {
+    const delegate = (prisma as unknown as Record<string, { updateMany?: Function }>)[modelName];
+    if (!delegate?.updateMany) continue;
+    await delegate.updateMany({ where: { instituteId: null }, data: { instituteId } });
+  }
 }
 
 async function main() {
-  await ensureAdminUser();
+  const institute = await ensureSeedInstitute();
+  await ensureAdminUser(institute.id);
 
   // Module 5 cleanup
   await prisma.classSession.deleteMany();
@@ -1563,6 +1668,9 @@ async function main() {
       []
     );
   }
+
+  await backfillSeedInstitute(institute.id);
+  console.log(`Seed data assigned to institute ${institute.name}`);
 }
 
 main()
