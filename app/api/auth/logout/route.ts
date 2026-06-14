@@ -8,8 +8,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clearAuthCookie, verifyToken } from "@/lib/auth";
 import { logActivityFromRequest } from "@/lib/activityLogger";
+import { withoutAuthScope } from "@/lib/institute";
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     const token = request.cookies.get("tuitionpro_auth")?.value;
 
@@ -47,4 +49,5 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  });
 }

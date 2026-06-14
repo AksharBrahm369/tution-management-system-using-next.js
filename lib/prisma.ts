@@ -10,7 +10,7 @@ import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { jwtVerify } from "jose";
-import { getRequestInstituteId, setRequestInstitute } from "@/lib/institute";
+import { getRequestInstituteId, isAuthScopeDisabled, setRequestInstitute } from "@/lib/institute";
 
 // Extend global type to hold the Prisma instance across hot reloads
 const globalForPrisma = globalThis as unknown as {
@@ -186,6 +186,10 @@ async function getInstituteIdForQuery() {
   const currentInstituteId = getRequestInstituteId();
   if (currentInstituteId) {
     return currentInstituteId;
+  }
+
+  if (isAuthScopeDisabled()) {
+    return null;
   }
 
   let token: string | undefined;

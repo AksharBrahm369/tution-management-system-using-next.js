@@ -90,9 +90,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user }) => {
     }
 
     void loadStandards()
+    window.addEventListener("tuitionpro:standards-changed", loadStandards)
 
     return () => {
       mounted = false
+      window.removeEventListener("tuitionpro:standards-changed", loadStandards)
     }
   }, [])
 

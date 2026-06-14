@@ -10,7 +10,7 @@ import {
   setAuthCookie,
 } from "@/lib/auth";
 import { ensureUserInstitute } from "@/lib/instituteProvisioning";
-import { setRequestInstitute } from "@/lib/institute";
+import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 import { loginApiSchema } from "@/lib/validations/auth";
 import { errorResponse, getClientIp } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
@@ -55,6 +55,7 @@ function clearFailedAttempts(identifier: string): void {
 }
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     const ip = getClientIp(request);
 
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!user.isActive) {
+      if (user.instituteId) setRequestInstitute(user.instituteId);
       await logActivityFromRequest(request, {
         userId: user.id,
         action: "LOGIN_FAILED",
@@ -121,6 +123,7 @@ export async function POST(request: NextRequest) {
 
     const isPasswordValid = await comparePassword(password, user.password);
     if (!isPasswordValid) {
+      if (user.instituteId) setRequestInstitute(user.instituteId);
       const attempts = recordFailedAttempt(ip);
       await logActivityFromRequest(request, {
         userId: user.id,
@@ -204,4 +207,5 @@ export async function POST(request: NextRequest) {
     console.error("[LOGIN]", error);
     return errorResponse("Something went wrong. Please try again", 500);
   }
+  });
 }

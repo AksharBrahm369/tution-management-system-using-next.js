@@ -9,10 +9,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, clearAuthCookie } from "@/lib/auth";
 import { resetPasswordApiSchema } from "@/lib/validations/auth";
-import { errorResponse, successResponse } from "@/lib/utils";
+import { errorResponse } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
+import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     // ── 1. Parse & validate ───────────────────────────────────────────────────
     let body: unknown;
@@ -55,6 +57,8 @@ export async function POST(request: NextRequest) {
       return errorResponse("This reset link is invalid or expired", 400);
     }
 
+    if (user.instituteId) setRequestInstitute(user.instituteId);
+
     // ── 4. Hash new password & update user ────────────────────────────────────
     const hashedPassword = await hashPassword(password);
 
@@ -87,14 +91,15 @@ export async function POST(request: NextRequest) {
 
     // ── 6. Clear cookie if user is currently logged in ────────────────────────
     const response = NextResponse.json(
-      successResponse(null, "Password reset successfully. Please login with your new password."),
+      { success: true, message: "Password reset successfully. Please login with your new password.", data: null },
       { status: 200 }
     );
 
     clearAuthCookie(response);
-    return successResponse(null, "Password reset successfully. Please login with your new password.");
+    return response;
   } catch (error) {
     console.error("[RESET_PASSWORD]", error);
     return errorResponse("Something went wrong. Please try again", 500);
   }
+  });
 }

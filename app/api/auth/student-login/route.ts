@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, generateToken, setAuthCookie } from "@/lib/auth";
 import { errorResponse } from "@/lib/utils";
-import { setRequestInstitute } from "@/lib/institute";
+import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 
 function normalizeStudentCode(value: string): string {
   return value
@@ -13,6 +13,7 @@ function normalizeStudentCode(value: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     const { studentCode, password, rememberMe } = await request.json();
 
@@ -92,4 +93,5 @@ export async function POST(request: NextRequest) {
     console.error("[STUDENT_LOGIN]", error);
     return errorResponse("Something went wrong. Please try again", 500);
   }
+  });
 }

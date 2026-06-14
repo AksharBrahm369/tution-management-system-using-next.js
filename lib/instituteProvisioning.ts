@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
 
+type BackfillDelegate = {
+  updateMany?: (args: {
+    where: { instituteId: null };
+    data: { instituteId: string };
+  }) => Promise<unknown>;
+};
+
 const INSTITUTE_BACKFILL_MODELS = [
   "session",
   "oTPVerification",
@@ -133,7 +140,7 @@ async function adoptLegacyRows(instituteId: string) {
   });
 
   for (const modelName of INSTITUTE_BACKFILL_MODELS) {
-    const delegate = (prisma as unknown as Record<string, { updateMany?: Function }>)[modelName];
+    const delegate = (prisma as unknown as Record<string, BackfillDelegate>)[modelName];
     if (!delegate?.updateMany) continue;
 
     await delegate.updateMany({

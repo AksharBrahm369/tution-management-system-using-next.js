@@ -5,7 +5,7 @@ import type { SettingsSection } from "./types";
 
 const sections: Array<{ id: SettingsSection; label: string; icon: React.ReactNode }> = [
   { id: "profile", label: "Institute Profile", icon: <Settings size={18} /> },
-  { id: "academics", label: "Subjects & Rooms", icon: <BookOpen size={18} /> },
+  { id: "academics", label: "Academic Setup", icon: <BookOpen size={18} /> },
   { id: "academic-years", label: "Academic Years", icon: <GraduationCap size={18} /> },
   { id: "gst", label: "Fee & GST", icon: <Receipt size={18} /> },
   { id: "notifications", label: "Notifications", icon: <Bell size={18} /> },

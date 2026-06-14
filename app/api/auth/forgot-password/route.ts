@@ -13,8 +13,10 @@ import { forgotPasswordApiSchema } from "@/lib/validations/auth";
 import { errorResponse, successResponse, maskEmail } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 import { getAppUrl } from "@/lib/appUrl";
+import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     // ── 1. Parse & validate ───────────────────────────────────────────────────
     let body: unknown;
@@ -46,6 +48,8 @@ export async function POST(request: NextRequest) {
         "If this email is registered, you will receive a reset link shortly."
       );
     }
+
+    if (user.instituteId) setRequestInstitute(user.instituteId);
 
     // ── 3. Invalidate any existing tokens for this email ──────────────────────
     await prisma.passwordResetToken.updateMany({
@@ -90,4 +94,5 @@ export async function POST(request: NextRequest) {
     console.error("[FORGOT_PASSWORD]", error);
     return errorResponse("Something went wrong. Please try again", 500);
   }
+  });
 }

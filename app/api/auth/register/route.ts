@@ -12,7 +12,7 @@ import { errorResponse, successResponse } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 import { createDefaultSettings } from "@/lib/settings";
 import { createInstituteForAdmin } from "@/lib/instituteProvisioning";
-import { setRequestInstitute } from "@/lib/institute";
+import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 
 export async function GET(_request: NextRequest) {
   return successResponse({
@@ -22,6 +22,7 @@ export async function GET(_request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     let body: unknown;
     try {
@@ -104,4 +105,5 @@ export async function POST(request: NextRequest) {
     console.error("[REGISTER]", error);
     return errorResponse("Something went wrong. Please try again", 500);
   }
+  });
 }

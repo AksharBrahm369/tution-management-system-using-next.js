@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, generateToken, setAuthCookie } from "@/lib/auth";
 import { errorResponse } from "@/lib/utils";
-import { setRequestInstitute } from "@/lib/institute";
+import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 
 export async function POST(request: NextRequest) {
+  return withoutAuthScope(async () => {
   try {
     const { parentCode, password, rememberMe } = await request.json();
 
@@ -73,4 +74,5 @@ export async function POST(request: NextRequest) {
     console.error("[PARENT_LOGIN]", error);
     return errorResponse("Something went wrong. Please try again", 500);
   }
+  });
 }
