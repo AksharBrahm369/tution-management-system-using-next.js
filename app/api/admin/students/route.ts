@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma, StudentStatus, type BloodGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
-import { generateNextStudentCode } from "@/lib/studentCode";
+import { generateNextStudentCodeInTransaction } from "@/lib/studentCode";
 import { studentCreateSchema } from "@/lib/validations/student";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 import { hashPassword } from "@/lib/auth";
-import { generateNextParentCode } from "@/lib/parentCode";
+import { generateNextParentCodeInTransaction } from "@/lib/parentCode";
 
 export const runtime = "nodejs";
 
@@ -71,6 +71,18 @@ function buildOrderBy(sortBy: string | null, sortOrder: string | null): Prisma.S
     default:
       return { createdAt: "desc" };
   }
+}
+
+function getDuplicateStudentMessage(error: Prisma.PrismaClientKnownRequestError): string {
+  const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : String(error.meta?.target ?? "");
+
+  if (target.includes("studentCode")) return "Student code already exists. Please try saving again.";
+  if (target.includes("parentCode")) return "Parent code already exists. Please try saving again.";
+  if (target.includes("email")) return "This email is already in use. Please use a different email.";
+  if (target.includes("userId")) return "This login is already linked to another profile.";
+  if (target.includes("studentId") && target.includes("batchId")) return "This student is already enrolled in one of the selected batches.";
+
+  return "A duplicate value already exists. Please review the form and try again.";
 }
 
 async function getCurrentBatch(studentId: string) {
@@ -244,102 +256,135 @@ export async function POST(request: NextRequest) {
       inferredStandardId = inferredStandardId ?? batchStandardIds[0] ?? null;
     }
 
-    // Always allocate a fresh server-side code for new students.
-    // The client displays a preview code, but it can become stale if another
-    // student is created before submit completes.
-    const studentCode = await generateNextStudentCode();
-    const parentCode = await generateNextParentCode();
+    const studentLoginPassword = data.createStudentLogin ? await hashPassword("temporary-student-login") : null;
+    const parentLoginPassword = data.createParentLogin ? await hashPassword("temporary-parent-login") : null;
 
-    const parent = await prisma.parent.create({
-      data: {
-        parentCode,
-        fatherName: data.fatherName || null,
-        fatherPhone: data.fatherPhone,
-        fatherEmail: data.fatherEmail || null,
-        fatherOccup: data.fatherOccup || null,
-        motherName: data.motherName || null,
-        motherPhone: data.motherPhone || null,
-        motherEmail: data.motherEmail || null,
-        motherOccup: data.motherOccup || null,
-        guardianName: data.guardianName || null,
-        guardianPhone: data.guardianPhone || null,
-        guardianRel: data.guardianRel || null,
-        primaryContact: data.primaryContact,
-      },
-    });
+    const student = await prisma.$transaction(async (tx) => {
+      // The client displays a preview code, but the server allocates the final
+      // values while the advisory locks are held until this transaction commits.
+      const studentCode = await generateNextStudentCodeInTransaction(tx);
+      const parentCode = await generateNextParentCodeInTransaction(tx);
 
-    const student = await prisma.student.create({
-      data: {
-        studentCode,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email,
-        phone: data.phone || null,
-        dateOfBirth: data.dateOfBirth ?? null,
-        gender: data.gender,
-        bloodGroup: (data.bloodGroup as BloodGroup | undefined) ?? null,
-        profilePhoto: data.profilePhoto || null,
-        addressLine1: data.addressLine1 || null,
-        addressLine2: data.addressLine2 || null,
-        city: data.city,
-        state: data.state,
-        pincode: data.pincode || null,
-        previousSchool: data.previousSchool || null,
-        previousClass: data.previousClass || null,
-        previousMarks: data.previousMarks || null,
-        joiningDate: data.joiningDate,
-        academicYear: data.academicYear,
-        standardId: inferredStandardId,
-        status: data.status ?? "ACTIVE",
-        category: data.category,
-        referredBy: data.referredBy || null,
-        parentId: parent.id,
-        notifications: undefined,
-        batchEnrollments: validBatchIds.length > 0
-          ? {
-              create: validBatchIds.map((batchId) => ({
-                batchId,
-                enrolledBy: auth?.userId ?? "admin",
-                isActive: true,
-              })),
-            }
-          : undefined,
-        emergencyContacts: {
-          create: data.emergencyContacts.map((contact) => ({
-            name: contact.name,
-            relationship: contact.relationship,
-            phone: contact.phone,
-          })),
+      const parent = await tx.parent.create({
+        data: {
+          parentCode,
+          fatherName: data.fatherName || null,
+          fatherPhone: data.fatherPhone,
+          fatherEmail: data.fatherEmail || null,
+          fatherOccup: data.fatherOccup || null,
+          motherName: data.motherName || null,
+          motherPhone: data.motherPhone || null,
+          motherEmail: data.motherEmail || null,
+          motherOccup: data.motherOccup || null,
+          guardianName: data.guardianName || null,
+          guardianPhone: data.guardianPhone || null,
+          guardianRel: data.guardianRel || null,
+          primaryContact: data.primaryContact,
         },
-        medicalInfo:
-          data.addMedicalInfo || data.allergies || data.medications || data.conditions || data.doctorName
+      });
+
+      const createdStudent = await tx.student.create({
+        data: {
+          studentCode,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email,
+          phone: data.phone || null,
+          dateOfBirth: data.dateOfBirth ?? null,
+          gender: data.gender,
+          bloodGroup: (data.bloodGroup as BloodGroup | undefined) ?? null,
+          profilePhoto: data.profilePhoto || null,
+          addressLine1: data.addressLine1 || null,
+          addressLine2: data.addressLine2 || null,
+          city: data.city,
+          state: data.state,
+          pincode: data.pincode || null,
+          previousSchool: data.previousSchool || null,
+          previousClass: data.previousClass || null,
+          previousMarks: data.previousMarks || null,
+          joiningDate: data.joiningDate,
+          academicYear: data.academicYear,
+          standardId: inferredStandardId,
+          status: data.status ?? "ACTIVE",
+          category: data.category,
+          referredBy: data.referredBy || null,
+          parentId: parent.id,
+          notifications: undefined,
+          batchEnrollments: validBatchIds.length > 0
             ? {
-                create: {
-                  allergies: data.allergies || null,
-                  medications: data.medications || null,
-                  conditions: data.conditions || null,
-                  doctorName: data.doctorName || null,
-                  doctorPhone: data.doctorPhone || null,
-                  insuranceInfo: data.insuranceInfo || null,
-                  extraNotes: data.extraNotes || null,
-                },
+                create: validBatchIds.map((batchId) => ({
+                  batchId,
+                  enrolledBy: auth?.userId ?? "admin",
+                  isActive: true,
+                })),
               }
             : undefined,
-      },
-      include: {
-        parent: true,
-        batchEnrollments: { include: { batch: true } },
-        emergencyContacts: true,
-        medicalInfo: true,
-      },
-    });
-
-    if (data.siblingIds?.length) {
-      await prisma.siblingLink.createMany({
-        data: data.siblingIds.map((siblingId) => ({ studentId: student.id, siblingId })),
-        skipDuplicates: true,
+          emergencyContacts: {
+            create: data.emergencyContacts.map((contact) => ({
+              name: contact.name,
+              relationship: contact.relationship,
+              phone: contact.phone,
+            })),
+          },
+          medicalInfo:
+            data.addMedicalInfo || data.allergies || data.medications || data.conditions || data.doctorName
+              ? {
+                  create: {
+                    allergies: data.allergies || null,
+                    medications: data.medications || null,
+                    conditions: data.conditions || null,
+                    doctorName: data.doctorName || null,
+                    doctorPhone: data.doctorPhone || null,
+                    insuranceInfo: data.insuranceInfo || null,
+                    extraNotes: data.extraNotes || null,
+                  },
+                }
+              : undefined,
+        },
+        include: {
+          parent: true,
+          batchEnrollments: { include: { batch: true } },
+          emergencyContacts: true,
+          medicalInfo: true,
+        },
       });
-    }
+
+      if (data.siblingIds?.length) {
+        await tx.siblingLink.createMany({
+          data: data.siblingIds.map((siblingId) => ({ studentId: createdStudent.id, siblingId })),
+          skipDuplicates: true,
+        });
+      }
+
+      if (studentLoginPassword) {
+        const studentUser = await tx.user.create({
+          data: {
+            name: `${createdStudent.firstName} ${createdStudent.lastName}`,
+            email: `${studentCode}@tuitionpro.local`,
+            password: studentLoginPassword,
+            role: "STUDENT",
+            isActive: true,
+          },
+        });
+
+        await tx.student.update({ where: { id: createdStudent.id }, data: { userId: studentUser.id } });
+      }
+
+      if (parentLoginPassword) {
+        const parentUser = await tx.user.create({
+          data: {
+            name: parent.fatherName || parent.motherName || parent.guardianName || `Parent of ${createdStudent.firstName}`,
+            email: `${parentCode}@tuitionpro.local`,
+            password: parentLoginPassword,
+            role: "PARENT",
+            isActive: true,
+          },
+        });
+        await tx.parent.update({ where: { id: parent.id }, data: { userId: parentUser.id } });
+      }
+
+      return createdStudent;
+    });
 
     await createStudentTimeline(
       student.id,
@@ -347,36 +392,6 @@ export async function POST(request: NextRequest) {
       `${student.firstName} ${student.lastName} was created by admin.`,
       auth.userId
     );
-
-    if (data.createStudentLogin) {
-      const hashedPassword = await hashPassword("temporary-student-login");
-      const studentUser = await prisma.user.create({
-        data: {
-          name: `${student.firstName} ${student.lastName}`,
-          email: `${studentCode}@tuitionpro.local`,
-          password: hashedPassword,
-          role: "STUDENT",
-          isActive: true,
-        },
-      });
-
-      await prisma.student.update({ where: { id: student.id }, data: { userId: studentUser.id } });
-    }
-
-    // Create Parent User automatically if requested
-    if (data.createParentLogin) {
-      const hashedPassword = await hashPassword("temporary-parent-login");
-      const parentUser = await prisma.user.create({
-        data: {
-          name: parent.fatherName || parent.motherName || parent.guardianName || `Parent of ${student.firstName}`,
-          email: `${parentCode}@tuitionpro.local`,
-          password: hashedPassword,
-          role: "PARENT",
-          isActive: true,
-        },
-      });
-      await prisma.parent.update({ where: { id: parent.id }, data: { userId: parentUser.id } });
-    }
 
     await logActivityFromRequest(request, {
       userId: auth.userId,
@@ -393,11 +408,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ student }, { status: 201 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : "unique field";
-      const message = target.includes("email")
-        ? "A student with this email already exists"
-        : `Duplicate value found for ${target}`;
-      return NextResponse.json({ error: message }, { status: 409 });
+      return NextResponse.json({ error: getDuplicateStudentMessage(error) }, { status: 409 });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;

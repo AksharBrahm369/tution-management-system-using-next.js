@@ -315,7 +315,6 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId =
 
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
-          console.error("❌ API Error Response:", payload);
           if (response.status === 401) {
             // Session expired or unauthorized - redirect to login
             router.push("/auth/login");
@@ -339,14 +338,12 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId =
         setStep(1);
         await refetchGeneratedCode();
       } catch (error) {
-        console.error("🔴 Submit error:", error);
         toast.error(error instanceof Error ? error.message : "Failed to save student");
       } finally {
         setIsSubmitting(false);
       }
     },
     (errors) => {
-      console.error("❌ Form validation failed:", errors);
       const errorList = Object.entries(errors).map(([field, err]) => {
         const label = getFieldLabel(field);
         return { field: label, message: (err as any)?.message || "Invalid value" };

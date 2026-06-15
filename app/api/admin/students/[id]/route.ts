@@ -24,6 +24,18 @@ function normalizeOptionalEmail(value: unknown) {
   return email.length > 0 ? email : null;
 }
 
+function getDuplicateStudentMessage(error: Prisma.PrismaClientKnownRequestError): string {
+  const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : String(error.meta?.target ?? "");
+
+  if (target.includes("studentCode")) return "Student code already exists. Please use a different code.";
+  if (target.includes("parentCode")) return "Parent code already exists. Please try saving again.";
+  if (target.includes("email")) return "This email is already in use. Please use a different email.";
+  if (target.includes("userId")) return "This login is already linked to another profile.";
+  if (target.includes("studentId") && target.includes("batchId")) return "This student is already enrolled in one of the selected batches.";
+
+  return "A duplicate value already exists. Please review the form and try again.";
+}
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     await requireSuperAdmin(request);
@@ -377,11 +389,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     return NextResponse.json({ student: updated }, { status: 200 });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(", ") : "unique field";
-      const message = target.includes("email")
-        ? "A student with this email already exists"
-        : `Duplicate value found for ${target}`;
-      return NextResponse.json({ error: message }, { status: 409 });
+      return NextResponse.json({ error: getDuplicateStudentMessage(error) }, { status: 409 });
     }
     const message = error instanceof Error ? error.message : "Internal server error";
     const status = message === "Forbidden" ? 403 : message === "Unauthorized" ? 401 : 500;

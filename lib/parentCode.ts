@@ -1,45 +1,46 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
+type ParentCodeClient = {
+  $executeRaw(query: Prisma.Sql): Promise<number>;
+  $queryRaw<T = unknown>(query: Prisma.Sql): Promise<T>;
+};
+
 function formatParentCode(year: number, sequence: number): string {
   return `PAR-${year}-${String(sequence).padStart(3, "0")}`;
 }
 
-function extractCodeParts(code: string): { year: number; sequence: number } | null {
-  const match = code.match(/^PAR-(\d{4})-(\d{3})$/);
-  if (!match) return null;
-  return {
-    year: Number(match[1]),
-    sequence: Number(match[2]),
-  };
+export async function generateNextParentCode(): Promise<string> {
+  return prisma.$transaction((tx) => generateNextParentCodeInTransaction(tx));
 }
 
-export async function generateNextParentCode(): Promise<string> {
+export async function generateNextParentCodeInTransaction(client: ParentCodeClient): Promise<string> {
   const currentYear = new Date().getFullYear();
+  const codePrefix = `PAR-${currentYear}-%`;
+  const emailPrefix = `par-${currentYear}-%@tuitionpro.local`;
+  const codePattern = `^PAR-${currentYear}-(\\d+)$`;
 
-  return prisma.$transaction(async (tx) => {
-    // Different lock ID from studentCode (915273)
-    await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(915274)`);
+  // Different lock ID from studentCode (915273)
+  await client.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(915274)`);
 
-    const lastParent = await tx.parent.findFirst({
-      where: {
-        parentCode: {
-          startsWith: `PAR-${currentYear}-`,
-        },
-      },
-      orderBy: { createdAt: "desc" },
-      select: { parentCode: true },
-    });
+  const rows = await client.$queryRaw<Array<{ sequence: number | bigint | null }>>(Prisma.sql`
+    SELECT MAX(sequence) AS sequence
+    FROM (
+      SELECT CAST(substring("parentCode" FROM ${codePattern}) AS integer) AS sequence
+      FROM "parents"
+      WHERE "parentCode" LIKE ${codePrefix}
+      UNION ALL
+      SELECT CAST(substring(upper(split_part("email", '@', 1)) FROM ${codePattern}) AS integer) AS sequence
+      FROM "users"
+      WHERE lower("email") LIKE ${emailPrefix}
+    ) existing_codes
+    WHERE sequence IS NOT NULL
+  `);
 
-    if (!lastParent?.parentCode) {
-      return formatParentCode(currentYear, 1);
-    }
+  const lastSequence = rows[0]?.sequence;
+  if (lastSequence === null || lastSequence === undefined) {
+    return formatParentCode(currentYear, 1);
+  }
 
-    const parts = extractCodeParts(lastParent.parentCode);
-    if (!parts || parts.year !== currentYear) {
-      return formatParentCode(currentYear, 1);
-    }
-
-    return formatParentCode(currentYear, parts.sequence + 1);
-  });
+  return formatParentCode(currentYear, Number(lastSequence) + 1);
 }
