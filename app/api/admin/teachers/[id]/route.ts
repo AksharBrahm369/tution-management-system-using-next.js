@@ -6,10 +6,10 @@ import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdmin(req);
+    const auth = await requireAdmin(req);
     const { id } = await params;
     const teacher = await prisma.teacher.findUnique({
-      where: { id },
+      where: { id, instituteId: auth.instituteId },
       include: {
         subjects: {
           include: { subject: true }
@@ -34,10 +34,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdmin(req);
+    const auth = await requireAdmin(req);
     const { id } = await params;
     const body = await req.json();
     const data = teacherSchema.parse(body);
+
+    // Verify teacher belongs to this institute
+    const existing = await prisma.teacher.findUnique({ where: { id, instituteId: auth.instituteId }, select: { id: true } });
+    if (!existing) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+    }
 
     // Check email isn't taken by another teacher
     const existingEmail = await prisma.teacher.findFirst({
@@ -101,6 +107,31 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json(teacher);
   } catch (error) {
     console.error("[TEACHER_PUT]", error);
+    const { message, status } = getRouteErrorStatus(error);
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const auth = await requireAdmin(req);
+    const { id } = await params;
+
+    // Verify teacher belongs to this institute
+    const existing = await prisma.teacher.findUnique({
+      where: { id, instituteId: auth.instituteId },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Teacher not found" }, { status: 404 });
+    }
+
+    await prisma.teacher.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[TEACHER_DELETE]", error);
     const { message, status } = getRouteErrorStatus(error);
     return NextResponse.json({ error: message }, { status });
   }

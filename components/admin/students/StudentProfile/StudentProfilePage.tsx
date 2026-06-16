@@ -36,11 +36,19 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId, base
     password: string;
   } | null>(null);
 
+  const [fetchError, setFetchError] = useState<{ status: number; message: string } | null>(null);
+
   const { data, isLoading, refetch } = useQuery<StudentProfileData>({
     queryKey: ["student-profile", studentId, refreshKey],
+    retry: false,
     queryFn: async () => {
       const response = await fetch(`/api/admin/students/${studentId}`);
-      if (!response.ok) throw new Error("Failed to load student");
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setFetchError({ status: response.status, message: payload.error ?? "Failed to load student" });
+        throw new Error(payload.error ?? "Failed to load student");
+      }
+      setFetchError(null);
       return response.json();
     },
   });
@@ -75,6 +83,33 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId, base
         return null;
     }
   }, [activeTab, data, refetch, timelineQuery.data]);
+
+  if (fetchError) {
+    const is404 = fetchError.status === 404;
+    return (
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20">
+          <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-slate-800 dark:text-slate-100">
+          {is404 ? "Student Not Found" : "Access Denied"}
+        </h2>
+        <p className="mb-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          {is404
+            ? "This student does not exist or belongs to a different institute."
+            : fetchError.message}
+        </p>
+        <a
+          href={basePath}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          ← Back to Students
+        </a>
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return (

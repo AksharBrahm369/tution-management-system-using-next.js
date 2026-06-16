@@ -8,14 +8,14 @@ import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin(req);
+    const auth = await requireAdmin(req);
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
     const standardId = searchParams.get("standardId");
     const limit = Math.max(1, parseInt(searchParams.get("limit") || "100"));
     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { instituteId: auth.instituteId };
 
     if (search) {
       where.OR = [
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
 
     const teacher = await prisma.teacher.create({
       data: {
+        instituteId: auth.instituteId,
         teacherCode,
         firstName: data.firstName,
         lastName: data.lastName,

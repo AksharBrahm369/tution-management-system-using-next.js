@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { ZodError } from "zod";
 import { Role } from "@prisma/client";
-import { validateJWT } from "@/lib/auth";
+import { requireInstituteSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { setRequestInstitute } from "@/lib/institute";
 
@@ -15,37 +15,28 @@ export interface RoleAuthContext {
 }
 
 export async function requireRole(request: NextRequest, roles: Role[]): Promise<RoleAuthContext> {
-  const payload = await validateJWT(request);
-  if (!payload?.userId) {
-    throw new Error("Unauthorized");
+  const session = await requireInstituteSession();
+  
+  if (!roles.includes(session.role)) {
+    throw new Error("Forbidden");
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
+    where: { id: session.userId },
     select: {
-      id: true,
-      instituteId: true,
-      role: true,
       teacher: { select: { id: true } },
       students: { select: { id: true }, take: 1 },
       parents: { select: { id: true }, take: 1 },
     },
   });
 
-  if (!user) throw new Error("Unauthorized");
-  if (!user.instituteId || user.instituteId !== payload.instituteId) {
-    throw new Error("Unauthorized: Invalid institute session");
-  }
-  if (!roles.includes(user.role)) throw new Error("Forbidden");
-  setRequestInstitute(user.instituteId);
-
   return {
-    userId: user.id,
-    instituteId: user.instituteId,
-    role: user.role,
-    teacherId: user.teacher?.id,
-    studentId: user.students?.[0]?.id,
-    parentId: user.parents?.[0]?.id,
+    userId: session.userId,
+    instituteId: session.instituteId,
+    role: session.role,
+    teacherId: user?.teacher?.id,
+    studentId: user?.students?.[0]?.id,
+    parentId: user?.parents?.[0]?.id,
   };
 }
 

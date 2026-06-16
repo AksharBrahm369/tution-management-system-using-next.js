@@ -15,7 +15,7 @@ function parseNumber(value: string | null, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function buildWhere(searchParams: URLSearchParams): Prisma.StudentWhereInput {
+function buildWhere(searchParams: URLSearchParams, instituteId: string): Prisma.StudentWhereInput {
   const search = searchParams.get("search")?.trim();
   const status = searchParams.get("status") as StudentStatus | null;
   const category = searchParams.get("category");
@@ -23,7 +23,7 @@ function buildWhere(searchParams: URLSearchParams): Prisma.StudentWhereInput {
   const standardId = searchParams.get("standardId");
   const academicYear = searchParams.get("academicYear");
 
-  const where: Prisma.StudentWhereInput = {};
+  const where: Prisma.StudentWhereInput = { instituteId };
 
   if (search) {
     where.OR = [
@@ -152,12 +152,12 @@ function normalizeOptionalEmail(value: unknown) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
 
     const searchParams = request.nextUrl.searchParams;
     const page = parseNumber(searchParams.get("page"), 1);
     const limit = parseNumber(searchParams.get("limit"), 12);
-    const where = buildWhere(searchParams);
+    const where = buildWhere(searchParams, auth.instituteId);
     const orderBy = buildOrderBy(searchParams.get("sortBy"), searchParams.get("sortOrder"));
 
     const [students, total, totalCount, activeCount, inactiveCount, leaveCount] = await Promise.all([
@@ -267,6 +267,7 @@ export async function POST(request: NextRequest) {
 
       const parent = await tx.parent.create({
         data: {
+          instituteId: auth.instituteId,
           parentCode,
           fatherName: data.fatherName || null,
           fatherPhone: data.fatherPhone,
@@ -285,6 +286,7 @@ export async function POST(request: NextRequest) {
 
       const createdStudent = await tx.student.create({
         data: {
+          instituteId: auth.instituteId,
           studentCode,
           firstName: data.firstName,
           lastName: data.lastName,

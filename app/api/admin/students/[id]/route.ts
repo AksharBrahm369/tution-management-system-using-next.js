@@ -38,11 +38,11 @@ function getDuplicateStudentMessage(error: Prisma.PrismaClientKnownRequestError)
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const { id } = await context.params;
 
     const student = await prisma.student.findUnique({
-      where: { id },
+      where: { id, instituteId: auth.instituteId },
       include: {
         parent: true,
         user: {
@@ -110,7 +110,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       return NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten() }, { status: 400 });
     }
 
-    const existing = await prisma.student.findUnique({ where: { id }, include: { parent: true } });
+    // Scope to current institute
+    const existing = await prisma.student.findUnique({ where: { id, instituteId: auth.instituteId }, include: { parent: true } });
     if (!existing) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
@@ -191,6 +192,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       await prisma.parent.upsert({
         where: { id: existing.parent?.id ?? "" },
         create: {
+          instituteId: auth.instituteId,
           parentCode,
           fatherName: data.fatherName || null,
           fatherPhone: data.fatherPhone || null,
@@ -402,7 +404,16 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const auth = await requireSuperAdmin(request);
     const { id } = await context.params;
 
-    const existing = await prisma.student.findUnique({ where: { id }, select: { firstName: true, lastName: true, studentCode: true } });
+    // Scope to current institute to prevent cross-institute deletion
+    const existing = await prisma.student.findUnique({
+      where: { id, instituteId: auth.instituteId },
+      select: { firstName: true, lastName: true, studentCode: true },
+    });
+
+    if (!existing) {
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
+    }
+
     await prisma.student.update({ where: { id }, data: { status: "INACTIVE" } });
     await createTimeline(id, "Student Deactivated", "Student was marked inactive by admin.", auth.userId);
 
@@ -411,10 +422,10 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
       action: "STUDENT_DELETED",
       category: "STUDENT",
       severity: "WARNING",
-      description: `Student deactivated: ${existing?.firstName ?? ""} ${existing?.lastName ?? ""}`,
+      description: `Student deactivated: ${existing.firstName} ${existing.lastName}`,
       entityType: "Student",
       entityId: id,
-      entityName: existing ? `${existing.firstName} ${existing.lastName}` : undefined,
+      entityName: `${existing.firstName} ${existing.lastName}`,
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

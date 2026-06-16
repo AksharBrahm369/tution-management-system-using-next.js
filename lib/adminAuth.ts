@@ -1,13 +1,8 @@
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { setRequestInstitute } from "@/lib/institute";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "fallback-secret-for-dev-only-replace-in-production"
-);
+import { requireInstituteSession } from "@/lib/auth";
 
 export interface AdminAuthContext {
   userId: string;
@@ -35,57 +30,26 @@ const ADMIN_USER_SELECT = {
 } as const;
 
 export async function requireSuperAdmin(request: NextRequest): Promise<AdminAuthContext> {
-  const token = request.cookies.get("tuitionpro_auth")?.value ?? request.cookies.get("auth-token")?.value;
-  if (!token) {
-    throw new Error("Unauthorized");
+  const session = await requireInstituteSession();
+
+  if (session.role !== "SUPER_ADMIN") {
+    throw new Error(`Forbidden: User role is ${session.role}, but expected SUPER_ADMIN`);
   }
 
-  const { payload } = await jwtVerify(token, JWT_SECRET);
-  const userId = (payload.sub || payload.userId) as string;
-  if (!userId) {
-    throw new Error("Unauthorized: No userId in token");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true, instituteId: true },
-  });
-
-  if (!user) {
-    // User ID from JWT doesn't exist in DB — likely a stale token after a DB reset or user deletion
-    throw new Error(`Unauthorized: Session expired. Please log in again.`);
-  }
-
-  if (user.role !== "SUPER_ADMIN") {
-    throw new Error(`Forbidden: User role is ${user.role}, but expected SUPER_ADMIN`);
-  }
-  if (!user.instituteId || user.instituteId !== payload.instituteId) {
-    throw new Error("Unauthorized: Invalid institute session");
-  }
-  setRequestInstitute(user.instituteId);
-
-  return { userId, instituteId: user.instituteId, role: user.role };
+  return { userId: session.userId, instituteId: session.instituteId, role: session.role };
 }
 
 export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("tuitionpro_auth")?.value;
-    if (!token) return null;
+    const session = await requireInstituteSession();
+    if (session.role !== "SUPER_ADMIN") return null;
 
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const userId = (payload.sub || payload.userId) as string | undefined;
-    if (!userId) return null;
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: ADMIN_USER_SELECT,
+    });
 
-    const [session, user] = await Promise.all([
-      prisma.session.findUnique({ where: { token }, select: { expiresAt: true } }),
-      prisma.user.findUnique({ where: { id: userId }, select: ADMIN_USER_SELECT }),
-    ]);
-
-    if (!session || session.expiresAt < new Date()) return null;
-    if (!user?.isActive || user.role !== "SUPER_ADMIN") return null;
-    if (!user.instituteId || user.instituteId !== payload.instituteId) return null;
-    setRequestInstitute(user.instituteId);
+    if (!user || !user.isActive || !user.instituteId) return null;
 
     return {
       id: user.id,

@@ -7,7 +7,7 @@ import { ArrowLeft, CheckCircle2, Loader2, Save } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { studentCreateSchema, StudentCreateInput } from "@/lib/validations/student";
 import StepProgress from "./StepProgress";
@@ -140,6 +140,7 @@ function buildDefaultValues(student?: StudentApiResponse | null, fallbackStandar
 
 const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId = "", returnHref }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isEditMode = Boolean(studentId);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -328,11 +329,15 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId =
         const student = payload.student as { id: string; studentCode: string; firstName: string; lastName: string };
 
       if (isEditMode) {
+          // Invalidate both the list and the individual student cache
+          await queryClient.invalidateQueries({ queryKey: ["admin-students"] });
           router.push(returnHref ?? `/admin/students/${studentId}`);
           router.refresh();
           return;
         }
 
+      // Invalidate the student list cache so navigating back shows the new student immediately
+      await queryClient.invalidateQueries({ queryKey: ["admin-students"] });
       setSuccessStudent({ id: student.id, code: student.studentCode, name: `${student.firstName} ${student.lastName}` });
         form.reset(buildDefaultValues(null, standardId) as never);
         setStep(1);

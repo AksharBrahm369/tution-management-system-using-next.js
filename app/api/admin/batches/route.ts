@@ -105,7 +105,7 @@ function computeLiveBatchStatus(batch: BatchWithRelations) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search")?.trim();
     const status = searchParams.get("status");
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { instituteId: auth.instituteId };
 
     if (search) {
       where.OR = [
@@ -248,6 +248,7 @@ export async function POST(request: NextRequest) {
 
     const batch = await prisma.batch.create({
       data: {
+        instituteId: auth.instituteId,
         name: data.name,
         code,
         description: data.description || null,

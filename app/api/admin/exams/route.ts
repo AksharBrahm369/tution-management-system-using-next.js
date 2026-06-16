@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin(request);
+    const auth = await requireAdmin(request);
     const params = request.nextUrl.searchParams;
     const data = await listExams({
       search: params.get("search") ?? undefined,
@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
       toDate: params.get("toDate") ?? undefined,
       page: Number(params.get("page")) || 1,
       limit: Number(params.get("limit")) || 20,
+      instituteId: auth.instituteId,
     });
     return NextResponse.json(data);
   } catch (error) {
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdmin(request);
     const body = await request.json();
-    const exam = await createExam(body, auth.userId);
+    const exam = await createExam({ ...body, instituteId: auth.instituteId }, auth.userId);
     await logActivityFromRequest(request, {
       userId: auth.userId,
       action: "EXAM_CREATED",

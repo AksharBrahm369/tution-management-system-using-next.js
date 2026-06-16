@@ -12,11 +12,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const { id } = await params;
 
     const batch = await prisma.batch.findUnique({
-      where: { id },
+      where: { id, instituteId: auth.instituteId },
       include: {
         subject: true,
         teacher: {
@@ -86,7 +86,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const { id } = await params;
     const body = await request.json();
     const parsed = batchUpdateSchema.safeParse(body);
@@ -100,7 +100,7 @@ export async function PUT(
 
     const data = parsed.data;
 
-    const existing = await prisma.batch.findUnique({ where: { id } });
+    const existing = await prisma.batch.findUnique({ where: { id, instituteId: auth.instituteId } });
     if (!existing) {
       return NextResponse.json({ error: "Batch not found" }, { status: 404 });
     }
@@ -180,10 +180,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const { id } = await params;
 
-    const existing = await prisma.batch.findUnique({ where: { id } });
+    const existing = await prisma.batch.findUnique({ where: { id, instituteId: auth.instituteId } });
     if (!existing) {
       return NextResponse.json({ error: "Batch not found" }, { status: 404 });
     }

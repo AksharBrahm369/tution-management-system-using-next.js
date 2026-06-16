@@ -27,7 +27,7 @@ function normalizeAccessLevel(value: string | null) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const standardId = request.nextUrl.searchParams.get("standardId");
 
     const materials = await prisma.$queryRaw<Array<Record<string, unknown>>>(Prisma.sql`
@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
       FROM study_materials sm
       LEFT JOIN subjects s ON s.id = sm."subjectId"
       LEFT JOIN batches b ON b.id = sm."batchId"
-      WHERE ${standardId ? Prisma.sql`(sm."standardId" = ${standardId} OR b."standardId" = ${standardId})` : Prisma.sql`TRUE`}
+      WHERE sm."instituteId" = ${auth.instituteId}
+        AND ${standardId ? Prisma.sql`(sm."standardId" = ${standardId} OR b."standardId" = ${standardId})` : Prisma.sql`TRUE`}
       ORDER BY sm."createdAt" DESC
     `);
 
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO study_materials (
         id,
+        "instituteId",
         title,
         description,
         "standardId",
@@ -164,6 +166,7 @@ export async function POST(request: NextRequest) {
         "updatedAt"
       ) VALUES (
         ${id},
+        ${auth.instituteId},
         ${title},
         ${description},
         ${standardId},

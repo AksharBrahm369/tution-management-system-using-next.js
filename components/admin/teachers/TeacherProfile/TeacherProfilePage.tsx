@@ -7,16 +7,24 @@ import { ArrowLeft, Mail, Phone, MapPin, Calendar, Briefcase, Award, GraduationC
 export default function TeacherProfilePage({ teacherId, basePath = "/admin/teachers" }: { teacherId: string; basePath?: string }) {
   const [teacher, setTeacher] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<{ status: number; message: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/admin/teachers/${teacherId}`)
-      .then(res => res.json())
-      .then(data => {
+      .then(async res => {
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          setFetchError({ status: res.status, message: payload.error ?? "Failed to load teacher" });
+          setLoading(false);
+          return;
+        }
+        const data = await res.json();
         setTeacher(data);
         setLoading(false);
       })
       .catch(err => {
         console.error(err);
+        setFetchError({ status: 500, message: "Network error" });
         setLoading(false);
       });
   }, [teacherId]);
@@ -29,16 +37,29 @@ export default function TeacherProfilePage({ teacherId, basePath = "/admin/teach
     );
   }
 
-  if (!teacher || teacher.error) {
+  if (fetchError || (!loading && (!teacher || teacher.error))) {
+    const is404 = fetchError?.status === 404 || teacher?.error;
     return (
-      <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Teacher Not Found</h3>
-        <p className="text-slate-500 mt-2">The teacher profile you are looking for does not exist.</p>
-        <Link href={basePath}>
-          <button type="button" className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-            Back to Teachers
-          </button>
-        </Link>
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white p-16 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20">
+          <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-xl font-bold text-slate-800 dark:text-slate-100">
+          {is404 ? "Teacher Not Found" : "Access Denied"}
+        </h2>
+        <p className="mb-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          {is404
+            ? "This teacher does not exist or belongs to a different institute."
+            : (fetchError?.message ?? "You do not have access to this resource.")}
+        </p>
+        <a
+          href={basePath}
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+        >
+          ← Back to Teachers
+        </a>
       </div>
     );
   }

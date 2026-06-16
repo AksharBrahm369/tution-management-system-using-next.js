@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyAuth } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/adminAuth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const auth = await requireSuperAdmin(req);
     const { id } = await params;
-    const user = await verifyAuth(req);
-    if (!user || user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const exam = await prisma.exam.findUnique({
-      where: { id },
+      where: { id, instituteId: auth.instituteId },
       include: {
         batch: { select: { name: true, color: true } },
         subject: { select: { name: true } },
@@ -29,15 +28,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       progress: { entered: enteredResults, total: exam._count.results }
     });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch exam" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const auth = await requireSuperAdmin(req);
     const { id } = await params;
-    const user = await verifyAuth(req);
-    if (!user || user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Verify exam belongs to this institute
+    const existing = await prisma.exam.findUnique({ where: { id, instituteId: auth.instituteId }, select: { id: true } });
+    if (!existing) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
 
     const body = await req.json();
     if (body.examDate) body.examDate = new Date(body.examDate);
@@ -45,24 +49,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const updated = await prisma.exam.update({ where: { id }, data: body });
     return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update exam" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const auth = await requireSuperAdmin(req);
     const { id } = await params;
-    const user = await verifyAuth(req);
-    if (!user || user.role !== "SUPER_ADMIN") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const exam = await prisma.exam.findUnique({ where: { id } });
-    if (exam?.isResultPublished) {
+    const exam = await prisma.exam.findUnique({ where: { id, instituteId: auth.instituteId } });
+    if (!exam) return NextResponse.json({ error: "Exam not found" }, { status: 404 });
+
+    if (exam.isResultPublished) {
       return NextResponse.json({ error: "Cannot delete exam with published results" }, { status: 400 });
     }
 
     await prisma.exam.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete exam" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.startsWith("Forbidden") ? 403 : message.startsWith("Unauthorized") ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

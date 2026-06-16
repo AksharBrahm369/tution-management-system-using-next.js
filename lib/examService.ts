@@ -22,6 +22,7 @@ export interface ExamFilters {
   toDate?: string;
   page?: number;
   limit?: number;
+  instituteId?: string;
 }
 
 export function getGradeRangesFromExam(exam: { gradeConfig: Prisma.JsonValue | null }): GradeRangeInput[] {
@@ -109,6 +110,7 @@ export async function syncActiveExamStatuses() {
 
 export function buildExamWhere(filters: ExamFilters): Prisma.ExamWhereInput {
   const where: Prisma.ExamWhereInput = {};
+  if (filters.instituteId) where.instituteId = filters.instituteId;
   if (filters.status) where.status = filters.status as Prisma.EnumExamStatusFilter["equals"];
   if (filters.type) where.type = filters.type as Prisma.EnumExamTypeFilter["equals"];
   if (filters.batchId) where.batchId = filters.batchId;
@@ -201,8 +203,9 @@ export async function listExams(filters: ExamFilters) {
   };
 }
 
-export async function createExam(rawInput: ExamCreateInput, createdBy: string) {
-  const input = examCreateSchema.parse(rawInput);
+export async function createExam(rawInput: ExamCreateInput & { instituteId?: string }, createdBy: string) {
+  const { instituteId, ...rest } = rawInput;
+  const input = examCreateSchema.parse(rest);
   const code = input.code?.trim() || (await generateNextExamCode(input.examDate.getFullYear()));
   const [batch, enrollments] = await Promise.all([
     prisma.batch.findUnique({ where: { id: input.batchId }, select: { standardId: true } }),
@@ -214,6 +217,7 @@ export async function createExam(rawInput: ExamCreateInput, createdBy: string) {
 
   return prisma.exam.create({
     data: {
+      instituteId: instituteId ?? null,
       title: input.title,
       code,
       description: input.description,

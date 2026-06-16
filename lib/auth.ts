@@ -98,27 +98,18 @@ export async function validateJWT(
 export async function verifyAuth(
   request: NextRequest
 ): Promise<{ id: string; userId: string; instituteId: string; role: Role; email: string } | null> {
-  const payload = await validateJWT(request);
-  if (!payload?.userId || !payload.instituteId) return null;
-
-  const user = await prisma.user.findUnique({
-    where: { id: payload.userId },
-    select: { id: true, role: true, email: true, instituteId: true, isActive: true },
-  });
-
-  if (!user?.isActive || !user.instituteId || user.instituteId !== payload.instituteId) {
+  try {
+    const session = await requireInstituteSession();
+    return {
+      id: session.userId,
+      userId: session.userId,
+      instituteId: session.instituteId,
+      role: session.role,
+      email: session.email,
+    };
+  } catch {
     return null;
   }
-
-  setRequestInstitute(user.instituteId);
-
-  return {
-    id: user.id,
-    userId: user.id,
-    instituteId: user.instituteId,
-    role: user.role,
-    email: user.email,
-  };
 }
 
 // ─── Password Utilities ───────────────────────────────────────────────────────
@@ -212,6 +203,32 @@ export async function getCurrentSession(): Promise<TokenPayload | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Retrieves, verifies, and requires a valid session with an isolated institute.
+ * Throws an error if unauthorized, inactive, or not scoped to an institute.
+ */
+export async function requireInstituteSession(): Promise<{
+  userId: string;
+  role: Role;
+  instituteId: string;
+  email: string;
+}> {
+  const session = await getCurrentSession();
+  if (!session) {
+    throw new Error("Unauthorized: No active session");
+  }
+  if (!session.userId || !session.role || !session.instituteId) {
+    throw new Error("Unauthorized: Invalid institute session");
+  }
+  setRequestInstitute(session.instituteId);
+  return {
+    userId: session.userId,
+    role: session.role,
+    instituteId: session.instituteId,
+    email: session.email,
+  };
 }
 
 // ─── Role Redirect Mapping ────────────────────────────────────────────────────
