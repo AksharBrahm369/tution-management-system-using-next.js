@@ -12,15 +12,21 @@ export const DEFAULT_STANDARDS = [
 ];
 
 export async function ensureDefaultStandards() {
-  await Promise.all(
-    DEFAULT_STANDARDS.map((standard) =>
-      prisma.standard.upsert({
-        where: { order: standard.order },
-        create: { ...standard, isActive: true },
-        update: { name: standard.name, isActive: true },
-      })
-    )
-  );
+  for (const standard of DEFAULT_STANDARDS) {
+    const existing = await prisma.standard.findFirst({
+      where: { order: standard.order },
+    });
+    if (!existing) {
+      await prisma.standard.create({
+        data: { ...standard, isActive: true },
+      });
+    } else if (existing.name !== standard.name) {
+      await prisma.standard.update({
+        where: { id: existing.id },
+        data: { name: standard.name, isActive: true },
+      });
+    }
+  }
 }
 
 export async function getActiveStandards() {

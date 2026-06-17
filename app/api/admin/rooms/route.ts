@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await prisma.room.findUnique({ where: { code: parsed.data.code } });
+    const existing = await prisma.room.findFirst({ where: { code: parsed.data.code } });
     if (existing) {
       return NextResponse.json({ error: "Room code already exists" }, { status: 409 });
     }

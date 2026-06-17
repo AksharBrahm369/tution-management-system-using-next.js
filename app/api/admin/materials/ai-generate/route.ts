@@ -685,6 +685,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO study_materials (
         id,
+        "instituteId",
         title,
         description,
         "subjectId",
@@ -699,6 +700,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
         "updatedAt"
       ) VALUES (
         ${id},
+        ${auth.instituteId},
         ${title},
         ${markdownSummary || description || `AI generated study website for ${topic}`},
         ${subjectId},

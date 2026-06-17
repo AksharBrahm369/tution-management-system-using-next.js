@@ -4,12 +4,10 @@ import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { createDefaultSettings } from "../lib/settings";
 
-const connectionString = process.env.DATABASE_URL;
-const pool = connectionString ? new Pool({ connectionString }) : new Pool();
+const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+const pool = connectionString ? new Pool({ connectionString, ssl: { rejectUnauthorized: false } }) : new Pool();
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 const SEED_INSTITUTE_ID = "seed-default-institute";
-
-type Gender = "MALE" | "FEMALE" | "OTHER";
 type StudentStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED" | "GRADUATED" | "TRANSFERRED" | "ON_LEAVE";
 type StudentCategory = "WEAK" | "AVERAGE" | "GOOD" | "TOPPER";
 

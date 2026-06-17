@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 
 async function main() {
-  const student = await prisma.student.findUnique({
+  const student = await prisma.student.findFirst({
     where: { studentCode: "STU-2026-056" },
     include: { user: true }
   });

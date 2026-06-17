@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Parent Code and Password are required", 400);
     }
 
-    const parent = await prisma.parent.findUnique({
+    const parent = await prisma.parent.findFirst({
       where: { parentCode },
       include: { user: true },
     });

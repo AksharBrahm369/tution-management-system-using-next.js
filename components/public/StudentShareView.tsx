@@ -52,8 +52,10 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
   const [portalUrl, setPortalUrl] = useState<string>(
     baseUrl ? `${baseUrl}/student/login` : "/student/login"
   );
+  const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== "undefined") {
       setPortalUrl(`${window.location.origin}/student/login`);
     }
@@ -350,9 +352,9 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
                 </div>
               </div>
 
-              {data.examResults.length > 0 ? (
-                <div className="h-64 w-full mt-4 pr-4">
-                  <ResponsiveContainer width="100%" height="100%">
+              {isMounted && data.examResults.length > 0 ? (
+                <div className="h-64 w-full mt-4 pr-4 relative min-w-0">
+                  <ResponsiveContainer width="99%" height={240}>
                     <AreaChart data={data.examResults}>
                       <defs>
                         <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
@@ -394,10 +396,14 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
                         strokeWidth={2.5}
                         fillOpacity={1} 
                         fill="url(#growthGrad)" 
+                        dot={{ r: 4, strokeWidth: 2, fill: "#4f46e5" }}
+                        activeDot={{ r: 6 }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+              ) : data.examResults.length > 0 ? (
+                <div className="h-64 w-full mt-4 bg-slate-100/50 dark:bg-slate-900/50 animate-pulse rounded-2xl" />
               ) : (
                 <div className="h-64 flex flex-col items-center justify-center text-center text-slate-400">
                   <Award className="h-10 w-10 text-slate-300 mb-2" />

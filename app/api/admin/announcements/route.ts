@@ -15,10 +15,11 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin(request);
+    const auth = await requireAdmin(request);
     const list: any = await prisma.$queryRaw`
       SELECT id, "userId", title, message, audience, channels, "scheduleAt", status, "createdAt", "updatedAt"
       FROM announcements
+      WHERE "instituteId" = ${auth.instituteId}
       ORDER BY "createdAt" DESC
       LIMIT 50
     `;
@@ -48,8 +49,8 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const id = crypto.randomUUID();
     const inserted: any = await prisma.$queryRaw`
-      INSERT INTO announcements (id, "userId", title, message, audience, channels, "scheduleAt", status, "createdAt", "updatedAt")
-      VALUES (${id}, ${userId}, ${title.trim()}, ${message.trim()}, ${audience}, ${serializedChannels}, ${scheduleAt ? new Date(scheduleAt) : null}, ${scheduleAt ? 'SCHEDULED' : 'PUBLISHED'}, ${now}, ${now})
+      INSERT INTO announcements (id, "instituteId", "userId", title, message, audience, channels, "scheduleAt", status, "createdAt", "updatedAt")
+      VALUES (${id}, ${auth.instituteId}, ${userId}, ${title.trim()}, ${message.trim()}, ${audience}, ${serializedChannels}, ${scheduleAt ? new Date(scheduleAt) : null}, ${scheduleAt ? 'SCHEDULED' : 'PUBLISHED'}, ${now}, ${now})
       RETURNING *
     `;
     const created = Array.isArray(inserted) ? inserted[0] : inserted;

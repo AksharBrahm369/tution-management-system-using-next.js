@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPublicStudentProfile } from "@/lib/publicStudentProfile";
 import { applyCorsHeaders, corsOptionsResponse } from "@/lib/cors";
 import { resolvePublicInstituteId } from "@/lib/instituteProvisioning";
-import { withRequestInstitute } from "@/lib/institute";
+import { withRequestInstitute, withoutAuthScope } from "@/lib/institute";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,19 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       return applyCorsHeaders(request, response, "GET, OPTIONS");
     }
 
-    const instituteId = await resolvePublicInstituteId();
+    // In multi-tenant database, lookup the student's instituteId first
+    const studentInfo = await withoutAuthScope(() =>
+      prisma.student.findUnique({
+        where: { id },
+        select: { instituteId: true }
+      })
+    );
+
+    let instituteId = studentInfo?.instituteId;
+    if (!instituteId) {
+      instituteId = await resolvePublicInstituteId();
+    }
+
     if (!instituteId) {
       const response = NextResponse.json({ error: "Student not found" }, { status: 404 });
       return applyCorsHeaders(request, response, "GET, OPTIONS");

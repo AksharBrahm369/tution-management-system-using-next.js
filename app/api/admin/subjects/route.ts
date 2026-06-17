@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const { name, code, description, isActive } = parsed.data;
 
     // Check for duplicate code
-    const existing = await prisma.subject.findUnique({
+    const existing = await prisma.subject.findFirst({
       where: { code },
     });
 

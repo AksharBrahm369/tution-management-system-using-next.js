@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
     const durationMinutes = eh * 60 + em - (sh * 60 + sm);
 
     // Check for duplicate code
-    const existing = await prisma.batch.findUnique({ where: { code } });
+    const existing = await prisma.batch.findFirst({ where: { code } });
     if (existing) {
       return NextResponse.json({ error: "Batch code already exists" }, { status: 409 });
     }

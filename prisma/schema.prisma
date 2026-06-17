@@ -606,7 +606,7 @@ model Notification {
 model Enquiry {
   id            String @id @default(cuid())
   instituteId String?
-  enquiryNumber String @unique
+  enquiryNumber String
 
   studentName  String
   studentAge   Int?
@@ -642,6 +642,7 @@ model Enquiry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([instituteId, enquiryNumber])
   @@index([status])
   @@index([source])
   @@index([priority])
@@ -807,7 +808,7 @@ model InstituteSettings {
 model AcademicYear {
   id        String   @id @default(cuid())
   instituteId String?
-  name      String   @unique
+  name      String
   startDate DateTime
   endDate   DateTime
   isCurrent Boolean  @default(false)
@@ -816,6 +817,7 @@ model AcademicYear {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([instituteId, name])
   @@index([isCurrent])
   @@index([isActive])
   @@index([instituteId])
@@ -893,10 +895,10 @@ model Student {
   id String @id @default(cuid())
   instituteId String?
 
-  studentCode  String      @unique
+  studentCode  String
   firstName    String
   lastName     String
-  email        String?     @unique
+  email        String?
   phone        String?
   dateOfBirth  DateTime?
   gender       Gender
@@ -956,6 +958,8 @@ model Student {
   onlinePaymentOrders OnlinePaymentOrder[]
   standard            Standard?            @relation(fields: [standardId], references: [id], onDelete: SetNull)
 
+  @@unique([instituteId, studentCode])
+  @@unique([instituteId, email])
   @@index([studentCode])
   @@index([firstName, lastName])
   @@index([status])
@@ -969,8 +973,8 @@ model Student {
 model Standard {
   id       String  @id @default(cuid())
   instituteId String?
-  name     String  @unique
-  order    Int     @unique
+  name     String
+  order    Int
   isActive Boolean @default(true)
 
   students                Student[]
@@ -983,6 +987,8 @@ model Standard {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([instituteId, name])
+  @@unique([instituteId, order])
   @@index([isActive])
   @@index([instituteId])
   @@map("standards")
@@ -991,7 +997,7 @@ model Standard {
 model Parent {
   id             String  @id @default(cuid())
   instituteId String?
-  parentCode     String? @unique
+  parentCode     String?
   fatherName     String?
   fatherPhone    String?
   fatherEmail    String?
@@ -1015,6 +1021,8 @@ model Parent {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([instituteId, parentCode])
   @@index([instituteId])
 
   @@map("parents")
@@ -1250,7 +1258,7 @@ model FeeRecord {
   id String @id @default(cuid())
   instituteId String?
 
-  receiptNumber  String  @unique
+  receiptNumber  String
   studentId      String
   batchId        String
   feeStructureId String?
@@ -1286,6 +1294,7 @@ model FeeRecord {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([instituteId, receiptNumber])
   @@unique([studentId, batchId, month, year])
   @@index([studentId, status])
   @@index([batchId, month, year])
@@ -1297,7 +1306,7 @@ model FeePayment {
   id String @id @default(cuid())
   instituteId String?
 
-  paymentNumber String @unique
+  paymentNumber String
   feeRecordId   String
 
   amount      Float
@@ -1331,6 +1340,8 @@ model FeePayment {
   paidAt    DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([instituteId, paymentNumber])
   @@index([instituteId])
 
   @@map("fee_payments")
@@ -1822,7 +1833,7 @@ model Exam {
   instituteId String?
 
   title       String
-  code        String   @unique
+  code        String
   description String?
   type        ExamType
 
@@ -1860,6 +1871,7 @@ model Exam {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([instituteId, code])
   @@index([batchId])
   @@index([subjectId])
   @@index([standardId])
@@ -2127,10 +2139,10 @@ model Teacher {
   instituteId String?
 
   // Basic Info
-  teacherCode    String      @unique
+  teacherCode    String
   firstName      String
   lastName       String
-  email          String      @unique
+  email          String
   phone          String
   alternatePhone String?
   dateOfBirth    DateTime?
@@ -2187,6 +2199,9 @@ model Teacher {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([instituteId, teacherCode])
+  @@unique([instituteId, email])
   @@index([instituteId])
 
   @@map("teachers")
@@ -2196,7 +2211,7 @@ model Subject {
   id          String  @id @default(cuid())
   instituteId String?
   name        String
-  code        String  @unique
+  code        String
   description String?
   isActive    Boolean @default(true)
 
@@ -2208,6 +2223,8 @@ model Subject {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([instituteId, code])
   @@index([instituteId])
 
   @@map("subjects")
@@ -2401,7 +2418,7 @@ model Room {
   id         String   @id @default(cuid())
   instituteId String?
   name       String
-  code       String   @unique
+  code       String
   capacity   Int
   floor      String?
   building   String?
@@ -2413,6 +2430,8 @@ model Room {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([instituteId, code])
   @@index([instituteId])
 
   @@map("rooms")
@@ -2424,7 +2443,7 @@ model Batch {
 
   // Identity
   name        String
-  code        String  @unique
+  code        String
   description String?
   color       String?
 
@@ -2477,6 +2496,7 @@ model Batch {
   exams         Exam[]
   materials     StudyMaterial[]
 
+  @@unique([instituteId, code])
   @@index([code])
   @@index([status])
   @@index([academicYear])

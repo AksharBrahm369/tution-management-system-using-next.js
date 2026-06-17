@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const data = teacherSchema.parse(body);
 
     // Check email
-    const existingEmail = await prisma.teacher.findUnique({
+    const existingEmail = await prisma.teacher.findFirst({
       where: { email: data.email },
     });
 

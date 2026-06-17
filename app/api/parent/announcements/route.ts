@@ -6,10 +6,11 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireParent(request);
+    const session = await requireParent(request);
     const announcements = await prisma.$queryRaw`
       SELECT id, "userId", title, message, audience, channels, "scheduleAt", status, "createdAt", "updatedAt"
       FROM announcements
+      WHERE "instituteId" = ${session.instituteId}
       ORDER BY "createdAt" DESC
       LIMIT 20
     `;
