@@ -8,7 +8,7 @@ import { Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import {
   Tooltip,
   TooltipContent,
@@ -211,6 +211,10 @@ export const Sidebar = React.forwardRef<
               } as React.CSSProperties
             }
           >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Sidebar</SheetTitle>
+              <SheetDescription>Main navigation menu for the dashboard</SheetDescription>
+            </SheetHeader>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>

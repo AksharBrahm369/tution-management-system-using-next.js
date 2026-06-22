@@ -21,7 +21,14 @@ interface CustomThemeProviderProps {
 
 const THEME_STORAGE_KEY = 'tuitionpro-theme';
 const THEME_CHANGE_EVENT = 'tuitionpro-theme-change';
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+const globalForTheme = globalThis as unknown as {
+  ThemeContext: any;
+};
+
+const ThemeContext =
+  globalForTheme.ThemeContext ??
+  (globalForTheme.ThemeContext = createContext<ThemeContextValue | null>(null));
 
 function getStoredTheme(defaultTheme: Theme): Theme {
   if (typeof window === 'undefined') return defaultTheme;

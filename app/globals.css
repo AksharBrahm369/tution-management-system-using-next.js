@@ -457,3 +457,22 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* ─── Global Cursor Pointer for Clickable/Interactive Elements ─── */
+a,
+button,
+select,
+summary,
+label,
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+input[type="submit"],
+input[type="button"],
+[role="button"],
+[role="tab"],
+[role="link"],
+[onclick],
+.cursor-pointer-all {
+  cursor: pointer !important;
+}

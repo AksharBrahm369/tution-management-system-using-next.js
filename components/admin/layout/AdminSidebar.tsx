@@ -64,6 +64,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user }) => {
   const router = useRouter()
   const [standards, setStandards] = React.useState<Array<{ id: string; name: string }>>([])
   const [standardsOpen, setStandardsOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
     let mounted = true
@@ -85,6 +86,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user }) => {
       } catch {
         if (mounted) {
           setStandards([])
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
         }
       }
     }
@@ -220,13 +225,30 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user }) => {
 
                           <Collapsible.Content>
                             <SidebarMenuSub>
-                              {item.children?.map((child) => (
-                                <SidebarMenuSubItem key={child.href}>
-                                  <SidebarMenuSubButton asChild isActive={isActive(child.href)}>
-                                    <Link href={child.href}>{child.label}</Link>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              ))}
+                              {item.label === "Standards" && isLoading ? (
+                                <>
+                                  <SidebarMenuSubItem>
+                                    <SidebarMenuSubButton asChild isActive={isActive("/admin/standards")}>
+                                      <Link href="/admin/standards">All Standards</Link>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                  {Array.from({ length: 3 }).map((_, idx) => (
+                                    <SidebarMenuSubItem key={`skeleton-${idx}`}>
+                                      <div className="flex items-center h-8 px-3 py-2 w-full animate-pulse">
+                                        <div className="h-2 w-20 rounded bg-slate-800 dark:bg-slate-700/60" />
+                                      </div>
+                                    </SidebarMenuSubItem>
+                                  ))}
+                                </>
+                              ) : (
+                                item.children?.map((child) => (
+                                  <SidebarMenuSubItem key={child.href}>
+                                    <SidebarMenuSubButton asChild isActive={isActive(child.href)}>
+                                      <Link href={child.href}>{child.label}</Link>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))
+                              )}
                             </SidebarMenuSub>
                           </Collapsible.Content>
                         </Collapsible.Root>
