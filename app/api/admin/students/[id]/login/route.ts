@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { upsertCredentialAccount } from "@/lib/betterAuthAccounts";
 
 export const runtime = "nodejs";
 
@@ -56,6 +57,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         isVerified: true,
       },
     });
+
+    await upsertCredentialAccount(user.id, hashed);
 
     await prisma.student.update({
       where: { id },
@@ -130,6 +133,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         where: { userId: student.user.id },
       }),
     ]);
+
+    await upsertCredentialAccount(student.user.id, hashed);
 
     const fullName = `${student.firstName} ${student.lastName}`.trim() || student.studentCode;
     const { logActivityFromRequest } = await import("@/lib/activityLogger");

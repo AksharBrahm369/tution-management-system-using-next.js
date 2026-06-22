@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { setRequestInstitute } from "@/lib/institute";
+import { auth } from "@/lib/betterAuth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,10 +83,7 @@ export async function validateJWT(
   request: NextRequest
 ): Promise<TokenPayload | null> {
   try {
-    const token = request.cookies.get(COOKIE_NAME)?.value;
-    if (!token) return null;
-
-    return await verifyToken(token);
+    return await getCurrentSessionFromHeaders(request.headers);
   } catch {
     return null;
   }
@@ -96,8 +94,9 @@ export async function validateJWT(
  * Returns normalized user fields expected by older route handlers.
  */
 export async function verifyAuth(
-  request: NextRequest
+  request?: NextRequest
 ): Promise<{ id: string; userId: string; instituteId: string; role: Role; email: string } | null> {
+  void request;
   try {
     const session = await requireInstituteSession();
     return {
@@ -182,27 +181,56 @@ export async function getTokenFromCookies(): Promise<string | null> {
  * Retrieves and verifies the current session from the auth cookie.
  * Returns null when no valid session exists.
  */
-export async function getCurrentSession(): Promise<TokenPayload | null> {
+async function getCurrentSessionFromHeaders(
+  requestHeaders: Headers
+): Promise<TokenPayload | null> {
   try {
-    const token = await getTokenFromCookies();
-    if (!token) return null;
-    const payload = await verifyToken(token);
-    if (!payload?.userId || !payload.instituteId) return null;
-
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { instituteId: true, isActive: true },
+    const session = await auth.api.getSession({
+      headers: requestHeaders,
+      query: { disableCookieCache: true },
     });
 
-    if (!user?.isActive || user.instituteId !== payload.instituteId) {
+    if (!session?.user?.id) return null;
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        instituteId: true,
+        role: true,
+        email: true,
+        isActive: true,
+      },
+    });
+
+    if (!user?.isActive || !user.instituteId) {
       return null;
     }
 
-    setRequestInstitute(payload.instituteId);
-    return payload;
+    setRequestInstitute(user.instituteId);
+    return {
+      sub: user.id,
+      userId: user.id,
+      instituteId: user.instituteId,
+      role: user.role,
+      email: user.email,
+    };
   } catch {
     return null;
   }
+}
+
+/**
+ * Retrieves and verifies the current Better Auth session.
+ * Returns null when no valid session exists.
+ */
+export async function getCurrentSession(): Promise<TokenPayload | null> {
+  const requestHeaders = await import("next/headers")
+    .then((mod) => mod.headers())
+    .catch(() => null);
+
+  if (!requestHeaders) return null;
+  return getCurrentSessionFromHeaders(requestHeaders);
 }
 
 /**

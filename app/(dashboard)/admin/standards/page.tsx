@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BookOpen, CalendarDays, GraduationCap, IndianRupee, Users } from "lucide-react";

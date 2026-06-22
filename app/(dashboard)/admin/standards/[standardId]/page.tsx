@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -78,8 +80,8 @@ export default async function StandardDashboardPage({ params }: { params: Promis
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-xs sm:min-w-[360px]">
-            <StatusCell label="Students / Batch" value={studentsPerBatch || "-"} />
-            <StatusCell label="Batches / Teacher" value={teacherLoad || "-"} />
+            <StatusCell label="Students" value={students} />
+            <StatusCell label="Batches" value={batches} />
             <StatusCell label="Pending Fees" value={`Rs. ${pendingFeeValue.toLocaleString("en-IN")}`} tone={pendingFeeValue > 0 ? "amber" : "emerald"} />
           </div>
         </div>

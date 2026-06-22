@@ -6,6 +6,7 @@ import { requireSuperAdmin } from "@/lib/adminAuth";
 import { studentUpdateSchema } from "@/lib/validations/student";
 import { generateNextStudentCode } from "@/lib/studentCode";
 import { hashPassword } from "@/lib/auth";
+import { upsertCredentialAccount } from "@/lib/betterAuthAccounts";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 import { generateNextParentCode } from "@/lib/parentCode";
 import { inferStandardIdFromBatchIds } from "@/lib/standardAssignments";
@@ -337,6 +338,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         },
       });
 
+      await upsertCredentialAccount(studentUser.id, hashedPassword);
       await prisma.student.update({ where: { id }, data: { userId: studentUser.id } });
     }
 
@@ -352,6 +354,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         },
       });
 
+      await upsertCredentialAccount(parentUser.id, hashedPassword);
       await prisma.parent.update({ where: { id: existing.parent.id }, data: { userId: parentUser.id } });
     }
 

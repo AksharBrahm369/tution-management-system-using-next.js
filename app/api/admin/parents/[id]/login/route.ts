@@ -3,6 +3,7 @@ import { randomUUID } from "crypto";
 import { requireAdmin, getRouteErrorStatus } from "@/lib/roleAuth";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { upsertCredentialAccount } from "@/lib/betterAuthAccounts";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       : await prisma.user.create({
           data: { email, name, password: hashed, role: "PARENT", isActive: true, isVerified: true },
         });
+
+    await upsertCredentialAccount(user.id, hashed);
 
     await prisma.parent.update({ where: { id }, data: { userId: user.id } });
 

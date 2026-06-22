@@ -1,53 +1,47 @@
 /**
  * POST /api/auth/logout
  *
- * Clears the auth cookie and deletes the session record from the database.
+ * Clears Better Auth cookies and revokes the active session.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { clearAuthCookie, verifyToken } from "@/lib/auth";
+import { auth } from "@/lib/betterAuth";
+import { appendAuthCookies, signOutWithBetterAuth } from "@/lib/betterAuthRoute";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 import { withoutAuthScope } from "@/lib/institute";
 
 export async function POST(request: NextRequest) {
   return withoutAuthScope(async () => {
-  try {
-    const token = request.cookies.get("tuitionpro_auth")?.value;
+    try {
+      const session = await auth.api.getSession({
+        headers: request.headers,
+        query: { disableCookieCache: true },
+      });
+      const signOutResult = await signOutWithBetterAuth(request);
 
-    if (token) {
-      try {
-        // Decode to get userId for activity log
-        const payload = await verifyToken(token);
-
-        // Delete session from DB
-        await prisma.session.deleteMany({ where: { token } });
-
+      if (session?.user?.id) {
         await logActivityFromRequest(request, {
-          userId: payload.userId,
+          userId: session.user.id,
           action: "USER_LOGGED_OUT",
           category: "AUTH",
           severity: "INFO",
           description: "User logged out",
-        });
-      } catch {
-        // Token invalid — still clear the cookie
+        }).catch(() => undefined);
       }
+
+      const response = NextResponse.json(
+        { success: true, message: "Logged out successfully" },
+        { status: 200 }
+      );
+
+      appendAuthCookies(response, signOutResult.headers);
+      return response;
+    } catch (error) {
+      console.error("[LOGOUT]", error);
+      return NextResponse.json(
+        { success: false, message: "Something went wrong. Please try again" },
+        { status: 500 }
+      );
     }
-
-    const response = NextResponse.json(
-      { success: true, message: "Logged out successfully" },
-      { status: 200 }
-    );
-
-    clearAuthCookie(response);
-    return response;
-  } catch (error) {
-    console.error("[LOGOUT]", error);
-    return NextResponse.json(
-      { success: false, message: "Something went wrong. Please try again" },
-      { status: 500 }
-    );
-  }
   });
 }

@@ -7,6 +7,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { upsertCredentialAccount } from "@/lib/betterAuthAccounts";
 import { registerApiSchema } from "@/lib/validations/auth";
 import { errorResponse, successResponse } from "@/lib/utils";
 import { logActivityFromRequest } from "@/lib/activityLogger";
@@ -14,7 +15,7 @@ import { createDefaultSettings } from "@/lib/settings";
 import { createInstituteForAdmin } from "@/lib/instituteProvisioning";
 import { setRequestInstitute, withoutAuthScope } from "@/lib/institute";
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   return successResponse({
     exists: false,
     email: null,
@@ -88,6 +89,8 @@ export async function POST(request: NextRequest) {
       where: { id: institute.id },
       data: { ownerId: user.id },
     });
+
+    await upsertCredentialAccount(user.id, hashedPassword);
 
     await logActivityFromRequest(request, {
       userId: user.id,

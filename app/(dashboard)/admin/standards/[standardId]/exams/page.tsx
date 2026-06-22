@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import ExamListPage from "@/components/admin/exams/ExamList/ExamListPage";
 import { getStandardById } from "@/lib/standards";

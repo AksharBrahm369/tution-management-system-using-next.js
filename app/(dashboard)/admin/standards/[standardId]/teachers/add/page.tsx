@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import AddTeacherPage from "@/components/admin/teachers/AddTeacher/AddTeacherPage";
 import { getStandardById } from "@/lib/standards";

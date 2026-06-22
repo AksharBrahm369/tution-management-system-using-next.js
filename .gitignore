@@ -44,7 +44,7 @@ next-env.d.ts
 
 *.db
 scratch-*
+scratch/*.log
 test-*
-proxy.ts
 truncate-users.js
 .vercel

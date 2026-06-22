@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import CreateBatchPage from "@/components/admin/batches/CreateBatch/CreateBatchPage";
 import { getStandardById } from "@/lib/standards";

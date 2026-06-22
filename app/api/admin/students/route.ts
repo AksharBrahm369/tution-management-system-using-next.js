@@ -368,6 +368,14 @@ export async function POST(request: NextRequest) {
             isActive: true,
           },
         });
+        await tx.account.create({
+          data: {
+            userId: studentUser.id,
+            accountId: studentUser.id,
+            providerId: "credential",
+            password: studentLoginPassword,
+          },
+        });
 
         await tx.student.update({ where: { id: createdStudent.id }, data: { userId: studentUser.id } });
       }
@@ -380,6 +388,14 @@ export async function POST(request: NextRequest) {
             password: parentLoginPassword,
             role: "PARENT",
             isActive: true,
+          },
+        });
+        await tx.account.create({
+          data: {
+            userId: parentUser.id,
+            accountId: parentUser.id,
+            providerId: "credential",
+            password: parentLoginPassword,
           },
         });
         await tx.parent.update({ where: { id: parent.id }, data: { userId: parentUser.id } });

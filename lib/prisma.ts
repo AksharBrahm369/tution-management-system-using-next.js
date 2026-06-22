@@ -9,7 +9,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { jwtVerify } from "jose";
+import { webcrypto } from "node:crypto";
 import { getRequestInstituteId, isAuthScopeDisabled, setRequestInstitute } from "@/lib/institute";
 
 // Extend global type to hold the Prisma instance across hot reloads
@@ -30,16 +30,48 @@ if (!connectionString || connectionString.includes("[YOUR-PASSWORD]")) {
 let pool;
 try {
   pool = new Pool({ connectionString });
-} catch (e) {
+} catch {
   // Fallback so the server doesn't crash on start, though queries will fail
   pool = new Pool();
 }
 
 const adapter = new PrismaPg(pool);
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "fallback-secret-for-dev-only-replace-in-production"
-);
-const COOKIE_NAME = "tuitionpro_auth";
+const BETTER_AUTH_SECRET =
+  process.env.BETTER_AUTH_SECRET ||
+  process.env.JWT_SECRET ||
+  "fallback-secret-for-dev-only-replace-in-production";
+const BETTER_AUTH_SESSION_COOKIES = [
+  "better-auth.session_token",
+  "__Secure-better-auth.session_token",
+  "better-auth-session_token",
+  "__Secure-better-auth-session_token",
+];
+
+async function verifyBetterAuthCookie(value: string) {
+  const signatureStartPos = value.lastIndexOf(".");
+  if (signatureStartPos < 1) return null;
+
+  const signedValue = value.substring(0, signatureStartPos);
+  const signature = value.substring(signatureStartPos + 1);
+  if (signature.length !== 44 || !signature.endsWith("=")) return null;
+
+  const key = await webcrypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(BETTER_AUTH_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["verify"]
+  );
+
+  const isValid = await webcrypto.subtle.verify(
+    "HMAC",
+    key,
+    Buffer.from(signature, "base64"),
+    new TextEncoder().encode(signedValue)
+  );
+
+  return isValid ? signedValue : null;
+}
 
 const isProduction = process.env.NODE_ENV === "production";
 const cachedPrisma = globalForPrisma.prisma;
@@ -192,31 +224,47 @@ async function getInstituteIdForQuery() {
     return null;
   }
 
-  let token: string | undefined;
+  let signedToken: string | undefined;
   try {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
-    token = cookieStore.get(COOKIE_NAME)?.value;
+    signedToken = BETTER_AUTH_SESSION_COOKIES.map(
+      (name) => cookieStore.get(name)?.value
+    ).find(Boolean);
   } catch {
     return null;
   }
 
-  if (!token) return null;
+  if (!signedToken) return null;
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    const userId = (payload.sub || payload.userId) as string | undefined;
-    const instituteId = payload.instituteId as string | undefined;
-    if (!userId || !instituteId) {
+    const sessionToken = await verifyBetterAuthCookie(signedToken);
+    if (!sessionToken) {
       throw new Error("Unauthorized: Invalid institute session");
     }
 
-    const user = await basePrisma.user.findUnique({
-      where: { id: userId },
-      select: { instituteId: true, isActive: true },
+    const session = await basePrisma.session.findUnique({
+      where: { token: sessionToken },
+      select: {
+        expiresAt: true,
+        instituteId: true,
+        user: {
+          select: {
+            instituteId: true,
+            isActive: true,
+          },
+        },
+      },
     });
 
-    if (!user?.isActive || user.instituteId !== instituteId) {
+    const instituteId = session?.instituteId || session?.user.instituteId;
+    if (
+      !session ||
+      session.expiresAt <= new Date() ||
+      !session.user.isActive ||
+      !instituteId ||
+      session.user.instituteId !== instituteId
+    ) {
       throw new Error("Unauthorized: Invalid institute session");
     }
 
