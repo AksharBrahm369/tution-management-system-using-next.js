@@ -75,7 +75,7 @@ const FeeBarChart: React.FC = () => {
         </select>
       </div>
 
-      <div ref={chartRef} className="min-h-0 flex-1 w-full min-w-0 overflow-hidden">
+      <div ref={chartRef} className="min-h-0 flex-1 w-full min-w-0 overflow-hidden" style={{ minHeight: 250 }}>
         {chartSize.isReady ? (
           <BarChart
             width={chartSize.width}

@@ -145,6 +145,7 @@ export default function ExamListPage({
             size="sm" 
             onClick={() => setViewMode("grid")}
             className="rounded-xl"
+            aria-label="Grid view"
           >
             <LayoutGrid className="h-4 w-4" />
           </Button>
@@ -153,6 +154,7 @@ export default function ExamListPage({
             size="sm" 
             onClick={() => setViewMode("table")}
             className="rounded-xl"
+            aria-label="List view"
           >
             <List className="h-4 w-4" />
           </Button>

@@ -68,7 +68,7 @@ const AttendanceDonutChart: React.FC = () => {
 
       <div className="flex flex-1 flex-col items-center justify-between gap-3">
         {/* Chart View */}
-        <div ref={chartRef} className="relative mx-auto h-[170px] min-h-[170px] w-[170px] shrink-0 overflow-hidden">
+        <div ref={chartRef} className="relative mx-auto h-[170px] min-h-[170px] w-[170px] shrink-0 overflow-hidden" style={{ width: 170, height: 170 }}>
           {chartSize.isReady ? (
             <PieChart width={chartSize.width} height={chartSize.height}>
               <Pie

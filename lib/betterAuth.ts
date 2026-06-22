@@ -10,8 +10,19 @@ const appUrl =
   process.env.NEXT_PUBLIC_APP_URL ||
   "http://localhost:3000";
 
+// Restrict CORS to known origins only – never wildcard in production
+const trustedOrigins = [
+  appUrl,
+  "https://tution-management-system-using-next-nine.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+].filter(Boolean) as string[];
+
 export const auth = betterAuth({
   baseURL: appUrl,
+  trustedOrigins,
   secret:
     process.env.BETTER_AUTH_SECRET ||
     process.env.JWT_SECRET ||

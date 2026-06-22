@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { BarChart3, IndianRupee, Users, GraduationCap, CheckCircle2, FileBarChart2, ArrowRight } from "lucide-react";
-import WelcomeHeader from "@/components/admin/dashboard/WelcomeHeader";
 import StatsCard from "@/components/admin/dashboard/StatsCard";
 import FeeBarChart from "@/components/admin/dashboard/FeeBarChart";
 import AttendanceDonutChart from "@/components/admin/dashboard/AttendanceDonutChart";
@@ -21,7 +20,7 @@ const reportLinks = [
 
 export default function ReportsDashboardPage() {
   const router = useRouter();
-  const { data: stats, isLoading } = useAdminStats();
+  const { data: stats } = useAdminStats();
 
   const keyMetrics = useMemo(() => {
     return [
@@ -62,7 +61,17 @@ export default function ReportsDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <WelcomeHeader />
+      {/* Page-level heading – exactly one h1 on this page */}
+      <header className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Reports</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Overview of key metrics, charts, and quick report links.
+            </p>
+          </div>
+        </div>
+      </header>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {keyMetrics.map((metric) => (
@@ -74,7 +83,15 @@ export default function ReportsDashboardPage() {
             color={metric.color}
             change={metric.change}
             changeLabel={metric.changeLabel}
-            onClick={() => router.push(metric.label === "Fee Collected" ? "/admin/fees/reports" : metric.label === "Attendance" ? "/admin/attendance" : "/admin/dashboard")}
+            onClick={() =>
+              router.push(
+                metric.label === "Fee Collected"
+                  ? "/admin/fees/reports"
+                  : metric.label === "Attendance"
+                  ? "/admin/attendance"
+                  : "/admin/dashboard"
+              )
+            }
           />
         ))}
       </section>
@@ -86,7 +103,10 @@ export default function ReportsDashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Finance</p>
               <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">Collection Trends</h2>
             </div>
-            <button onClick={() => router.push("/admin/fees/reports")} className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            <button
+              onClick={() => router.push("/admin/fees/reports")}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
               Open fee reports <ArrowRight size={16} />
             </button>
           </div>
@@ -99,7 +119,10 @@ export default function ReportsDashboardPage() {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-600 dark:text-cyan-400">Academics</p>
               <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">Attendance Overview</h2>
             </div>
-            <button onClick={() => router.push("/admin/attendance")} className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            <button
+              onClick={() => router.push("/admin/attendance")}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
               View attendance <ArrowRight size={16} />
             </button>
           </div>
