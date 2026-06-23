@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { batchCreateSchema, type BatchCreateInput } from "@/lib/validations/batch";
 import StepProgress from "./StepProgress";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import Step1BatchDetails from "./Step1BatchDetails";
 import Step2Schedule from "./Step2Schedule";
 import Step3Students from "./Step3Students";
@@ -31,21 +32,12 @@ const CreateBatchPage: React.FC<CreateBatchPageProps> = ({ standardId = "", retu
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState<SuccessResult | null>(null);
 
-  const { data: codeData } = useQuery({
-    queryKey: ["batch-code"],
-    queryFn: async () => {
-      const res = await fetch("/api/admin/batches/generate-code");
-      if (!res.ok) return { code: "" };
-      return res.json() as Promise<{ code: string }>;
-    },
-  });
-
   const form = useForm<BatchCreateInput>({
     resolver: zodResolver(batchCreateSchema) as never,
     defaultValues: {
       standardId,
       name: "",
-      code: codeData?.code ?? "",
+      code: "",
       subjectId: "",
       academicYear: `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`,
       description: "",
@@ -65,11 +57,35 @@ const CreateBatchPage: React.FC<CreateBatchPageProps> = ({ standardId = "", retu
     },
   });
 
+  const { clearDraft } = useFormDraft<BatchCreateInput>({
+    keyName: "admin-batches-create",
+    form,
+    step,
+    setStep,
+  });
+
+  const { data: codeData } = useQuery({
+    queryKey: ["batch-code"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/batches/generate-code");
+      if (!res.ok) return { code: "" };
+      return res.json() as Promise<{ code: string }>;
+    },
+  });
+
+  // Fetch code dynamic update removed from construct to prevent useForm defaults conflict
+
   React.useEffect(() => {
     if (standardId) {
       form.setValue("standardId", standardId, { shouldValidate: true });
     }
   }, [form, standardId]);
+
+  React.useEffect(() => {
+    if (codeData?.code && !form.getValues("code")) {
+      form.setValue("code", codeData.code, { shouldValidate: true });
+    }
+  }, [codeData, form]);
 
   const resetFormForAnotherBatch = () => {
     form.reset({
@@ -144,6 +160,7 @@ const CreateBatchPage: React.FC<CreateBatchPageProps> = ({ standardId = "", retu
         enrolledCount: payload.enrolledCount,
         sessionsCount: payload.sessionsCount,
       });
+      clearDraft();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to create batch");
     } finally {

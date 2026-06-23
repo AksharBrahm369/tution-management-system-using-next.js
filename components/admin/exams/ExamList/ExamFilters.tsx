@@ -45,7 +45,7 @@ export default function ExamFilters({ onSearch, onFilterChange, onRefresh, onRes
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="icon" onClick={onRefresh} className="h-12 w-12 rounded-xl border-slate-200 dark:border-slate-700">
+          <Button variant="outline" size="icon" onClick={onRefresh} className="h-12 w-12 rounded-xl border-slate-200 dark:border-slate-700" aria-label="Refresh exams" title="Refresh exams">
             <RefreshCcw className="h-4 w-4" />
           </Button>
           <Button variant="ghost" onClick={onReset} className="h-12 rounded-xl px-4 text-slate-600 dark:text-slate-300">

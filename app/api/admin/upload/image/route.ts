@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       if (process.env.NODE_ENV === "production") {
         return NextResponse.json(
           { error: "Cloudinary credentials are not configured. Configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in settings or environment variables." },
-          { status: 400 }
+          { status: 503 }
         );
       }
       try {

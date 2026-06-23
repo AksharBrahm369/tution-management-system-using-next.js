@@ -13,6 +13,19 @@ export async function PUT(
   try {
     const auth = await requireSuperAdmin(request);
     const { id } = await params;
+
+    // Verify subject ownership
+    const subjectExists = await prisma.subject.findFirst({
+      where: { id, instituteId: auth.instituteId },
+    });
+
+    if (!subjectExists) {
+      return NextResponse.json(
+        { error: "Subject not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
     const parsed = subjectUpdateSchema.safeParse(body);
 
@@ -29,6 +42,7 @@ export async function PUT(
         where: {
           code: parsed.data.code,
           id: { not: id },
+          instituteId: auth.instituteId,
         },
       });
       if (existing) {
@@ -71,9 +85,21 @@ export async function DELETE(
     const auth = await requireSuperAdmin(request);
     const { id } = await params;
 
+    // Verify subject ownership
+    const subjectExists = await prisma.subject.findFirst({
+      where: { id, instituteId: auth.instituteId },
+    });
+
+    if (!subjectExists) {
+      return NextResponse.json(
+        { error: "Subject not found" },
+        { status: 404 }
+      );
+    }
+
     // Check if any batches are using this subject
     const activeBatches = await prisma.batch.count({
-      where: { subjectId: id },
+      where: { subjectId: id, instituteId: auth.instituteId },
     });
 
     if (activeBatches > 0) {

@@ -65,7 +65,7 @@ export default function EnquiryListPage() {
     [debouncedSearch, filters.status, filters.source, filters.assignedTo, filters.from, filters.to, page, viewMode]
   );
 
-  const { data, isLoading, refetch } = useQuery<EnquiryListResponse>({
+  const { data, isLoading, isError, error, refetch } = useQuery<EnquiryListResponse>({
     queryKey: ["admin-enquiries", queryParams],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -185,7 +185,29 @@ export default function EnquiryListPage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">Loading enquiries...</div>
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 animate-pulse">Loading enquiries...</div>
+      ) : isError ? (
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center space-y-4 shadow-sm dark:border-rose-900/50 dark:bg-rose-950/20">
+          <p className="text-sm font-medium text-rose-800 dark:text-rose-200">
+            {error instanceof Error ? error.message : "Failed to load enquiries"}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-500 transition active:scale-95 shadow-md"
+          >
+            Retry
+          </button>
+        </div>
+      ) : enquiries.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-slate-300 bg-white/60 p-12 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/40 animate-fade-in">
+          <div className="mx-auto max-w-sm space-y-3">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">No enquiries found</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Try adjusting your filters or adding a new enquiry to get started.
+            </p>
+          </div>
+        </div>
       ) : viewMode === "kanban" ? (
         <KanbanView
           enquiries={enquiries}

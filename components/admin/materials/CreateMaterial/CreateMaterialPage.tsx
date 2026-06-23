@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, FileUp, Save } from "lucide-react";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 type BatchOption = {
   id: string;
@@ -19,6 +20,8 @@ type SubjectOption = {
 type Props = {
   batches: BatchOption[];
   subjects: SubjectOption[];
+  isCloudinaryConfigured?: boolean;
+  missingCloudinaryVars?: string[];
 };
 
 const initialForm = {
@@ -37,12 +40,20 @@ export default function CreateMaterialPage({
   subjects,
   standardId = "",
   returnHref,
+  isCloudinaryConfigured = true,
+  missingCloudinaryVars = [],
 }: Props & { standardId?: string; returnHref?: string }) {
   const router = useRouter();
   const [form, setForm] = useState({ ...initialForm, standardId });
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { clearDraft } = useFormDraft<any>({
+    keyName: "admin-materials-create",
+    values: form,
+    onRestore: (draft) => setForm(draft),
+  });
 
   const handleChange = (name: keyof typeof initialForm, value: string) => {
     setForm((current) => ({ ...current, [name]: value }));
@@ -77,6 +88,7 @@ export default function CreateMaterialPage({
         throw new Error(data.error || "Failed to save study material");
       }
 
+      clearDraft();
       router.push(returnHref ?? "/admin/materials");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save study material");
@@ -214,17 +226,35 @@ export default function CreateMaterialPage({
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Upload file</span>
             <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/30">
-              <div className="flex items-center gap-3">
-                <FileUp className="h-5 w-5 text-slate-400" />
-                <input
-                  type="file"
-                  onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                  className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-white hover:file:bg-indigo-500 dark:text-slate-300"
-                />
-              </div>
-              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                Selected file will be uploaded and linked to this resource. On live deployments, configure Cloudinary for file uploads.
-              </p>
+              {!isCloudinaryConfigured ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                    File uploads are disabled because Cloudinary credentials are not configured.
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Missing env variables: <code className="bg-rose-50 dark:bg-rose-950/30 px-1 py-0.5 rounded font-mono text-[10px]">{missingCloudinaryVars.join(", ")}</code>
+                  </p>
+                  <input
+                    type="file"
+                    disabled
+                    className="block w-full text-sm text-slate-400 cursor-not-allowed opacity-50"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <FileUp className="h-5 w-5 text-slate-400" />
+                    <input
+                      type="file"
+                      onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                      className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-white hover:file:bg-indigo-500 dark:text-slate-300"
+                    />
+                  </div>
+                  <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                    Selected file will be uploaded and linked to this resource.
+                  </p>
+                </>
+              )}
             </div>
           </label>
         </div>

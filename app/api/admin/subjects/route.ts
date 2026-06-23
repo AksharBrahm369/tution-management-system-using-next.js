@@ -8,22 +8,55 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireSuperAdmin(request);
+    const auth = await requireSuperAdmin(request);
     const { searchParams } = new URL(request.url);
     const active = searchParams.get("active");
+    const standardId = searchParams.get("standardId");
 
-    const subjects = await prisma.subject.findMany({
-      where: active ? { isActive: active === "true" } : {},
-      orderBy: { name: "asc" },
-      include: {
-        _count: {
-          select: {
-            batches: { where: { status: "ACTIVE" } },
-            teachers: true,
+    const isActive = active ? active === "true" : undefined;
+
+    let subjects = [];
+    if (standardId) {
+      subjects = await prisma.subject.findMany({
+        where: {
+          instituteId: auth.instituteId,
+          isActive,
+          OR: [
+            { batches: { some: { standardId } } },
+            { teacherStandardSubjects: { some: { standardId } } },
+            { exams: { some: { standardId } } },
+            { materials: { some: { standardId } } },
+          ],
+        },
+        orderBy: { name: "asc" },
+        include: {
+          _count: {
+            select: {
+              batches: { where: { status: "ACTIVE", standardId } },
+              teachers: true,
+            },
           },
         },
-      },
-    });
+      });
+    }
+
+    if (subjects.length === 0) {
+      subjects = await prisma.subject.findMany({
+        where: {
+          instituteId: auth.instituteId,
+          isActive,
+        },
+        orderBy: { name: "asc" },
+        include: {
+          _count: {
+            select: {
+              batches: { where: { status: "ACTIVE" } },
+              teachers: true,
+            },
+          },
+        },
+      });
+    }
 
     return NextResponse.json({ subjects });
   } catch (error) {
@@ -50,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     // Check for duplicate code
     const existing = await prisma.subject.findFirst({
-      where: { code },
+      where: { code, instituteId: auth.instituteId },
     });
 
     if (existing) {
@@ -62,6 +95,7 @@ export async function POST(request: NextRequest) {
 
     const subject = await prisma.subject.create({
       data: {
+        instituteId: auth.instituteId,
         name,
         code,
         description: description || null,

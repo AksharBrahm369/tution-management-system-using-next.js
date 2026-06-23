@@ -75,7 +75,7 @@ export default function ExamTableView({ exams, onView, onEnterMarks, onCreate, o
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
       <Table>
         <TableHeader className="bg-slate-50 dark:bg-slate-950/40">
           <TableRow>

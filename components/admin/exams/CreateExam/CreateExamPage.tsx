@@ -9,6 +9,7 @@ import Step3QuestionSetup from "./Step3QuestionSetup";
 import Step4Review from "./Step4Review";
 import { CreateExamForm } from "./CreateExamTypes";
 import { BatchOption, SubjectOption } from "../types";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 const initialForm: CreateExamForm = {
   title: "",
@@ -49,6 +50,14 @@ export default function CreateExamPage({
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<CreateExamForm>({ ...initialForm, standardId });
 
+  const { clearDraft } = useFormDraft<CreateExamForm>({
+    keyName: "admin-exams-create",
+    values: form,
+    onRestore: (draft) => setForm(draft),
+    step,
+    setStep,
+  });
+
   const studentCount = useMemo(() => {
     const batch = batches.find((b) => b.id === form.batchId);
     return batch?.enrollments?.length ?? 0;
@@ -76,6 +85,7 @@ export default function CreateExamPage({
         throw new Error(payload.error ?? "Failed to create exam");
       }
 
+      clearDraft();
       const payload = await response.json();
       router.push(`${basePath}/${payload.exam.id}`);
     } catch (err) {

@@ -9,6 +9,15 @@ export interface CloudinaryConfig {
   apiSecret: string;
 }
 
+export function getMissingCloudinaryVars(): string[] {
+  const missing: string[] = [];
+  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push("CLOUDINARY_CLOUD_NAME");
+  if (!process.env.CLOUDINARY_API_KEY) missing.push("CLOUDINARY_API_KEY");
+  if (!process.env.CLOUDINARY_API_SECRET) missing.push("CLOUDINARY_API_SECRET");
+  return missing;
+}
+
+
 export async function getCloudinaryConfig(): Promise<CloudinaryConfig | null> {
   const envCloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const envApiKey = process.env.CLOUDINARY_API_KEY;

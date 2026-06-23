@@ -70,7 +70,7 @@ export default function ActivityLogsPage() {
     return params.toString();
   }, [debouncedSearch, filters, page]);
 
-  const { data, isLoading, refetch } = useQuery<ActivityLogsListResponse>({
+  const { data, isLoading, isError, error, refetch } = useQuery<ActivityLogsListResponse>({
     queryKey: ["admin-activity-logs", queryString],
     queryFn: async () => {
       const res = await fetch(`/api/admin/logs?${queryString}`, { credentials: "same-origin" });
@@ -168,12 +168,27 @@ export default function ActivityLogsPage() {
         onExport={handleExport}
       />
 
-      <LogsTable
-        logs={data?.logs ?? []}
-        highlightIds={highlightIds}
-        onViewDetails={setSelectedLog}
-        isLoading={isLoading}
-      />
+      {isError ? (
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center space-y-4 shadow-sm dark:border-rose-900/50 dark:bg-rose-950/20 my-4">
+          <p className="text-sm font-medium text-rose-800 dark:text-rose-200">
+            {error instanceof Error ? error.message : "Failed to load activity logs"}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-500 transition active:scale-95 shadow-md"
+          >
+            Retry
+          </button>
+        </div>
+      ) : (
+        <LogsTable
+          logs={data?.logs ?? []}
+          highlightIds={highlightIds}
+          onViewDetails={setSelectedLog}
+          isLoading={isLoading}
+        />
+      )}
 
       {data && data.total > data.limit && (
         <div className="flex items-center justify-between">

@@ -6,16 +6,23 @@ import { requireSuperAdmin } from "@/lib/adminAuth";
 import { documentTypeSchema } from "@/lib/validations/student";
 import { logActivityFromRequest } from "@/lib/activityLogger";
 
+import { getCloudinaryConfig } from "@/lib/cloudinary";
+
 export const runtime = "nodejs";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+async function uploadBufferToCloudinary(
+  buffer: Buffer,
+  folder: string,
+  filename: string,
+  config: { cloudName: string; apiKey: string; apiSecret: string }
+): Promise<{ secure_url: string; public_id: string }> {
+  cloudinary.config({
+    cloud_name: config.cloudName,
+    api_key: config.apiKey,
+    api_secret: config.apiSecret,
+    secure: true,
+  });
 
-async function uploadBufferToCloudinary(buffer: Buffer, folder: string, filename: string): Promise<{ secure_url: string; public_id: string }> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder, public_id: filename, resource_type: "auto" },
@@ -50,8 +57,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ error: "Invalid document type" }, { status: 400 });
     }
 
+    const config = await getCloudinaryConfig();
+    if (!config) {
+      return NextResponse.json(
+        { error: "Cloudinary credentials are not configured. Configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables." },
+        { status: 503 }
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const uploaded = await uploadBufferToCloudinary(buffer, `tuitionpro/students/${id}`, `${Date.now()}-${file.name}`);
+    const uploaded = await uploadBufferToCloudinary(buffer, `tuitionpro/students/${id}`, `${Date.now()}-${file.name}`, config);
 
     const document = await prisma.studentDocument.create({
       data: {

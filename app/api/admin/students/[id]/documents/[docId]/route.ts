@@ -3,14 +3,9 @@ import { v2 as cloudinary } from "cloudinary";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/adminAuth";
 
-export const runtime = "nodejs";
+import { getCloudinaryConfig } from "@/lib/cloudinary";
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
+export const runtime = "nodejs";
 
 function extractPublicId(fileUrl: string): string | null {
   const url = new URL(fileUrl);
@@ -34,7 +29,16 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
 
     const publicId = extractPublicId(document.fileUrl);
     if (publicId) {
-      await cloudinary.uploader.destroy(publicId, { resource_type: "auto" });
+      const config = await getCloudinaryConfig();
+      if (config) {
+        cloudinary.config({
+          cloud_name: config.cloudName,
+          api_key: config.apiKey,
+          api_secret: config.apiSecret,
+          secure: true,
+        });
+        await cloudinary.uploader.destroy(publicId, { resource_type: "auto" });
+      }
     }
 
     await prisma.studentDocument.delete({ where: { id: docId } });

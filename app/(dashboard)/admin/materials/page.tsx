@@ -1,13 +1,19 @@
 import MaterialsDashboardPage from "@/components/admin/materials/MaterialsDashboardPage";
-import { getCloudinaryConfig } from "@/lib/cloudinary";
+import { getCloudinaryConfig, getMissingCloudinaryVars } from "@/lib/cloudinary";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminMaterialsPage() {
   const cloudinaryConfig = await getCloudinaryConfig();
-  const hasCloudinary = Boolean(cloudinaryConfig);
+  const missingCloudinaryVars = getMissingCloudinaryVars();
+  const hasCloudinary = Boolean(cloudinaryConfig) && missingCloudinaryVars.length === 0;
   const hasGemini = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== "your-gemini-api-key-here");
-  const isDev = process.env.NODE_ENV === "development";
 
-  return <MaterialsDashboardPage isCloudinaryConfigured={isDev ? true : hasCloudinary} isGeminiConfigured={hasGemini} />;
+  return (
+    <MaterialsDashboardPage 
+      isCloudinaryConfigured={hasCloudinary} 
+      missingCloudinaryVars={missingCloudinaryVars}
+      isGeminiConfigured={hasGemini} 
+    />
+  );
 }

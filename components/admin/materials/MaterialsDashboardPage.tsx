@@ -34,6 +34,7 @@ type MaterialItem = {
   description?: string | null;
   fileName?: string | null;
   fileSize?: string | null;
+  standardName?: string | null;
 };
 
 interface Props {
@@ -42,6 +43,7 @@ interface Props {
   basePath?: string;
   isCloudinaryConfigured?: boolean;
   isGeminiConfigured?: boolean;
+  missingCloudinaryVars?: string[];
 }
 
 export default function MaterialsDashboardPage({ 
@@ -50,12 +52,15 @@ export default function MaterialsDashboardPage({
   basePath = "/admin/materials",
   isCloudinaryConfigured = true,
   isGeminiConfigured = true,
+  missingCloudinaryVars = [],
 }: Props) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [standardFilter, setStandardFilter] = useState("");
   const [materials, setMaterials] = useState<MaterialItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [loadingStandards, setLoadingStandards] = useState(!standardId);
 
   // Subject and Batch lists for dynamic dropdowns
   const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
@@ -79,7 +84,9 @@ export default function MaterialsDashboardPage({
   const [generationError, setGenerationError] = useState("");
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialItem | null>(null);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
-  const createHref = standardId ? `${basePath}/create` : `/admin/materials/create${standardId ? `?standardId=${standardId}` : ""}`;
+  const [isStandardsDropdownOpen, setIsStandardsDropdownOpen] = useState(false);
+  const targetStdId = standardId ?? standardFilter;
+  const createHref = standardId ? `${basePath}/create` : `/admin/materials/create${targetStdId ? `?standardId=${targetStdId}` : ""}`;
 
   const filteredMaterials = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -96,8 +103,23 @@ export default function MaterialsDashboardPage({
     loadFiltersData();
   }, [standardId, standardFilter]);
 
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (activeDropdownId && !target.closest(".materials-dropdown-container")) {
+        setActiveDropdownId(null);
+      }
+      if (isStandardsDropdownOpen && !target.closest(".standards-dropdown-container")) {
+        setIsStandardsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [activeDropdownId, isStandardsDropdownOpen]);
+
   async function loadMaterials() {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (standardId || standardFilter) params.set("standardId", standardId ?? standardFilter);
@@ -113,19 +135,21 @@ export default function MaterialsDashboardPage({
 
       const payload = await response.json();
       setMaterials(payload.materials ?? []);
-    } catch (error) {
-      console.error(error);
-      alert(error instanceof Error ? error.message : "Failed to load study materials");
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to load study materials");
     } finally {
       setLoading(false);
     }
   }
 
   async function loadFiltersData() {
+    if (!standardId) setLoadingStandards(true);
     try {
+      const targetStdId = standardId ?? standardFilter;
       const [subRes, batRes, stdRes] = await Promise.all([
-        fetch("/api/admin/subjects"),
-        fetch(`/api/admin/batches?limit=100${standardId ? `&standardId=${standardId}` : ""}`),
+        fetch(`/api/admin/subjects${targetStdId ? `?standardId=${targetStdId}` : ""}`),
+        fetch(`/api/admin/batches?limit=100${targetStdId ? `&standardId=${targetStdId}` : ""}`),
         !standardId ? fetch("/api/admin/standards") : Promise.resolve(null),
       ]);
       if (subRes.ok) {
@@ -133,6 +157,8 @@ export default function MaterialsDashboardPage({
         setSubjects(subData.subjects ?? []);
         if (subData.subjects?.length > 0) {
           setAiSubjectId(subData.subjects[0].id);
+        } else {
+          setAiSubjectId("");
         }
       }
       if (batRes.ok) {
@@ -140,6 +166,8 @@ export default function MaterialsDashboardPage({
         setBatches(batData.batches ?? []);
         if (batData.batches?.length > 0) {
           setAiBatchId(batData.batches[0].id);
+        } else {
+          setAiBatchId("");
         }
       }
       if (stdRes && stdRes.ok) {
@@ -148,6 +176,8 @@ export default function MaterialsDashboardPage({
       }
     } catch (err) {
       console.error("Failed to load filter dependencies:", err);
+    } finally {
+      if (!standardId) setLoadingStandards(false);
     }
   }
 
@@ -174,6 +204,7 @@ export default function MaterialsDashboardPage({
           description: `AI generated study material for ${aiTopic.trim()}`,
           subjectId: aiSubjectId || null,
           batchId: aiBatchId || null,
+          standardId: standardId ?? standardFilter ?? null,
           resourceType: aiType,
           accessLevel: aiAccess,
           topic: aiTopic.trim(),
@@ -253,7 +284,14 @@ export default function MaterialsDashboardPage({
           </div>
           <ul className="mt-2 ml-7 list-disc space-y-1">
             {!isCloudinaryConfigured && (
-              <li><strong>Cloudinary</strong> credentials are not set. File uploads are disabled or restricted to local storage. Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your environment.</li>
+              <li>
+                <strong>Cloudinary</strong> credentials are not set. File uploads are disabled. Missing environment variables:{" "}
+                <code className="bg-amber-100 dark:bg-amber-900/40 px-1 py-0.5 rounded font-mono text-xs">
+                  {missingCloudinaryVars.length > 0
+                    ? missingCloudinaryVars.join(", ")
+                    : "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET"}
+                </code>
+              </li>
             )}
             {!isGeminiConfigured && (
               <li><strong>Gemini AI</strong> API key is not set. The AI generator will fall back to basic local compilation. Add GEMINI_API_KEY to enable smart generation.</li>
@@ -274,17 +312,57 @@ export default function MaterialsDashboardPage({
 
           <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             {!standardId && (
-              <select
-                aria-label="Filter materials by standard"
-                value={standardFilter}
-                onChange={(event) => setStandardFilter(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:w-auto"
-              >
-                <option value="">All Standards</option>
-                {standards.map((standard) => (
-                  <option key={standard.id} value={standard.id}>{standard.name}</option>
-                ))}
-              </select>
+              <div className="relative inline-block text-left sm:w-auto w-full standards-dropdown-container">
+                <button
+                  type="button"
+                  aria-label="Filter materials by standard"
+                  onClick={() => setIsStandardsDropdownOpen(!isStandardsDropdownOpen)}
+                  className="w-full sm:w-[160px] inline-flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white transition hover:bg-slate-50 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                >
+                  <span className="truncate">
+                    {standards.find(s => s.id === standardFilter)?.name || "All Standards"}
+                  </span>
+                  <span className="ml-2 text-[9px] opacity-65">{isStandardsDropdownOpen ? "▲" : "▼"}</span>
+                </button>
+
+                {isStandardsDropdownOpen && (
+                  <div className="absolute right-0 sm:left-0 top-full mt-2 w-full sm:w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900 space-y-1 z-50 animate-slide-down">
+                    {loadingStandards ? (
+                      <div className="p-2 space-y-2">
+                        <div className="h-7 w-full animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+                        <div className="h-7 w-full animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+                        <div className="h-7 w-full animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+                      </div>
+                    ) : (
+                      <div className="max-h-[220px] overflow-y-auto pr-0.5 space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStandardFilter("");
+                            setIsStandardsDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3.5 py-2 text-sm rounded-xl transition ${standardFilter === "" ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 font-semibold" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"}`}
+                        >
+                          All Standards
+                        </button>
+                        {standards.map((standard) => (
+                          <button
+                            key={standard.id}
+                            type="button"
+                            onClick={() => {
+                              setStandardFilter(standard.id);
+                              setIsStandardsDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3.5 py-2 text-sm rounded-xl transition ${standardFilter === standard.id ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 font-semibold" : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"}`}
+                          >
+                            {standard.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             <button
               onClick={() => setIsAiModalOpen(true)}
@@ -299,10 +377,21 @@ export default function MaterialsDashboardPage({
             >
               Create resource <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href={createHref} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 sm:w-auto">
-              <Upload className="h-4 w-4" />
-              Upload file
-            </Link>
+            {!isCloudinaryConfigured ? (
+              <button
+                disabled
+                title={`File uploads are disabled. Missing env vars: ${missingCloudinaryVars.join(", ")}`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-200 dark:bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-400 dark:text-slate-500 cursor-not-allowed sm:w-auto border border-transparent"
+              >
+                <Upload className="h-4 w-4" />
+                Upload file (Disabled)
+              </button>
+            ) : (
+              <Link href={createHref} className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 sm:w-auto">
+                <Upload className="h-4 w-4" />
+                Upload file
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -343,16 +432,39 @@ export default function MaterialsDashboardPage({
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
             {loading && (
-              <div className="p-6 text-sm text-slate-500 dark:text-slate-400">Loading study materials...</div>
+              <div className="p-6 space-y-4 animate-pulse">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between gap-4">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/3"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4"></div>
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/6"></div>
+                  </div>
+                ))}
+              </div>
             )}
 
-            {!loading && filteredMaterials.length > 0 && (
+            {!loading && error && (
+              <div className="p-8 text-center space-y-4">
+                <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{error}</p>
+                <button
+                  type="button"
+                  onClick={loadMaterials}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white transition active:scale-95 shadow-md"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && filteredMaterials.length > 0 && (
               <div className="space-y-3 p-4 md:hidden">
                 {filteredMaterials.map((item) => (
                   <article key={item.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
                     <div className="min-w-0">
                       <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">{item.title}</h3>
-                      <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{item.subject}</p>
+                      <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+                        {item.subject}{item.standardName ? ` - ${item.standardName}` : ""}
+                      </p>
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-3 text-xs">
                       <div>
@@ -399,7 +511,7 @@ export default function MaterialsDashboardPage({
               </div>
             )}
 
-            <div className="hidden overflow-x-auto md:block">
+            <div className={`hidden overflow-x-auto md:block ${activeDropdownId ? "pb-44" : ""}`}>
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase tracking-[0.14em] text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                   <tr>
@@ -411,11 +523,13 @@ export default function MaterialsDashboardPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {!loading && filteredMaterials.map((item) => (
+                  {!loading && !error && filteredMaterials.map((item) => (
                     <tr key={item.id} className="bg-white dark:bg-slate-900/70">
                       <td className="px-4 py-4">
                         <div className="font-medium text-slate-900 dark:text-white">{item.title}</div>
-                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{item.subject}</div>
+                        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          {item.subject}{item.standardName ? ` - ${item.standardName}` : ""}
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-slate-600 dark:text-slate-300">{item.batch}</td>
                       <td className="px-4 py-4 text-slate-600 dark:text-slate-300">{item.type}</td>
@@ -424,16 +538,16 @@ export default function MaterialsDashboardPage({
                           {String(item.access).replaceAll("_", " ")}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-slate-500 dark:text-slate-400 flex items-start gap-3 relative min-w-[280px]">
+                      <td className="px-4 py-4 text-slate-500 dark:text-slate-400 flex items-center gap-3 relative min-w-[280px]">
                         {(() => {
                           if (!item.resourceUrl) {
-                            return <span className="text-xs sm:text-sm pt-1.5 inline-block">{item.updatedAt}</span>;
+                            return <span className="text-xs sm:text-sm inline-block">{item.updatedAt}</span>;
                           }
 
                           if (!item.resourceUrl.startsWith("http")) {
                             // Local file upload
                             return (
-                              <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm pt-1.5 animate-fade-in" target="_blank" rel="noreferrer">
+                              <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm animate-fade-in" target="_blank" rel="noreferrer">
                                 Open File <ExternalLink className="h-3 w-3" />
                               </a>
                             );
@@ -448,11 +562,11 @@ export default function MaterialsDashboardPage({
                             links.push({ name: match[1], url: match[2] });
                           }
 
-                          // If there are multiple links, render a beautiful inline expanding list!
+                          // If there are multiple links, render a beautiful absolute dropdown popover!
                           if (links.length > 0) {
                             const isOpen = activeDropdownId === item.id;
                             return (
-                              <div className="flex flex-col gap-2 animate-fade-in">
+                              <div className="relative inline-block materials-dropdown-container animate-fade-in">
                                 <button
                                   type="button"
                                   aria-label={`${isOpen ? "Hide" : "Show"} website options for ${item.title}`}
@@ -467,7 +581,7 @@ export default function MaterialsDashboardPage({
                                 </button>
 
                                 {isOpen && (
-                                  <div className="w-72 rounded-2xl border border-slate-200 bg-slate-50 p-2.5 shadow-inner dark:border-slate-800 dark:bg-slate-950/40 space-y-1.5 animate-slide-down">
+                                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 space-y-1.5 animate-slide-down z-50">
                                     <div className="px-2 py-1 border-b border-slate-200/50 dark:border-slate-800/50">
                                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Select Platform Options</p>
                                     </div>
@@ -478,7 +592,7 @@ export default function MaterialsDashboardPage({
                                           href={link.url}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-indigo-50 hover:text-indigo-600 transition dark:text-slate-350 dark:bg-slate-900/60 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-450 group border border-slate-100 dark:border-slate-800/40 shadow-sm"
+                                          className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition dark:text-slate-300 dark:bg-slate-950/40 dark:hover:bg-indigo-950/30 dark:hover:text-indigo-400 group border border-slate-100 dark:border-slate-800/40 shadow-sm"
                                         >
                                           <span className="truncate max-w-[190px]">{link.name}</span>
                                           <ExternalLink className="h-3 w-3 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -493,7 +607,7 @@ export default function MaterialsDashboardPage({
 
                           // Single website link fallback
                           return (
-                            <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm pt-1.5 animate-fade-in" target="_blank" rel="noreferrer">
+                            <a href={item.resourceUrl} className="text-cyan-600 hover:underline dark:text-cyan-400 inline-flex items-center gap-1 font-medium text-xs sm:text-sm animate-fade-in" target="_blank" rel="noreferrer">
                               Open Website <ExternalLink className="h-3 w-3" />
                             </a>
                           );
@@ -516,7 +630,7 @@ export default function MaterialsDashboardPage({
               </table>
             </div>
 
-            {!loading && filteredMaterials.length === 0 && (
+            {!loading && !error && filteredMaterials.length === 0 && (
               <div className="border-t border-slate-200 p-8 text-center dark:border-slate-800">
                 <FileText className="mx-auto h-10 w-10 text-slate-400" />
                 <div className="mt-3 text-sm font-medium text-slate-900 dark:text-white">No materials found</div>
@@ -584,6 +698,7 @@ export default function MaterialsDashboardPage({
                         id="ai-subject"
                         value={aiSubjectId} 
                         onChange={(e) => setAiSubjectId(e.target.value)}
+                        aria-label="Subject"
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
                         required
                       >
@@ -598,6 +713,7 @@ export default function MaterialsDashboardPage({
                         id="ai-batch"
                         value={aiBatchId} 
                         onChange={(e) => setAiBatchId(e.target.value)}
+                        aria-label="Target Batch"
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
                       >
                         <option value="">All Batches</option>
@@ -614,6 +730,7 @@ export default function MaterialsDashboardPage({
                         id="ai-type"
                         value={aiType} 
                         onChange={(e) => setAiType(e.target.value)}
+                        aria-label="Resource Category"
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
                         required
                       >
@@ -630,6 +747,7 @@ export default function MaterialsDashboardPage({
                         id="ai-access"
                         value={aiAccess} 
                         onChange={(e) => setAiAccess(e.target.value)}
+                        aria-label="Access Level"
                         className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
                         required
                       >
@@ -648,6 +766,7 @@ export default function MaterialsDashboardPage({
                       type="text"
                       value={aiTitle}
                       onChange={(e) => setAiTitle(e.target.value)}
+                      aria-label="Material / Resource Title"
                       placeholder="e.g. Calculus: Introduction to Limits and Integrals"
                       className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200"
                       required
@@ -661,6 +780,7 @@ export default function MaterialsDashboardPage({
                       id="ai-topic"
                       value={aiTopic}
                       onChange={(e) => setAiTopic(e.target.value)}
+                      aria-label="Prompt / Topic Description"
                       placeholder="Describe what key concepts, formulas, and proofs you want the AI to incorporate. E.g.: Trigonometric identity proofs, solved problems, exam cheat sheets, and 5 multiple choice quiz questions."
                       className="w-full h-24 p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none dark:border-slate-700 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
                       required
@@ -770,7 +890,9 @@ export default function MaterialsDashboardPage({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{selectedMaterial.title}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{selectedMaterial.subject} | {selectedMaterial.batch}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {selectedMaterial.subject}{selectedMaterial.standardName ? ` - ${selectedMaterial.standardName}` : ""} | {selectedMaterial.batch}
+                  </p>
                 </div>
               </div>
               <button 

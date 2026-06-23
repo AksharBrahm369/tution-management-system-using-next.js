@@ -13,7 +13,6 @@ function isReadOnlyFilesystemError(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "EROFS";
 }
 
-
 function normalizeAccessLevel(value: string | null) {
   switch (value) {
     case "BATCH_ONLY":
@@ -47,10 +46,12 @@ export async function GET(request: NextRequest) {
         sm."createdAt",
         sm."updatedAt",
         COALESCE(s.name, 'General') AS "subject",
-        COALESCE(b.name, 'All Batches') AS "batch"
+        COALESCE(b.name, 'All Batches') AS "batch",
+        std.name AS "standardName"
       FROM study_materials sm
       LEFT JOIN subjects s ON s.id = sm."subjectId"
       LEFT JOIN batches b ON b.id = sm."batchId"
+      LEFT JOIN standards std ON std.id = COALESCE(sm."standardId", b."standardId")
       WHERE sm."instituteId" = ${auth.instituteId}
         AND ${standardId ? Prisma.sql`(sm."standardId" = ${standardId} OR b."standardId" = ${standardId})` : Prisma.sql`TRUE`}
       ORDER BY sm."createdAt" DESC
@@ -63,6 +64,7 @@ export async function GET(request: NextRequest) {
         batch: material.batch,
         type: material.resourceType,
         access: material.accessLevel,
+        standardName: material.standardName,
       })),
     });
   } catch (error) {
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
         if (process.env.NODE_ENV === "production") {
           return NextResponse.json(
             { error: "Cloudinary credentials are not configured. Add a Resource URL or configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables." },
-            { status: 400 }
+            { status: 503 }
           );
         }
         try {
@@ -200,10 +202,12 @@ export async function POST(request: NextRequest) {
         sm."createdAt",
         sm."updatedAt",
         COALESCE(s.name, 'General') AS "subject",
-        COALESCE(b.name, 'All Batches') AS "batch"
+        COALESCE(b.name, 'All Batches') AS "batch",
+        std.name AS "standardName"
       FROM study_materials sm
       LEFT JOIN subjects s ON s.id = sm."subjectId"
       LEFT JOIN batches b ON b.id = sm."batchId"
+      LEFT JOIN standards std ON std.id = COALESCE(sm."standardId", b."standardId")
       WHERE sm.id = ${id}
       LIMIT 1
     `);
@@ -216,6 +220,7 @@ export async function POST(request: NextRequest) {
         batch: material?.batch ?? "All Batches",
         type: material?.resourceType,
         access: material?.accessLevel,
+        standardName: material?.standardName,
       },
     }, { status: 201 });
   } catch (error) {

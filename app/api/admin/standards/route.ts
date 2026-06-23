@@ -9,7 +9,15 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   try {
     await requireSuperAdmin(request);
+    const { searchParams } = new URL(request.url);
+    const includeStats = searchParams.get("stats") === "true";
+
     const standards = await getActiveStandards();
+
+    if (!includeStats) {
+      return NextResponse.json({ standards });
+    }
+
     const now = new Date();
 
     const standardsWithStats = await Promise.all(

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 type FeeRecord = {
   id: string;
@@ -79,6 +80,34 @@ export default function CollectFeePage() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const values = useMemo(() => ({
+    selectedStudentId,
+    studentSearch,
+    amount,
+    paymentMode,
+    collectedBy,
+    notes,
+    recordStatus,
+    mode,
+    selectedIds
+  }), [selectedStudentId, studentSearch, amount, paymentMode, collectedBy, notes, recordStatus, mode, selectedIds]);
+
+  const { clearDraft } = useFormDraft<any>({
+    keyName: "admin-fees-collect",
+    values,
+    onRestore: (draft) => {
+      if (draft.selectedStudentId !== undefined) setSelectedStudentId(draft.selectedStudentId);
+      if (draft.studentSearch !== undefined) setStudentSearch(draft.studentSearch);
+      if (draft.amount !== undefined) setAmount(draft.amount);
+      if (draft.paymentMode !== undefined) setPaymentMode(draft.paymentMode);
+      if (draft.collectedBy !== undefined) setCollectedBy(draft.collectedBy);
+      if (draft.notes !== undefined) setNotes(draft.notes);
+      if (draft.recordStatus !== undefined) setRecordStatus(draft.recordStatus);
+      if (draft.mode !== undefined) setMode(draft.mode);
+      if (draft.selectedIds !== undefined) setSelectedIds(draft.selectedIds);
+    }
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -277,6 +306,8 @@ export default function CollectFeePage() {
       }
       if (!res.ok) throw new Error(payload.error || "Failed to collect fee");
 
+      clearDraft();
+
       setSuccess(recordStatus === "PENDING" && !isPendingMode ? `Pending due created for ${money(Number(amount))}.` : `Collected ${money(Number(payload.collected ?? amount))} successfully.`);
       setSelectedIds([]);
       setNotes("");
@@ -322,8 +353,16 @@ export default function CollectFeePage() {
       </section>
 
       {(error || success) && (
-        <div className={`rounded-xl px-4 py-3 text-sm ring-1 ${error ? "bg-rose-500/10 text-rose-100 ring-rose-400/20" : "bg-emerald-500/10 text-emerald-100 ring-emerald-400/20"}`}>
-          {error || success}
+        <div className={`rounded-xl px-4 py-3 text-sm ring-1 flex items-center justify-between gap-3 ${error ? "bg-rose-500/10 text-rose-100 ring-rose-400/20" : "bg-emerald-500/10 text-emerald-100 ring-emerald-400/20"}`}>
+          <span>{error || success}</span>
+          {error && (
+            <button
+              onClick={load}
+              className="shrink-0 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 px-2.5 py-1 text-xs font-semibold text-rose-100 transition active:scale-95"
+            >
+              Retry
+            </button>
+          )}
         </div>
       )}
 

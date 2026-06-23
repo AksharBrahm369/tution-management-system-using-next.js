@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { teacherSchema } from '@/lib/validations/teacher';
+import { useFormDraft } from '@/hooks/useFormDraft';
 
 type TeacherFormValues = z.input<typeof teacherSchema>;
 
@@ -43,6 +44,11 @@ export default function AddTeacherPage({
       subjectIds: [],
       standardId,
     }
+  });
+
+  const { clearDraft } = useFormDraft<TeacherFormValues>({
+    keyName: "admin-teachers-create",
+    form,
   });
 
   useEffect(() => {
@@ -95,6 +101,7 @@ export default function AddTeacherPage({
         return;
       }
 
+      clearDraft();
       router.push(returnHref);
       router.refresh();
     } catch (error) {

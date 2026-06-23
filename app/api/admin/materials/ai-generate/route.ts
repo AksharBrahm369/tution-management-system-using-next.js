@@ -441,9 +441,18 @@ export async function POST(request: NextRequest) {
     const description = String(body.description ?? "").trim() || null;
     const subjectId = String(body.subjectId ?? "").trim() || null;
     const batchId = String(body.batchId ?? "").trim() || null;
+    let standardId = String(body.standardId ?? "").trim() || null;
     const resourceType = String(body.resourceType ?? "").trim();
     const accessLevel = String(body.accessLevel ?? "PUBLIC");
     const topic = String(body.topic ?? "").trim();
+
+    if (!standardId && batchId) {
+      const batch = await prisma.batch.findUnique({
+        where: { id: batchId },
+        select: { standardId: true },
+      });
+      standardId = batch?.standardId ?? null;
+    }
 
     if (!title || !resourceType || !topic) {
       return NextResponse.json({ error: "Title, Resource Type, and Topic Description are required." }, { status: 400 });
@@ -688,6 +697,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
         "instituteId",
         title,
         description,
+        "standardId",
         "subjectId",
         "batchId",
         "resourceType",
@@ -703,6 +713,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
         ${auth.instituteId},
         ${title},
         ${markdownSummary || description || `AI generated study website for ${topic}`},
+        ${standardId},
         ${subjectId},
         ${batchId},
         ${resourceType},
@@ -722,6 +733,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
         sm.id,
         sm.title,
         sm.description,
+        sm."standardId",
         sm."subjectId",
         sm."batchId",
         sm."resourceType",
@@ -733,10 +745,12 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
         sm."createdAt",
         sm."updatedAt",
         COALESCE(s.name, 'General') AS "subject",
-        COALESCE(b.name, 'All Batches') AS "batch"
+        COALESCE(b.name, 'All Batches') AS "batch",
+        std.name AS "standardName"
       FROM study_materials sm
       LEFT JOIN subjects s ON s.id = sm."subjectId"
       LEFT JOIN batches b ON b.id = sm."batchId"
+      LEFT JOIN standards std ON std.id = COALESCE(sm."standardId", b."standardId")
       WHERE sm.id = ${id}
       LIMIT 1
     `);
@@ -751,6 +765,7 @@ Do NOT wrap the JSON inside markdown blocks like \`\`\`json. Output ONLY the raw
         batch: material?.batch ?? "All Batches",
         type: material?.resourceType,
         access: material?.accessLevel,
+        standardName: material?.standardName,
       },
     }, { status: 201 });
 

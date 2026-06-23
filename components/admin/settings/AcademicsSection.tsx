@@ -111,7 +111,7 @@ export default function AcademicsSection() {
   const { data: standardsData, isLoading: loadingStandards } = useQuery<{ standards: Standard[] }>({
     queryKey: ["admin-standards-options"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/standards");
+      const res = await fetch("/api/admin/standards?stats=true");
       if (!res.ok) throw new Error("Failed to fetch standards");
       return res.json();
     }
@@ -367,78 +367,79 @@ export default function AcademicsSection() {
                   <div>
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
                           {sub.name}
                         </h4>
                         <span className="mt-1 inline-block rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                           {sub.code}
                         </span>
                       </div>
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          sub.isActive
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                        }`}
-                      >
-                        {sub.isActive ? "Active" : "Inactive"}
-                      </span>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            sub.isActive
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          {sub.isActive ? "Active" : "Inactive"}
+                        </span>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950/40 rounded-lg p-0.5 border border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenSubjectModal(sub)}
+                            className="rounded-md p-1 text-slate-400 hover:bg-white hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white transition shadow-xs"
+                            title="Edit Subject"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (sub._count.batches > 0 || sub._count.teachers > 0) {
+                                alert(
+                                  `Cannot delete subject "${sub.name}". It is currently assigned to ${sub._count.batches} batch(es) and ${sub._count.teachers} teacher(s).`
+                                );
+                                return;
+                              }
+                              if (confirm(`Are you sure you want to delete the subject "${sub.name}"?`)) {
+                                deleteSubjectMutation.mutate(sub.id);
+                              }
+                            }}
+                            className={`rounded-md p-1 transition ${
+                              sub._count.batches > 0 || sub._count.teachers > 0
+                                ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                                : "text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/20 dark:hover:text-rose-450"
+                            }`}
+                            title={
+                              sub._count.batches > 0 || sub._count.teachers > 0
+                                ? "Cannot delete subject in use"
+                                : "Delete Subject"
+                            }
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[2rem]">
+                    <p className="mt-3.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2 min-h-[2rem]">
                       {sub.description || "No description provided."}
                     </p>
                   </div>
 
                   {/* Footer & Stats */}
-                  <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800 flex items-center justify-between">
-                    <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1" title="Active Batches using subject">
-                        <Calendar size={14} className="text-slate-400" />
-                        <strong>{sub._count.batches}</strong> Batches
-                      </span>
-                      <span className="flex items-center gap-1" title="Teachers assigned to subject">
-                        <Users size={14} className="text-slate-400" />
-                        <strong>{sub._count.teachers}</strong> Teachers
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenSubjectModal(sub)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white transition"
-                        title="Edit Subject"
-                      >
-                        <Edit3 size={15} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (sub._count.batches > 0 || sub._count.teachers > 0) {
-                            alert(
-                              `Cannot delete subject "${sub.name}". It is currently assigned to ${sub._count.batches} batch(es) and ${sub._count.teachers} teacher(s).`
-                            );
-                            return;
-                          }
-                          if (confirm(`Are you sure you want to delete the subject "${sub.name}"?`)) {
-                            deleteSubjectMutation.mutate(sub.id);
-                          }
-                        }}
-                        className={`rounded-lg p-1.5 transition ${
-                          sub._count.batches > 0 || sub._count.teachers > 0
-                            ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
-                            : "text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400"
-                        }`}
-                        title={
-                          sub._count.batches > 0 || sub._count.teachers > 0
-                            ? "Cannot delete subject in use"
-                            : "Delete Subject"
-                        }
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                  <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1.5" title="Active Batches using subject">
+                      <Calendar size={14} className="text-slate-400" />
+                      <strong>{sub._count.batches}</strong> Batches
+                    </span>
+                    <span className="flex items-center gap-1.5" title="Teachers assigned to subject">
+                      <Users size={14} className="text-slate-400" />
+                      <strong>{sub._count.teachers}</strong> Teachers
+                    </span>
                   </div>
                 </div>
               ))}
@@ -559,17 +560,57 @@ export default function AcademicsSection() {
                   <div>
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition truncate">
                           {rm.name}
                         </h4>
                         <span className="mt-1 inline-block rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                           {rm.code}
                         </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
-                        Cap: {rm.capacity}
-                      </span>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">
+                          Cap: {rm.capacity}
+                        </span>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-950/40 rounded-lg p-0.5 border border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenRoomModal(rm)}
+                            className="rounded-md p-1 text-slate-400 hover:bg-white hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white transition shadow-xs"
+                            title="Edit Room"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const activeCount = rm._count?.batches ?? 0;
+                              if (activeCount > 0) {
+                                alert(
+                                  `Cannot delete room "${rm.name}". It is currently assigned to ${activeCount} active batch(es).`
+                                );
+                                return;
+                              }
+                              if (confirm(`Are you sure you want to delete the classroom "${rm.name}"?`)) {
+                                deleteRoomMutation.mutate(rm.id);
+                              }
+                            }}
+                            className={`rounded-md p-1 transition ${
+                              (rm._count?.batches ?? 0) > 0
+                                ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
+                                : "text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-red-950/20 dark:hover:text-red-400"
+                            }`}
+                            title={
+                              (rm._count?.batches ?? 0) > 0
+                                ? "Cannot delete room in use"
+                                : "Delete Room"
+                            }
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Metadata */}
@@ -604,50 +645,11 @@ export default function AcademicsSection() {
                   </div>
 
                   {/* Footer & Stats */}
-                  <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800 flex items-center justify-between">
-                    <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1" title="Active Batches using room">
-                        <Calendar size={14} className="text-slate-400" />
-                        <strong>{rm._count?.batches ?? 0}</strong> Active Batches
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleOpenRoomModal(rm)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white transition"
-                        title="Edit Room"
-                      >
-                        <Edit3 size={15} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          const activeCount = rm._count?.batches ?? 0;
-                          if (activeCount > 0) {
-                            alert(
-                              `Cannot delete room "${rm.name}". It is currently assigned to ${activeCount} active batch(es).`
-                            );
-                            return;
-                          }
-                          if (confirm(`Are you sure you want to delete the classroom "${rm.name}"?`)) {
-                            deleteRoomMutation.mutate(rm.id);
-                          }
-                        }}
-                        className={`rounded-lg p-1.5 transition ${
-                          (rm._count?.batches ?? 0) > 0
-                            ? "text-slate-200 dark:text-slate-800 cursor-not-allowed"
-                            : "text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20 dark:hover:text-red-400"
-                        }`}
-                        title={
-                          (rm._count?.batches ?? 0) > 0
-                            ? "Cannot delete room in use"
-                            : "Delete Room"
-                        }
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                  <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1.5" title="Active Batches using room">
+                      <Calendar size={14} className="text-slate-400" />
+                      <strong>{rm._count?.batches ?? 0}</strong> Active Batches
+                    </span>
                   </div>
                 </div>
               ))}

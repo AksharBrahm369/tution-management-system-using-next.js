@@ -94,15 +94,15 @@ function loginPathFor(pathname: string) {
   return "/auth/login";
 }
 
-function withSecurityHeaders(response: NextResponse, pathname: string): NextResponse {
+function withSecurityHeaders(request: NextRequest, response: NextResponse, pathname: string): NextResponse {
   const isDev = process.env.NODE_ENV === "development";
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
-    "connect-src 'self'",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -120,7 +120,7 @@ function withSecurityHeaders(response: NextResponse, pathname: string): NextResp
     );
   }
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     response.headers.set(
       "Cache-Control",
       "private, no-cache, no-store, max-age=0, must-revalidate"
@@ -129,22 +129,57 @@ function withSecurityHeaders(response: NextResponse, pathname: string): NextResp
     response.headers.set("Expires", "0");
   }
 
+  // Enforce CORS origin constraints - restrict to approved origins, never wildcard in production
+  const origin = request.headers.get("origin");
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.BETTER_AUTH_URL;
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  const allowedOrigins = new Set([
+    "https://tution-management-system-using-next-nine.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    envUrl,
+    vercelUrl,
+  ].filter(Boolean) as string[]);
+
+  if (origin && allowedOrigins.has(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set("Vary", "Origin");
+  } else {
+    // Strip wildcard or unauthorized origin header to prevent security issues in production
+    const currentOrigin = response.headers.get("Access-Control-Allow-Origin");
+    if (currentOrigin === "*" || (currentOrigin && !allowedOrigins.has(currentOrigin))) {
+      response.headers.delete("Access-Control-Allow-Origin");
+      response.headers.delete("Access-Control-Allow-Credentials");
+    }
+  }
+
   return response;
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  
+  // Handle preflight OPTIONS requests directly
+  if (request.method === "OPTIONS") {
+    const response = new NextResponse(null, { status: 204 });
+    return withSecurityHeaders(request, response, pathname);
+  }
+
   const sessionUser = await getSessionUser(request);
 
   if (isProtectedRoute(pathname)) {
     if (!sessionUser) {
       const loginUrl = new URL(loginPathFor(pathname), request.url);
       loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
-      return withSecurityHeaders(NextResponse.redirect(loginUrl), pathname);
+      return withSecurityHeaders(request, NextResponse.redirect(loginUrl), pathname);
     }
 
     if (!hasRoleAccess(sessionUser.role, pathname)) {
       return withSecurityHeaders(
+        request,
         NextResponse.redirect(
           new URL(ROLE_DASHBOARD_MAP[sessionUser.role], request.url)
         ),
@@ -160,6 +195,7 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set("x-pathname", pathname + request.nextUrl.search);
 
     return withSecurityHeaders(
+      request,
       NextResponse.next({ request: { headers: requestHeaders } }),
       pathname
     );
@@ -175,6 +211,7 @@ export async function proxy(request: NextRequest) {
 
     if (matchesAuthRoute) {
       return withSecurityHeaders(
+        request,
         NextResponse.redirect(
           new URL(ROLE_DASHBOARD_MAP[sessionUser.role], request.url)
         ),
@@ -183,13 +220,13 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return withSecurityHeaders(NextResponse.next(), pathname);
+  return withSecurityHeaders(request, NextResponse.next(), pathname);
 }
 
 export default proxy;
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api/).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

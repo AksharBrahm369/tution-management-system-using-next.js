@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutGrid, Table, CalendarDays, Plus, Settings, Palmtree } from "lucide-react";
@@ -72,6 +72,66 @@ const BatchListPage: React.FC<BatchListPageProps> = ({ standardId, standardName,
   const [page, setPage] = useState(1);
   const [showRooms, setShowRooms] = useState(false);
   const [showHolidays, setShowHolidays] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string; instituteId: string } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((payload) => {
+        if (active && payload.success && payload.data?.user) {
+          setCurrentUser({
+            id: payload.data.user.id,
+            instituteId: payload.data.user.instituteId,
+          });
+        }
+      })
+      .catch((err) => console.error("Error fetching user for list state scoping:", err));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Load saved state on mount/auth load
+  useEffect(() => {
+    if (!currentUser) return;
+    const key = `tuitionpro:list-state:${currentUser.instituteId}:${currentUser.id}:admin-batches`;
+    try {
+      const saved = sessionStorage.getItem(key);
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.view !== undefined) setView(state.view);
+        if (state.search !== undefined) setSearch(state.search);
+        if (state.status !== undefined) setStatus(state.status);
+        if (state.subjectId !== undefined) setSubjectId(state.subjectId);
+        if (state.teacherId !== undefined) setTeacherId(state.teacherId);
+        if (state.standardFilter !== undefined) setStandardFilter(state.standardFilter);
+        if (state.selectedDays !== undefined) setSelectedDays(state.selectedDays);
+        if (state.timeRange !== undefined) setTimeRange(state.timeRange);
+        if (state.page !== undefined) setPage(state.page);
+      }
+    } catch (e) {
+      console.warn("Failed to load list state:", e);
+    }
+  }, [currentUser]);
+
+  // Save state on change
+  useEffect(() => {
+    if (!currentUser) return;
+    const key = `tuitionpro:list-state:${currentUser.instituteId}:${currentUser.id}:admin-batches`;
+    const stateToSave = {
+      view,
+      search,
+      status,
+      subjectId,
+      teacherId,
+      standardFilter,
+      selectedDays,
+      timeRange,
+      page,
+    };
+    sessionStorage.setItem(key, JSON.stringify(stateToSave));
+  }, [view, search, status, subjectId, teacherId, standardFilter, selectedDays, timeRange, page, currentUser]);
 
   const debouncedSearch = useDebounce(search, 400);
 

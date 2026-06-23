@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Loader2, Save } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
@@ -237,6 +238,14 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId =
     defaultValues: buildDefaultValues(null, standardId),
   });
 
+  const { clearDraft } = useFormDraft<any>({
+    keyName: `admin-students-create${studentId ? `-${studentId}` : ""}`,
+    form,
+    step,
+    setStep,
+    excludeFields: ["studentCode"],
+  });
+
   useEffect(() => {
     if (existingStudent) {
       form.reset(buildDefaultValues(existingStudent, standardId) as never);
@@ -327,6 +336,7 @@ const AddStudentPage: React.FC<AddStudentPageProps> = ({ studentId, standardId =
         const payload = await response.json();
         console.log("✅ Student created/updated successfully:", payload);
         const student = payload.student as { id: string; studentCode: string; firstName: string; lastName: string };
+        clearDraft();
 
       if (isEditMode) {
           // Invalidate both the list and the individual student cache

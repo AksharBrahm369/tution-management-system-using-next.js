@@ -11,21 +11,36 @@ export const DEFAULT_STANDARDS = [
   { name: "12th Standard", order: 12 },
 ];
 
+let defaultStandardsEnsured = false;
+
 export async function ensureDefaultStandards() {
-  for (const standard of DEFAULT_STANDARDS) {
-    const existing = await prisma.standard.findFirst({
-      where: { order: standard.order },
+  if (defaultStandardsEnsured) return;
+
+  try {
+    const orders = DEFAULT_STANDARDS.map((s) => s.order);
+    const existingStandards = await prisma.standard.findMany({
+      where: { order: { in: orders } },
     });
-    if (!existing) {
-      await prisma.standard.create({
-        data: { ...standard, isActive: true },
-      });
-    } else if (existing.name !== standard.name) {
-      await prisma.standard.update({
-        where: { id: existing.id },
-        data: { name: standard.name, isActive: true },
-      });
+
+    const existingMap = new Map(existingStandards.map((s) => [s.order, s]));
+
+    for (const standard of DEFAULT_STANDARDS) {
+      const existing = existingMap.get(standard.order);
+      if (!existing) {
+        await prisma.standard.create({
+          data: { ...standard, isActive: true },
+        });
+      } else if (existing.name !== standard.name) {
+        await prisma.standard.update({
+          where: { id: existing.id },
+          data: { name: standard.name, isActive: true },
+        });
+      }
     }
+
+    defaultStandardsEnsured = true;
+  } catch (error) {
+    console.error("Failed to ensure default standards:", error);
   }
 }
 

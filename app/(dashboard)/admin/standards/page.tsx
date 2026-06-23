@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { BookOpen, CalendarDays, GraduationCap, IndianRupee, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { PageShell } from "@/components/shared/PageShell";
 import { getActiveStandards } from "@/lib/standards";
 
 async function getStandardStats() {
@@ -55,14 +56,10 @@ export default async function StandardsPage() {
   const standards = await getStandardStats();
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h1 className="text-2xl font-semibold tracking-normal text-slate-950 dark:text-white">Standards</h1>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-          Manage students, teachers, batches, attendance, exams, fees, materials, and reports standard-wise.
-        </p>
-      </section>
-
+    <PageShell
+      title="Standards"
+      description="Manage students, teachers, batches, attendance, exams, fees, materials, and reports standard-wise."
+    >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {standards.map((standard) => (
           <Link
@@ -100,7 +97,7 @@ export default async function StandardsPage() {
           </Link>
         ))}
       </section>
-    </div>
+    </PageShell>
   );
 }
 

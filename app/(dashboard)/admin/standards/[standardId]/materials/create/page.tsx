@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import CreateMaterialPage from "@/components/admin/materials/CreateMaterial/CreateMaterialPage";
-import { getStandardById } from "@/lib/standards";
+import { getCloudinaryConfig, getMissingCloudinaryVars } from "@/lib/cloudinary";
+import { requireInstituteSession } from "@/lib/auth";
 
 export default async function StandardCreateMaterialRoutePage({
   params,
@@ -9,21 +10,46 @@ export default async function StandardCreateMaterialRoutePage({
   params: Promise<{ standardId: string }>;
 }) {
   const { standardId } = await params;
-  const standard = await getStandardById(standardId);
+  const session = await requireInstituteSession();
+  const instituteId = session.instituteId;
+
+  const standard = await prisma.standard.findFirst({
+    where: { id: standardId, instituteId },
+  });
   if (!standard) notFound();
 
-  const [batches, subjects] = await Promise.all([
-    prisma.batch.findMany({
-      where: { status: "ACTIVE", standardId: standard.id },
+  const batches = await prisma.batch.findMany({
+    where: { status: "ACTIVE", instituteId, standardId: standard.id },
+    select: { id: true, name: true, code: true },
+    orderBy: { name: "asc" },
+  });
+
+  let subjects = await prisma.subject.findMany({
+    where: {
+      isActive: true,
+      instituteId,
+      OR: [
+        { batches: { some: { standardId: standard.id } } },
+        { teacherStandardSubjects: { some: { standardId: standard.id } } },
+        { exams: { some: { standardId: standard.id } } },
+        { materials: { some: { standardId: standard.id } } },
+      ],
+    },
+    select: { id: true, name: true, code: true },
+    orderBy: { name: "asc" },
+  });
+
+  if (subjects.length === 0) {
+    subjects = await prisma.subject.findMany({
+      where: { isActive: true, instituteId },
       select: { id: true, name: true, code: true },
       orderBy: { name: "asc" },
-    }),
-    prisma.subject.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, code: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+    });
+  }
+
+  const cloudinaryConfig = await getCloudinaryConfig();
+  const missingCloudinaryVars = getMissingCloudinaryVars();
+  const hasCloudinary = Boolean(cloudinaryConfig) && missingCloudinaryVars.length === 0;
 
   return (
     <CreateMaterialPage
@@ -31,6 +57,8 @@ export default async function StandardCreateMaterialRoutePage({
       subjects={subjects}
       standardId={standard.id}
       returnHref={`/admin/standards/${standard.id}/materials`}
+      isCloudinaryConfigured={hasCloudinary}
+      missingCloudinaryVars={missingCloudinaryVars}
     />
   );
 }
