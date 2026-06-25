@@ -64,7 +64,17 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
           orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
           take: 50,
         },
-        examResults: { orderBy: { enteredAt: "desc" }, take: 50 },
+        examResults: {
+          include: {
+            exam: {
+              include: {
+                subject: true,
+              },
+            },
+          },
+          orderBy: { enteredAt: "desc" },
+          take: 50,
+        },
         documents: { orderBy: { uploadedAt: "desc" } },
         emergencyContacts: true,
         medicalInfo: true,
@@ -82,14 +92,50 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const feePaid = student.feeRecords.reduce((sum, record) => sum + record.paidAmount, 0);
     const feePending = student.feeRecords.reduce((sum, record) => sum + record.pendingAmount, 0);
 
+    const studentAssignments = await prisma.examResult.findMany({
+      where: {
+        studentId: id,
+        exam: {
+          type: "ASSIGNMENT",
+        },
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    const assignmentsTotal = studentAssignments.length;
+    const assignmentsSubmitted = studentAssignments.filter((r) => r.status !== "PENDING").length;
+
+    const mappedExamResults = student.examResults.map((result) => {
+      const examName = result.exam?.title || "Exam";
+      const subject = result.exam?.subject?.name || "Unknown";
+      const score = result.marksObtained || 0;
+      const totalMarks = result.totalMarks || result.exam?.totalMarks || 100;
+      const percentage = result.percentage || (totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0);
+
+      return {
+        id: result.id,
+        examName,
+        subject,
+        score,
+        totalMarks,
+        percentage,
+        examDate: result.exam?.examDate || new Date().toISOString(),
+      };
+    });
+
     return NextResponse.json(
       {
         ...student,
+        examResults: mappedExamResults,
         fullName: `${student.firstName} ${student.lastName}`,
         attendancePercent: attendanceTotal > 0 ? Math.round((attendancePresent / attendanceTotal) * 100) : 0,
         feesPaid: feePaid,
         pendingFees: feePending,
         currentBatch: student.batchEnrollments.find((enrollment) => enrollment.isActive)?.batch ?? null,
+        assignmentsSubmitted,
+        assignmentsTotal,
       },
       { status: 200 }
     );

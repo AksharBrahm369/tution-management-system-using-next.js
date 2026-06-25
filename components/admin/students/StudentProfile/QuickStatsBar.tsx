@@ -57,10 +57,10 @@ const QuickStatsBar: React.FC<QuickStatsBarProps> = ({ student }) => {
     trendColor = "text-rose-600 bg-rose-50 dark:bg-rose-950/30 dark:text-rose-400";
   }
 
-  // 5. Mock assignments (as requested in Section 3 to present complete dashboard view)
-  const assignmentsSubmitted = 7;
-  const assignmentsTotal = 8;
-  const assignmentsRate = Math.round((assignmentsSubmitted / assignmentsTotal) * 100);
+  // 5. Live assignments data from backend
+  const assignmentsSubmitted = student.assignmentsSubmitted ?? 0;
+  const assignmentsTotal = student.assignmentsTotal ?? 0;
+  const assignmentsRate = assignmentsTotal > 0 ? Math.round((assignmentsSubmitted / assignmentsTotal) * 100) : 0;
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-805 dark:bg-slate-900/60">

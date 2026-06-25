@@ -202,6 +202,8 @@ export interface StudentProfileData {
   feesPaid: number;
   pendingFees: number;
   currentBatch: StudentBatch | null;
+  assignmentsSubmitted?: number;
+  assignmentsTotal?: number;
 }
 
 export interface StudentFiltersState {
