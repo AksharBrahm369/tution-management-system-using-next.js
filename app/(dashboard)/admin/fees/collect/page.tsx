@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type FeeRecord = {
   id: string;
@@ -384,7 +385,35 @@ export default function CollectFeePage() {
           </div>
 
           {loading ? (
-            <div className="p-5 text-sm text-slate-400">Loading live fee and student data...</div>
+            <div className="overflow-x-auto animate-pulse">
+              <table className="min-w-full divide-y divide-white/10 text-sm">
+                <thead className="bg-slate-950/40 text-left text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold"><Skeleton className="h-4 w-4 rounded bg-slate-800" /></th>
+                    <th className="px-4 py-3 font-semibold"><Skeleton className="h-3.5 w-16 bg-slate-800" /></th>
+                    <th className="px-4 py-3 font-semibold"><Skeleton className="h-3.5 w-12 bg-slate-800" /></th>
+                    <th className="px-4 py-3 font-semibold"><Skeleton className="h-3.5 w-14 bg-slate-800" /></th>
+                    <th className="px-4 py-3 text-right font-semibold"><Skeleton className="h-3.5 w-16 ml-auto bg-slate-800" /></th>
+                    <th className="px-5 py-3 font-semibold"><Skeleton className="h-3.5 w-14 bg-slate-800" /></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <tr key={idx} className="bg-transparent">
+                      <td className="px-5 py-4"><Skeleton className="h-4 w-4 rounded bg-slate-850" /></td>
+                      <td className="px-4 py-4 space-y-2">
+                        <Skeleton className="h-4 w-32 bg-slate-800" />
+                        <Skeleton className="h-3 w-20 bg-slate-850" />
+                      </td>
+                      <td className="px-4 py-4"><Skeleton className="h-4 w-16 bg-slate-800" /></td>
+                      <td className="px-4 py-4"><Skeleton className="h-4 w-14 bg-slate-800" /></td>
+                      <td className="px-4 py-4 text-right"><Skeleton className="h-4 w-20 ml-auto bg-slate-800" /></td>
+                      <td className="px-5 py-4"><Skeleton className="h-6 w-16 rounded-full bg-slate-800" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : records.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-white/10 text-sm">

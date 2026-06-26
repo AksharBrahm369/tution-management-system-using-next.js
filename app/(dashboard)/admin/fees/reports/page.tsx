@@ -231,6 +231,7 @@ export default function AdminFeeReportsPage() {
 						color={card.color}
 						change={card.change}
 						changeLabel={card.changeLabel}
+						isLoading={loading}
 					/>
 				))}
 			</section>

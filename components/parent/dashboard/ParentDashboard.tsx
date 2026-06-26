@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type DashboardData = {
   parent: any;
@@ -49,7 +50,64 @@ export default function ParentDashboard() {
   }, [selectedChild]);
 
   if (isLoading || !data) {
-    return <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">Loading parent dashboard...</div>;
+    return (
+      <div className="space-y-5 animate-pulse">
+        {/* Header Skeleton */}
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-8 w-64 rounded bg-slate-300 dark:bg-slate-700" />
+              <div className="h-4 w-96 rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+            <div className="h-16 w-32 rounded-lg bg-slate-200 dark:bg-slate-800" />
+          </div>
+        </section>
+
+        {/* Quick Stats Grid Skeleton */}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-2">
+              <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-8 w-16 rounded bg-slate-300 dark:bg-slate-700" />
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content Grid Skeleton */}
+        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          {/* Left card skeleton */}
+          <div className="space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <div className="h-6 w-48 rounded bg-slate-300 dark:bg-slate-700" />
+                <div className="h-4 w-64 rounded bg-slate-200 dark:bg-slate-800" />
+              </div>
+              <div className="flex gap-2">
+                <div className="h-10 w-24 rounded-lg bg-slate-200 dark:bg-slate-800" />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="h-32 rounded bg-slate-100 dark:bg-slate-800/40" />
+              <div className="h-32 rounded bg-slate-100 dark:bg-slate-800/40" />
+            </div>
+          </div>
+
+          {/* Right sidebar skeletons */}
+          <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 h-40 space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 h-40 space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   const latestFee = selectedChild?.feeRecords?.[0];

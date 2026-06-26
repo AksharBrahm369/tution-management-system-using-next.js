@@ -34,19 +34,25 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Optimize N+1 query: Fetch all attendance sessions for today in bulk
+    const attendanceSessions = await prisma.attendanceSession.findMany({
+      where: {
+        date: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+    });
+
+    const attendanceSessionMap = new Map(
+      attendanceSessions.map((session) => [session.batchId, session])
+    );
+
     const batchSummaries = [];
 
     for (const batch of batchesWithClassToday) {
-      // Check if attendance already marked
-      const attendanceRecord = await prisma.attendanceSession.findFirst({
-        where: {
-          batchId: batch.id,
-          date: {
-            gte: today,
-            lt: tomorrow,
-          },
-        },
-      });
+      // Check if attendance already marked using map lookup
+      const attendanceRecord = attendanceSessionMap.get(batch.id);
 
       const attendanceCount = attendanceRecord
         ? attendanceRecord.presentCount +

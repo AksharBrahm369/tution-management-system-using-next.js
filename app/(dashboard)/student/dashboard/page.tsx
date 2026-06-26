@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { User, BookOpen, Clock } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type StudentDashboardData = {
   student: {
@@ -84,7 +85,44 @@ export default function StudentDashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="rounded-lg border border-slate-200 bg-white p-5 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">Loading your dashboard...</div>;
+    return (
+      <div className="space-y-5 animate-pulse">
+        {/* Welcome Banner Skeleton */}
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-lg bg-slate-200 dark:bg-slate-800" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 rounded bg-slate-300 dark:bg-slate-700" />
+              <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+          </div>
+        </div>
+
+        {/* 2-column Content Skeleton */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Left card skeleton */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-6 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-5 w-32 rounded bg-slate-300 dark:bg-slate-700" />
+            </div>
+            <div className="space-y-3 pt-2">
+              <div className="h-20 rounded bg-slate-100 dark:bg-slate-800/40" />
+              <div className="h-20 rounded bg-slate-100 dark:bg-slate-800/40" />
+            </div>
+          </div>
+
+          {/* Right card skeleton */}
+          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-6 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-5 w-32 rounded bg-slate-300 dark:bg-slate-700" />
+            </div>
+            <div className="h-24 rounded-lg bg-slate-100 dark:bg-slate-800/40" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error || !data) {

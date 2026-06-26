@@ -13,6 +13,7 @@ import StudentStatsBar from "./StudentStatsBar";
 import ImportStudentsModal from "../Modals/ImportStudentsModal";
 import ChangeStatusModal from "../Modals/ChangeStatusModal";
 import StudentIDCardModal from "../Modals/StudentIDCardModal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function useDebouncedValue<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -207,11 +208,60 @@ const StudentListPage: React.FC<StudentListPageProps> = ({ standardId, standardN
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: viewMode === "grid" ? 6 : 4 }).map((_, index) => (
-            <div key={index} className="h-64 animate-pulse rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-900/60" />
-          ))}
-        </div>
+        viewMode === "grid" ? (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 space-y-4 animate-pulse">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-14 w-14 rounded-2xl shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+                <div className="space-y-2 border-t border-slate-100 pt-4 dark:border-slate-850">
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/5" />
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                </div>
+                <div className="flex items-center gap-2 pt-2">
+                  <Skeleton className="h-9 w-20 rounded-xl" />
+                  <Skeleton className="h-9 w-20 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60 animate-pulse">
+            <div className="bg-slate-50 p-4 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 flex justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="p-4 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3.5 w-24" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
       ) : hasStudents ? (
         viewMode === "grid" ? (
           <StudentGridView

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Copy, LayoutGrid, List, Plus, RefreshCcw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 import EnquiryStatsBar from "./EnquiryStatsBar";
 import KanbanView from "./KanbanView";
 import EnquiryTableView from "./EnquiryTableView";
@@ -185,7 +186,61 @@ export default function EnquiryListPage() {
       </div>
 
       {isLoading ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 animate-pulse">Loading enquiries...</div>
+        viewMode === "kanban" ? (
+          <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-6 animate-pulse">
+            {["New", "Contacted", "Demo Scheduled", "Demo Done", "Interested", "Converted"].map((colTitle) => (
+              <div key={colTitle} className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/40 space-y-4">
+                <div className="flex justify-between items-center pb-2">
+                  <div className="h-5 w-24 rounded bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-5 w-6 rounded-full bg-slate-150 dark:bg-slate-900" />
+                </div>
+                <div className="space-y-3">
+                  {Array.from({ length: 2 }).map((_, idx) => (
+                    <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3 dark:border-slate-800 dark:bg-slate-900/60">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <div className="space-y-2 pt-2">
+                        <Skeleton className="h-3 w-5/6" />
+                        <Skeleton className="h-3 w-2/3" />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Skeleton className="h-6 w-12 rounded-lg" />
+                        <Skeleton className="h-6 w-16 rounded-lg" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/60 animate-pulse">
+            <div className="bg-slate-50 p-4 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 flex justify-between">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="p-4 flex justify-between items-center">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-36" />
+                    <Skeleton className="h-3.5 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )
       ) : isError ? (
         <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center space-y-4 shadow-sm dark:border-rose-900/50 dark:bg-rose-950/20">
           <p className="text-sm font-medium text-rose-800 dark:text-rose-200">

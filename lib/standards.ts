@@ -25,16 +25,24 @@ export async function ensureDefaultStandards() {
     const existingMap = new Map(existingStandards.map((s) => [s.order, s]));
 
     for (const standard of DEFAULT_STANDARDS) {
-      const existing = existingMap.get(standard.order);
-      if (!existing) {
-        await prisma.standard.create({
-          data: { ...standard, isActive: true },
-        });
-      } else if (existing.name !== standard.name) {
-        await prisma.standard.update({
-          where: { id: existing.id },
-          data: { name: standard.name, isActive: true },
-        });
+      try {
+        const existing = existingMap.get(standard.order);
+        if (!existing) {
+          await prisma.standard.create({
+            data: { ...standard, isActive: true },
+          });
+        } else if (existing.name !== standard.name) {
+          await prisma.standard.update({
+            where: { id: existing.id },
+            data: { name: standard.name, isActive: true },
+          });
+        }
+      } catch (err) {
+        // If it failed because another concurrent request already created or updated it, ignore P2002
+        if (err && typeof err === "object" && "code" in err && err.code === "P2002") {
+          continue;
+        }
+        console.warn(`Standard ${standard.name} creation/update warning:`, err);
       }
     }
 

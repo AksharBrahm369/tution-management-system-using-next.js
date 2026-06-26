@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { User } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type StudentProfile = {
   firstName: string;
@@ -36,7 +37,27 @@ export default function StudentProfilePage() {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading profile...</div>;
+    return (
+      <div className="mx-auto max-w-2xl space-y-6 animate-pulse">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="h-24 w-24 rounded-full bg-slate-200 dark:bg-slate-800" />
+            <div className="space-y-2">
+              <div className="h-6 w-48 rounded bg-slate-300 dark:bg-slate-700" />
+              <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+          </div>
+          <div className="mt-8 space-y-4 rounded-2xl bg-slate-50 p-4 dark:bg-slate-900">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={idx} className="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-800 last:border-0 last:pb-0">
+                <div className="h-4 w-16 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="h-4 w-24 rounded bg-slate-300 dark:bg-slate-700" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!student) {

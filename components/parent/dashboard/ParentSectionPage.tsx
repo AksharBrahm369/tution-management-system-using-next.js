@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ParentSectionPageProps<T> {
   title: string;
@@ -37,7 +38,22 @@ export default function ParentSectionPage<T>({ title, subtitle, endpoint, itemsK
       </div>
 
       {loading ? (
-        <div className="rounded-lg border border-slate-200 bg-white p-5 text-slate-500 shadow-sm dark:border-slate-800 dark:bg-slate-900">Loading...</div>
+        <div className="grid gap-4 lg:grid-cols-2 animate-pulse">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 space-y-3">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-2/3" />
+              <div className="pt-2 flex justify-between items-center">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-8 w-20 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : items.length > 0 ? (
         <div className="grid gap-4 lg:grid-cols-2">{items.map((item, index) => <div key={index}>{renderItem(item)}</div>)}</div>
       ) : (

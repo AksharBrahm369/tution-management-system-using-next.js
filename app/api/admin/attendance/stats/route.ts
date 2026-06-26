@@ -10,6 +10,32 @@ export async function GET(req: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Calculate range boundaries
+    const startOfRange = new Date(today);
+    startOfRange.setDate(today.getDate() - 6);
+    startOfRange.setHours(0, 0, 0, 0);
+
+    const endOfRange = new Date(today);
+    endOfRange.setDate(today.getDate() + 1);
+    endOfRange.setHours(0, 0, 0, 0);
+
+    // Fetch all records for the 7-day range in one bulk query
+    const records = await prisma.attendance.findMany({
+      where: {
+        date: {
+          gte: startOfRange,
+          lt: endOfRange,
+        },
+        status: {
+          notIn: ["HOLIDAY", "CANCELLED"],
+        },
+      },
+      select: {
+        date: true,
+        status: true,
+      },
+    });
+
     const weeklyTrend = [];
     for (let offset = 6; offset >= 0; offset -= 1) {
       const date = new Date(today);
@@ -20,22 +46,16 @@ export async function GET(req: NextRequest) {
       const end = new Date(start);
       end.setDate(end.getDate() + 1);
 
-      const records = await prisma.attendance.findMany({
-        where: {
-          date: {
-            gte: start,
-            lt: end,
-          },
-          status: {
-            notIn: ["HOLIDAY", "CANCELLED"],
-          },
-        },
+      // Filter in memory by date range
+      const dailyRecords = records.filter((r) => {
+        const time = r.date.getTime();
+        return time >= start.getTime() && time < end.getTime();
       });
 
-      const presentCount = records.filter(
+      const presentCount = dailyRecords.filter(
         (record) => record.status === "PRESENT" || record.status === "LATE"
       ).length;
-      const percentage = records.length > 0 ? Math.round((presentCount / records.length) * 10000) / 100 : 0;
+      const percentage = dailyRecords.length > 0 ? Math.round((presentCount / dailyRecords.length) * 10000) / 100 : 0;
 
       weeklyTrend.push({
         date: date.toLocaleDateString("en-US", { weekday: "short" }),

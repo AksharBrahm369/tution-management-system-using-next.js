@@ -186,29 +186,47 @@ export async function getBatchWiseAttendancePercentage(
 ) {
   const batches = await prisma.batch.findMany({
     where: { status: "ACTIVE" },
-    include: { _count: { select: { enrollments: true } } },
+    select: { id: true, name: true }
   });
+
+  const records = await prisma.attendance.findMany({
+    where: {
+      date: {
+        ...(fromDate && { gte: fromDate }),
+        ...(toDate && { lte: toDate }),
+      },
+      status: {
+        notIn: ["HOLIDAY", "CANCELLED"],
+      },
+      batch: {
+        status: "ACTIVE"
+      }
+    },
+    select: {
+      batchId: true,
+      status: true
+    }
+  });
+
+  const batchRecordsMap = new Map<string, { present: number; total: number }>();
+  for (const record of records) {
+    let stats = batchRecordsMap.get(record.batchId);
+    if (!stats) {
+      stats = { present: 0, total: 0 };
+      batchRecordsMap.set(record.batchId, stats);
+    }
+    stats.total++;
+    if (record.status === "PRESENT" || record.status === "LATE") {
+      stats.present++;
+    }
+  }
 
   const results = [];
 
   for (const batch of batches) {
-    const records = await prisma.attendance.findMany({
-      where: {
-        batchId: batch.id,
-        date: {
-          ...(fromDate && { gte: fromDate }),
-          ...(toDate && { lte: toDate }),
-        },
-        status: {
-          notIn: ["HOLIDAY", "CANCELLED"],
-        },
-      },
-    });
-
-    const present = records.filter(
-      (r) => r.status === "PRESENT" || r.status === "LATE"
-    ).length;
-    const total = records.length;
+    const stats = batchRecordsMap.get(batch.id);
+    const present = stats?.present || 0;
+    const total = stats?.total || 0;
     const percentage = total > 0 ? (present / total) * 100 : 0;
 
     results.push({

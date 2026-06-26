@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Filter, Mail, Phone } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Teacher {
   id: string;
@@ -127,7 +128,33 @@ export default function TeacherListPage({ standardId, standardName, basePath = "
       {loading ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="h-64 animate-pulse rounded-lg border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900"></div>
+            <div key={i} className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 animate-pulse space-y-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-11 w-11 rounded-lg shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/3" />
+                </div>
+              </div>
+              <div className="space-y-3 flex-1">
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-2/3" />
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3 space-y-2">
+                  <Skeleton className="h-3.5 w-12" />
+                  <div className="flex gap-1.5">
+                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-14" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+                <Skeleton className="h-8 w-24 rounded-md" />
+              </div>
+            </div>
           ))}
         </div>
       ) : filteredTeachers.length === 0 ? (

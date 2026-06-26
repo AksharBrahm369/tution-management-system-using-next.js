@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { StudentProfileData } from "../types";
+import { Skeleton } from "@/components/ui/skeleton";
 import ProfileHeader from "./ProfileHeader";
 import QuickStatsBar from "./QuickStatsBar";
 import ProfileTabs, { StudentProfileTab } from "./ProfileTabs";
@@ -113,8 +114,51 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = ({ studentId, base
 
   if (isLoading || !data) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
-        <div className="h-8 w-40 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+      <div className="space-y-6 animate-pulse">
+        {/* ProfileHeader Skeleton */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="flex flex-col items-center gap-5 text-center md:flex-row md:items-start md:text-left">
+              <div className="h-24 w-24 rounded-2xl bg-slate-200 dark:bg-slate-800 shrink-0" />
+              <div className="space-y-2">
+                <div className="h-7 w-48 rounded bg-slate-300 dark:bg-slate-700" />
+                <div className="h-4 w-32 rounded bg-slate-200 dark:bg-slate-800" />
+                <div className="h-4 w-64 rounded bg-slate-200 dark:bg-slate-800" />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <div className="h-10 w-24 rounded-lg bg-slate-200 dark:bg-slate-800" />
+              <div className="h-10 w-32 rounded-lg bg-slate-200 dark:bg-slate-800" />
+            </div>
+          </div>
+        </div>
+
+        {/* QuickStatsBar Skeleton */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div key={idx} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 space-y-2">
+              <div className="h-4 w-20 rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-7 w-16 rounded bg-slate-300 dark:bg-slate-700" />
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-2 dark:border-slate-800">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div key={idx} className="h-10 w-24 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0" />
+          ))}
+        </div>
+
+        {/* Tab Content Skeleton */}
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60 space-y-4">
+          <div className="h-5 w-44 rounded bg-slate-300 dark:bg-slate-700" />
+          <div className="space-y-2">
+            <div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-800/40" />
+            <div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-800/40" />
+            <div className="h-4 w-3/4 rounded bg-slate-100 dark:bg-slate-800/40" />
+          </div>
+        </div>
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { User, BookOpen, Clock, CreditCard } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ParentChildrenPage() {
   const [children, setChildren] = useState<any[]>([]);
@@ -28,7 +29,44 @@ export default function ParentChildrenPage() {
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center p-8 text-slate-500">Loading children...</div>;
+    return (
+      <div className="space-y-6 animate-pulse">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, idx) => (
+            <div key={idx} className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="border-b border-slate-100 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900 flex items-center gap-4">
+                <Skeleton className="h-12 w-12 rounded-full shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-6 w-36" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/20 space-y-2">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/20 space-y-2">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/20 space-y-2">
+                    <Skeleton className="h-3 w-10" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {

@@ -9,6 +9,7 @@ interface StatsCardProps {
   change?: number;
   changeLabel?: string;
   onClick?: () => void;
+  isLoading?: boolean;
 }
 
 const colorClasses: Record<string, string> = {
@@ -28,7 +29,21 @@ const StatsCard: React.FC<StatsCardProps> = ({
   change,
   changeLabel,
   onClick,
+  isLoading = false,
 }) => {
+  if (isLoading) {
+    return (
+      <div className="group rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 animate-pulse">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="h-4 w-24 rounded bg-slate-200 dark:bg-slate-850" />
+          <div className="h-10 w-10 rounded-lg bg-slate-150 dark:bg-slate-800" />
+        </div>
+        <div className="h-8 w-20 rounded bg-slate-200 dark:bg-slate-800" />
+        <div className="mt-2 h-4 w-32 rounded bg-slate-150 dark:bg-slate-850" />
+      </div>
+    );
+  }
+
   const isPositive = Boolean(change && change > 0);
 
   return (
