@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { nextCookies } from "better-auth/next-js";
 import bcryptjs from "bcryptjs";
-import { prisma } from "@/lib/prisma";
+import { basePrisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/passwordResetEmail";
 
 const appUrl =
@@ -27,7 +27,7 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_SECRET ||
     process.env.JWT_SECRET ||
     "fallback-secret-for-dev-only-replace-in-production",
-  database: prismaAdapter(prisma, {
+  database: prismaAdapter(basePrisma, {
     provider: "postgresql",
     transaction: true,
   }),
@@ -106,7 +106,7 @@ export const auth = betterAuth({
       });
     },
     onPasswordReset: async ({ user }) => {
-      await prisma.user.update({
+      await basePrisma.user.update({
         where: { id: user.id },
         data: { updatedAt: new Date() },
       });

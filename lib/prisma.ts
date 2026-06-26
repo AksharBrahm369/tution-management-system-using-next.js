@@ -354,4 +354,8 @@ if (isProduction) {
   globalForPrisma.prisma = basePrisma;
 }
 
+// Export basePrisma (unextended) for use by Better Auth and other
+// internal systems that must bypass the institute-scoping middleware.
+export { basePrisma };
+
 export default prisma;
