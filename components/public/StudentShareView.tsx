@@ -48,7 +48,7 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
   const [data, setData] = useState<StudentData | null>(initialData);
   const [loading, setLoading] = useState<boolean>(!initialData);
   const [error, setError] = useState<string | null>(null);
-  const [debugState, setDebugState] = useState<string>("Initializing...");
+  const [retryCount, setRetryCount] = useState<number>(0);
   const [portalUrl, setPortalUrl] = useState<string>(
     baseUrl ? `${baseUrl}/student/login` : "/student/login"
   );
@@ -62,17 +62,23 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
   }, []);
 
   useEffect(() => {
+    // If we already have data from the server-side render, skip client fetch
+    if (initialData && retryCount === 0) {
+      setData(initialData);
+      setLoading(false);
+      return;
+    }
+
     let isMounted = true;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
     const fetchStudentData = async () => {
+      if (isMounted) {
+        setLoading(true);
+        setError(null);
+      }
       try {
-        if (isMounted) {
-          setLoading(!initialData);
-          setDebugState(`Fetching student ID: ${studentId}`);
-        }
-        
         const res = await fetch(`/api/public/students/${studentId}?t=${Date.now()}`, {
           cache: "no-store",
           headers: {
@@ -81,31 +87,29 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
           },
           signal: controller.signal
         });
-        
+
         if (!isMounted) return;
-        setDebugState(`Response received. Status: ${res.status}`);
 
         if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
           if (res.status === 404) {
-            throw new Error("Student profile not found.");
+            throw new Error("Student profile not found. Please check the QR code.");
           }
-          throw new Error(`Failed to load student dashboard. Status: ${res.status}`);
+          throw new Error(body?.error || `Server error (${res.status}). Please try again.`);
         }
-        
-        setDebugState("Parsing JSON data...");
+
         const jsonData = await res.json();
-        
+
         if (isMounted) {
-          setDebugState("Data loaded successfully.");
           setData(jsonData);
+          setError(null);
         }
       } catch (err: unknown) {
         if (!isMounted) return;
         let errorMessage = err instanceof Error ? err.message : "An unexpected error occurred.";
         if (err instanceof Error && err.name === "AbortError") {
-          errorMessage = "Network request timed out after 10 seconds. Please check your connection.";
+          errorMessage = "Request timed out. Please check your internet connection and try again.";
         }
-        setDebugState(`Error occurred: ${errorMessage}`);
         setError(errorMessage);
       } finally {
         clearTimeout(timeoutId);
@@ -116,32 +120,53 @@ export default function StudentShareView({ studentId, initialData = null, baseUr
     };
 
     fetchStudentData();
-    
+
     return () => {
       isMounted = false;
       controller.abort();
     };
-  }, [studentId, initialData]);
+  }, [studentId, retryCount]); // only re-run when studentId or retry changes
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
         <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
-        <p className="text-slate-500 text-sm font-medium">Fetching secure student dashboard...</p>
-        <p className="text-slate-400 text-xs font-mono mt-4 max-w-sm text-center bg-slate-100 dark:bg-slate-900 p-2 rounded-lg">{debugState}</p>
+        <p className="text-slate-500 text-sm font-medium">Loading student profile...</p>
+        <p className="text-slate-400 text-xs mt-2">Please wait a moment</p>
       </div>
     );
   }
 
   if (error || !data) {
+    const isNotFound = error?.includes("not found");
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="h-16 w-16 bg-red-100 dark:bg-red-950/30 rounded-full flex items-center justify-center text-red-600 dark:text-red-400 mb-4">
+        <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 ${
+          isNotFound 
+            ? "bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400"
+            : "bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400"
+        }`}>
           <AlertCircle className="h-8 w-8" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Access Denied</h1>
-        <p className="text-slate-500 max-w-md mb-6">{error || "Could not retrieve student details."}</p>
-        <div className="text-xs text-slate-400">Please make sure the QR code or link is correct and matches a valid student.</div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          {isNotFound ? "Student Not Found" : "Could Not Load Profile"}
+        </h1>
+        <p className="text-slate-500 max-w-md mb-6">
+          {error || "Could not retrieve student details. Please try again."}
+        </p>
+        {!isNotFound && (
+          <button
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 active:scale-95 transition-all shadow-md"
+          >
+            Retry
+          </button>
+        )}
+        <div className="text-xs text-slate-400 mt-4">
+          {isNotFound 
+            ? "Please make sure the QR code is correct."
+            : "If this error persists, please contact your institute."}
+        </div>
       </div>
     );
   }

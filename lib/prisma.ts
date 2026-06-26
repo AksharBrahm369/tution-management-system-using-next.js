@@ -26,13 +26,21 @@ if (!connectionString || connectionString.includes("[YOUR-PASSWORD]")) {
   );
 }
 
-// We only initialize the pool if it's a valid-looking URL to prevent ERR_INVALID_URL crashes
-let pool;
+// In serverless environments (Vercel), each function invocation may create a new pool.
+// Limiting max connections to 1 prevents exhausting Supabase's connection limit.
+// In development we allow more connections for concurrent queries.
+const isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+let pool: InstanceType<typeof Pool>;
 try {
-  pool = new Pool({ connectionString });
+  pool = new Pool({
+    connectionString,
+    max: isServerless ? 1 : 10,
+    idleTimeoutMillis: isServerless ? 10000 : 30000,
+    connectionTimeoutMillis: 10000,
+  });
 } catch {
   // Fallback so the server doesn't crash on start, though queries will fail
-  pool = new Pool();
+  pool = new Pool({ max: 1 });
 }
 
 const adapter = new PrismaPg(pool);
