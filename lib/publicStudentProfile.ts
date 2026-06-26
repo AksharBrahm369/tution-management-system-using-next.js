@@ -7,7 +7,7 @@ export interface PublicStudentProfileData {
   profilePhoto: string | null;
   email: string | null;
   phone: string | null;
-  joiningDate: Date;
+  joiningDate: Date | string;
   academicYear: string;
   currentBatch: { name: string; subject?: string | null } | null;
   parent: {
@@ -31,7 +31,7 @@ export interface PublicStudentProfileData {
   };
   attendance: Array<{
     id: string;
-    date: Date;
+    date: Date | string;
     status: string;
     lateMinutes: number | null;
   }>;
@@ -48,7 +48,7 @@ export interface PublicStudentProfileData {
     paidAmount: number;
     pendingAmount: number;
     status: string;
-    dueDate: Date | null;
+    dueDate: Date | string | null;
     batchName: string;
   }>;
   examResults: Array<{

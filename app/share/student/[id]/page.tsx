@@ -27,9 +27,11 @@ export default async function Page({ params }: PageProps) {
     instituteId = await resolvePublicInstituteId();
   }
 
-  const initialData = instituteId
+  const initialDataRaw = instituteId
     ? await withRequestInstitute(instituteId, () => getPublicStudentProfile(id))
     : null;
+
+  const initialData = initialDataRaw ? JSON.parse(JSON.stringify(initialDataRaw)) : null;
 
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
