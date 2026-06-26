@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { basePrisma as prisma } from "@/lib/prisma";
 
 type BackfillDelegate = {
   updateMany?: (args: {

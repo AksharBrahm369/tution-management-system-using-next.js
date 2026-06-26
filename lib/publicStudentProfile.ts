@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { basePrisma as prisma } from "@/lib/prisma";
 
 export interface PublicStudentProfileData {
   id: string;
@@ -62,9 +62,12 @@ export interface PublicStudentProfileData {
   }>;
 }
 
-export async function getPublicStudentProfile(studentId: string): Promise<PublicStudentProfileData | null> {
+export async function getPublicStudentProfile(studentId: string, instituteId?: string): Promise<PublicStudentProfileData | null> {
+  // Build where clause - include instituteId if provided (for basePrisma queries without scoping middleware)
+  const studentWhere = instituteId ? { id: studentId, instituteId } : { id: studentId };
+
   const student = await prisma.student.findUnique({
-    where: { id: studentId },
+    where: studentWhere,
     include: {
       parent: true,
       batchEnrollments: {
