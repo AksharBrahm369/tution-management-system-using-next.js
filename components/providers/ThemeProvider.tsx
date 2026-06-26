@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useSyncExternalStore, type Context } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 type ResolvedTheme = 'light' | 'dark';
@@ -23,7 +23,7 @@ const THEME_STORAGE_KEY = 'tuitionpro-theme';
 const THEME_CHANGE_EVENT = 'tuitionpro-theme-change';
 
 const globalForTheme = globalThis as unknown as {
-  ThemeContext: any;
+  ThemeContext?: Context<ThemeContextValue | null>;
 };
 
 const ThemeContext =

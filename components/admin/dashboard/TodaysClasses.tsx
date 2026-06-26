@@ -47,7 +47,8 @@ const TodaysClasses: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch classes');
       return response.json();
     },
-    refetchInterval: 5000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const getStatusColor = (status: string) => {

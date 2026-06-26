@@ -1,6 +1,9 @@
 import prisma from "@/lib/prisma";
 import TeacherExamsPage from "@/components/teacher/exams/TeacherExamsPage";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 export default async function TeacherExamsRoutePage() {
   const exams = await prisma.exam.findMany({
     include: { batch: { select: { name: true } } },

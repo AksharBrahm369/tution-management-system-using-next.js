@@ -286,7 +286,6 @@ export default function CommunicationPage() {
         : targetMode === "EVERYONE"
           ? "ALL"
           : "STUDENT";
-    console.log("[communication] handleCreate clicked", { title, message, audience, channels: selectedChannels });
     setLoading(true);
 
     try {
@@ -448,6 +447,7 @@ export default function CommunicationPage() {
                   <div className="grid gap-2 sm:grid-cols-3">
                     <button
                       type="button"
+                      aria-label="Send announcement to everyone"
                       onClick={() => setTargetMode("EVERYONE")}
                       className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
                         targetMode === "EVERYONE"
@@ -459,6 +459,7 @@ export default function CommunicationPage() {
                     </button>
                     <button
                       type="button"
+                      aria-label="Send announcement to all students"
                       onClick={() => setTargetMode("ALL_STUDENTS")}
                       className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
                         targetMode === "ALL_STUDENTS"
@@ -470,6 +471,7 @@ export default function CommunicationPage() {
                     </button>
                     <button
                       type="button"
+                      aria-label="Send announcement to a class or batch"
                       onClick={() => setTargetMode("BATCH")}
                       className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
                         targetMode === "BATCH"
@@ -503,6 +505,7 @@ export default function CommunicationPage() {
                     <label className="block text-sm font-medium text-slate-300">Channels</label>
                     <button
                       type="button"
+                      aria-label="Select all announcement channels"
                       onClick={selectAllChannels}
                       className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-400/15"
                     >

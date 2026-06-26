@@ -44,11 +44,22 @@ export async function GET(req: NextRequest) {
     const [teachers, total] = await Promise.all([
       prisma.teacher.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          teacherCode: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          status: true,
+          employmentType: true,
           subjects: {
-            include: { subject: true },
+            select: {
+              subject: {
+                select: { name: true },
+              },
+            },
           },
-          standardSubjects: { include: { standard: true, subject: true } },
         },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,

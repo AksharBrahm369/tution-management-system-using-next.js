@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     const userId = auth.userId;
 
     const body = await request.json();
-    console.log('[announcements] body:', body);
     const { title, message, audience = 'STUDENT', channels = null, scheduleAt = null } = body;
     const serializedChannels = serializeAnnouncementChannels(channels);
 

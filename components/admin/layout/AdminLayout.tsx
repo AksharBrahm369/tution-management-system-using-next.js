@@ -65,11 +65,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, user }) => {
         <AdminSidebar user={user} />
 
         <SidebarInset className="relative flex h-full flex-col overflow-hidden bg-transparent dark:bg-transparent">
-          <AdminNavbar
-            user={user}
-            isSidebarCollapsed={isSidebarCollapsed}
-            onMobileMenuClick={() => {}}
-          />
+          <AdminNavbar user={user} />
 
           <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 md:px-5 md:py-5 xl:px-6 xl:py-6">
             <div className="page-enter mx-auto w-full max-w-[1600px]">{children}</div>

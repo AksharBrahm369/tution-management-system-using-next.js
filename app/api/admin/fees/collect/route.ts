@@ -13,9 +13,31 @@ export async function GET(request: NextRequest) {
 
     const pendingRecords = await prisma.feeRecord.findMany({
       where: { pendingAmount: { gt: 0 } },
-      include: {
-        student: true,
-        batch: true,
+      select: {
+        id: true,
+        studentId: true,
+        receiptNumber: true,
+        month: true,
+        year: true,
+        totalAmount: true,
+        paidAmount: true,
+        pendingAmount: true,
+        status: true,
+        dueDate: true,
+        student: {
+          select: {
+            firstName: true,
+            lastName: true,
+            studentCode: true,
+            phone: true,
+          },
+        },
+        batch: {
+          select: {
+            name: true,
+            code: true,
+          },
+        },
       },
       orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
       take: 100,

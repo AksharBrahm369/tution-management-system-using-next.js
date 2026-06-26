@@ -12,20 +12,33 @@ export async function GET(request: NextRequest) {
     const month = Number(searchParams.get("month")) || new Date().getMonth() + 1;
     const year = Number(searchParams.get("year")) || new Date().getFullYear();
 
-    // total due for month
-    const feeRecords = await prisma.feeRecord.findMany({ where: { month, year } });
+    const periodStart = new Date(year, month - 1, 1);
+    const periodEnd = new Date(year, month, 1);
 
-    const totalDue = feeRecords.reduce((s, r) => s + (r.totalAmount || 0), 0);
-    const pendingAmount = feeRecords.reduce((s, r) => s + (r.pendingAmount || 0), 0);
-    const overdueAmount = feeRecords.filter(r => r.status === "OVERDUE").reduce((s, r) => s + (r.pendingAmount || 0), 0);
+    const [monthlyTotals, overdueTotals, paymentTotals, totalStudents, dueStudents] = await Promise.all([
+      prisma.feeRecord.aggregate({
+        where: { month, year },
+        _sum: { totalAmount: true, pendingAmount: true },
+      }),
+      prisma.feeRecord.aggregate({
+        where: { month, year, status: "OVERDUE" },
+        _sum: { pendingAmount: true },
+      }),
+      prisma.feePayment.aggregate({
+        where: {
+          status: "COMPLETED",
+          paidAt: { gte: periodStart, lt: periodEnd },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.student.count({ where: { status: "ACTIVE" } }),
+      prisma.feeRecord.count({ where: { month, year, pendingAmount: { gt: 0 } } }),
+    ]);
 
-    // collected: sum of payments created this month
-    const payments = await prisma.feePayment.findMany({ where: { paidAt: { gte: new Date(year, month - 1, 1), lt: new Date(year, month, 1) } } });
-    const totalCollected = payments.reduce((s, p) => s + (p.amount || 0), 0);
-
-    // counts
-    const totalStudents = await prisma.student.count();
-    const dueStudents = feeRecords.filter(r => r.pendingAmount > 0).length;
+    const totalDue = monthlyTotals._sum.totalAmount ?? 0;
+    const pendingAmount = monthlyTotals._sum.pendingAmount ?? 0;
+    const overdueAmount = overdueTotals._sum.pendingAmount ?? 0;
+    const totalCollected = paymentTotals._sum.amount ?? 0;
 
     return NextResponse.json({
       month,

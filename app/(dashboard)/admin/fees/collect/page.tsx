@@ -116,7 +116,7 @@ export default function CollectFeePage() {
     try {
       const [pendingRes, studentsRes] = await Promise.all([
         fetch("/api/admin/fees/collect", { credentials: "include" }),
-        fetch("/api/admin/students?limit=200&status=ACTIVE", { credentials: "include" }),
+        fetch("/api/admin/students?view=options&limit=200&status=ACTIVE", { credentials: "include" }),
       ]);
 
       if (pendingRes.status === 401 || studentsRes.status === 401) {
@@ -333,7 +333,7 @@ export default function CollectFeePage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={generateMonthlyFees} disabled={generating} className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-slate-700 disabled:opacity-50">
+            <button type="button" aria-label="Generate monthly fee records" onClick={generateMonthlyFees} disabled={generating} className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-slate-700 disabled:opacity-50">
               {generating ? "Generating..." : "Generate monthly fees"}
             </button>
             <Link href="/admin/fees/records" className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/10 transition hover:bg-slate-700">
@@ -375,10 +375,10 @@ export default function CollectFeePage() {
               <p className="mt-1 text-xs text-slate-500">Select dues for one student and collect in a single payment entry.</p>
             </div>
             <div className="flex rounded-xl bg-slate-950/50 p-1 ring-1 ring-white/10">
-              <button onClick={() => setMode("pending")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "pending" ? "bg-white text-slate-950" : "text-slate-400 hover:text-white"}`}>
+                <button type="button" aria-label="Show pending fee records" onClick={() => setMode("pending")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "pending" ? "bg-white text-slate-950" : "text-slate-400 hover:text-white"}`}>
                 Pending
               </button>
-              <button onClick={() => setMode("manual")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "manual" ? "bg-white text-slate-950" : "text-slate-400 hover:text-white"}`}>
+                <button type="button" aria-label="Show manual student collection" onClick={() => setMode("manual")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${mode === "manual" ? "bg-white text-slate-950" : "text-slate-400 hover:text-white"}`}>
                 Manual
               </button>
             </div>
@@ -466,7 +466,7 @@ export default function CollectFeePage() {
               </div>
               <div className="rounded-xl bg-slate-950/45 p-5 ring-1 ring-white/10">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Next action</p>
-                <button onClick={() => setMode("manual")} className="mt-4 w-full rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200">
+                <button type="button" aria-label="Select a student manually" onClick={() => setMode("manual")} className="mt-4 w-full rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200">
                   Select student
                 </button>
               </div>
@@ -489,6 +489,7 @@ export default function CollectFeePage() {
             <label className="block space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Student</span>
               <input
+                aria-label="Search students for fee collection"
                 value={studentSearch}
                 onChange={(event) => {
                   setStudentSearch(event.target.value);
@@ -503,6 +504,8 @@ export default function CollectFeePage() {
               <div className="max-h-56 space-y-2 overflow-y-auto rounded-xl bg-slate-950/45 p-2 ring-1 ring-white/10">
                 {filteredStudents.length > 0 ? filteredStudents.map((student) => (
                   <button
+                    type="button"
+                    aria-label={`Select ${student.firstName} ${student.lastName} for fee collection`}
                     key={student.id}
                     onClick={() => pickStudent(student)}
                     className={`w-full rounded-lg px-3 py-2 text-left transition ${selectedStudentId === student.id ? "bg-cyan-500/10 ring-1 ring-cyan-400/30" : "hover:bg-white/[0.04]"}`}
@@ -530,6 +533,7 @@ export default function CollectFeePage() {
               <div className="flex items-center rounded-xl bg-slate-950 ring-1 ring-white/10 focus-within:ring-cyan-400">
                 <span className="px-3 text-sm font-semibold text-slate-400">Rs.</span>
                 <input
+                  aria-label="Fee amount"
                   className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-lg font-semibold text-white outline-none placeholder:text-slate-600"
                   type="number"
                   value={amount || ""}
@@ -543,7 +547,7 @@ export default function CollectFeePage() {
             <div className="grid grid-cols-2 gap-3">
               <label className="block space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Mode</span>
-                <select className="w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white outline-none ring-1 ring-white/10 focus:ring-cyan-400" value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}>
+                <select aria-label="Payment mode" className="w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white outline-none ring-1 ring-white/10 focus:ring-cyan-400" value={paymentMode} onChange={(event) => setPaymentMode(event.target.value)}>
                   <option value="CASH">Cash</option>
                   <option value="ONLINE">Online</option>
                   <option value="CHEQUE">Cheque</option>
@@ -554,7 +558,7 @@ export default function CollectFeePage() {
               </label>
               <label className="block space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Record as</span>
-                <select disabled={mode === "pending" && selectedIds.length > 0} className="w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white outline-none ring-1 ring-white/10 focus:ring-cyan-400 disabled:opacity-60" value={recordStatus} onChange={(event) => setRecordStatus(event.target.value as RecordStatus)}>
+                <select aria-label="Record payment status" disabled={mode === "pending" && selectedIds.length > 0} className="w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white outline-none ring-1 ring-white/10 focus:ring-cyan-400 disabled:opacity-60" value={recordStatus} onChange={(event) => setRecordStatus(event.target.value as RecordStatus)}>
                   <option value="PAID">Paid</option>
                   <option value="PENDING">Pending due</option>
                 </select>
@@ -564,6 +568,7 @@ export default function CollectFeePage() {
             <label className="block space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Collected / recorded by</span>
               <input
+                aria-label="Collected or recorded by"
                 className="w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white outline-none ring-1 ring-white/10 transition placeholder:text-slate-600 focus:ring-cyan-400"
                 value={collectedBy}
                 onChange={(event) => setCollectedBy(event.target.value)}
@@ -574,6 +579,7 @@ export default function CollectFeePage() {
             <label className="block space-y-2">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Notes</span>
               <textarea
+                aria-label="Fee collection notes"
                 className="min-h-20 w-full rounded-xl bg-slate-950 px-3 py-2.5 text-sm text-white outline-none ring-1 ring-white/10 transition placeholder:text-slate-600 focus:ring-cyan-400"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
@@ -588,7 +594,7 @@ export default function CollectFeePage() {
               </div>
             </div>
 
-            <button disabled={saving || loading} onClick={submit} className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:opacity-50">
+            <button type="button" aria-label="Submit fee payment" disabled={saving || loading} onClick={submit} className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:opacity-50">
               {saving ? "Saving..." : recordStatus === "PENDING" && mode === "manual" ? "Create pending due" : "Collect payment"}
             </button>
           </div>

@@ -10,9 +10,9 @@ import { generateNextParentCodeInTransaction } from "@/lib/parentCode";
 
 export const runtime = "nodejs";
 
-function parseNumber(value: string | null, fallback: number): number {
+function parseNumber(value: string | null, fallback: number, max = 50): number {
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback;
 }
 
 function buildWhere(searchParams: URLSearchParams, instituteId: string): Prisma.StudentWhereInput {
@@ -85,51 +85,160 @@ function getDuplicateStudentMessage(error: Prisma.PrismaClientKnownRequestError)
   return "A duplicate value already exists. Please review the form and try again.";
 }
 
-async function getCurrentBatch(studentId: string) {
-  const enrollment = await prisma.batchEnrollment.findFirst({
-    where: { studentId, isActive: true },
-    include: { batch: { include: { standard: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return enrollment?.batch ?? null;
-}
-
-async function buildStudentCard(student: {
-  id: string;
-  studentCode: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  profilePhoto: string | null;
-  status: StudentStatus;
-  category: string;
-  joiningDate: Date;
-  academicYear: string;
-  city: string | null;
-  standard?: { id: string; name: string } | null;
-  standardId?: string | null;
-}) {
-  const [batch, attendanceTotal, attendancePresent, latestFeeRecord] = await Promise.all([
-    getCurrentBatch(student.id),
-    prisma.attendance.count({ where: { studentId: student.id } }),
-    prisma.attendance.count({ where: { studentId: student.id, status: "PRESENT" } }),
-    prisma.feeRecord.findFirst({ where: { studentId: student.id }, orderBy: { createdAt: "desc" } }),
-  ]);
-
-  const attendancePercent = attendanceTotal > 0 ? Math.round((attendancePresent / attendanceTotal) * 100) : 0;
-  const resolvedStandard = student.standard ?? batch?.standard ?? null;
+function mapStudentListItem(
+  student: {
+    id: string;
+    studentCode: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    profilePhoto: string | null;
+    status: StudentStatus;
+    category: string;
+    joiningDate: Date;
+    academicYear: string;
+    city: string | null;
+    standardId: string | null;
+    standard: { id: string; name: string } | null;
+    batchEnrollments: Array<{
+      batch: {
+        id: string;
+        name: string;
+        subject: { name: string } | null;
+        teacher: { firstName: string; lastName: string } | null;
+        days: string[];
+        startTime: string;
+        endTime: string;
+      };
+    }>;
+  },
+  attendancePercent: number,
+  feeStatus: string
+) {
+  const batch = student.batchEnrollments[0]?.batch ?? null;
+  const standard = student.standard;
 
   return {
-    ...student,
-    fullName: `${student.firstName} ${student.lastName}`,
-    batch,
-    standard: resolvedStandard,
-    standardId: student.standardId ?? resolvedStandard?.id ?? null,
+    id: student.id,
+    studentCode: student.studentCode,
+    firstName: student.firstName,
+    lastName: student.lastName,
+    fullName: `${student.firstName} ${student.lastName}`.trim(),
+    email: student.email,
+    phone: student.phone,
+    profilePhoto: student.profilePhoto,
+    status: student.status,
+    category: student.category,
+    joiningDate: student.joiningDate,
+    academicYear: student.academicYear,
+    city: student.city,
+    standard,
+    standardId: student.standardId ?? standard?.id ?? null,
+    batch: batch
+      ? {
+          id: batch.id,
+          name: batch.name,
+          subject: batch.subject?.name ?? null,
+          teacherName: batch.teacher
+            ? `${batch.teacher.firstName} ${batch.teacher.lastName}`.trim()
+            : null,
+          schedule: `${batch.days.join(", ")} ${batch.startTime}-${batch.endTime}`,
+        }
+      : null,
     attendancePercent,
-    feeStatus: latestFeeRecord?.status ?? "UNPAID",
+    feeStatus,
   };
+}
+
+async function getStudentListExtras(studentIds: string[]) {
+  if (studentIds.length === 0) {
+    return {
+      attendanceByStudent: new Map<string, number>(),
+      feeStatusByStudent: new Map<string, string>(),
+    };
+  }
+
+  const [attendanceTotals, attendancePresent, feeRecords] = await Promise.all([
+    prisma.attendance.groupBy({
+      by: ["studentId"],
+      where: { studentId: { in: studentIds } },
+      _count: { _all: true },
+    }),
+    prisma.attendance.groupBy({
+      by: ["studentId"],
+      where: { studentId: { in: studentIds }, status: "PRESENT" },
+      _count: { _all: true },
+    }),
+    prisma.feeRecord.findMany({
+      where: { studentId: { in: studentIds } },
+      orderBy: { createdAt: "desc" },
+      select: { studentId: true, status: true },
+    }),
+  ]);
+
+  const totalByStudent = new Map(attendanceTotals.map((item) => [item.studentId, item._count._all]));
+  const presentByStudent = new Map(attendancePresent.map((item) => [item.studentId, item._count._all]));
+  const attendanceByStudent = new Map<string, number>();
+
+  for (const studentId of studentIds) {
+    const total = totalByStudent.get(studentId) ?? 0;
+    const present = presentByStudent.get(studentId) ?? 0;
+    attendanceByStudent.set(studentId, total > 0 ? Math.round((present / total) * 100) : 0);
+  }
+
+  const feeStatusByStudent = new Map<string, string>();
+  for (const record of feeRecords) {
+    if (!feeStatusByStudent.has(record.studentId)) {
+      feeStatusByStudent.set(record.studentId, record.status);
+    }
+  }
+
+  return { attendanceByStudent, feeStatusByStudent };
+}
+
+async function getStudentOptions(where: Prisma.StudentWhereInput, limit: number) {
+  const students = await prisma.student.findMany({
+    where,
+    orderBy: { firstName: "asc" },
+    take: limit,
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      studentCode: true,
+      phone: true,
+      status: true,
+      standard: { select: { id: true, name: true } },
+      batchEnrollments: {
+        where: { isActive: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: {
+          batch: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              fees: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return students.map((student) => ({
+    id: student.id,
+    firstName: student.firstName,
+    lastName: student.lastName,
+    fullName: `${student.firstName} ${student.lastName}`.trim(),
+    studentCode: student.studentCode,
+    phone: student.phone,
+    status: student.status,
+    standard: student.standard,
+    batch: student.batchEnrollments[0]?.batch ?? null,
+  }));
 }
 
 async function createStudentTimeline(studentId: string, title: string, description: string, performedById: string) {
@@ -160,21 +269,51 @@ export async function GET(request: NextRequest) {
     const where = buildWhere(searchParams, auth.instituteId);
     const orderBy = buildOrderBy(searchParams.get("sortBy"), searchParams.get("sortOrder"));
 
+    if (searchParams.get("view") === "options") {
+      const optionLimit = parseNumber(searchParams.get("limit"), 200, 500);
+      const students = await getStudentOptions(where, optionLimit);
+      return NextResponse.json({ students }, { status: 200 });
+    }
+
     const [students, total, totalCount, activeCount, inactiveCount, leaveCount] = await Promise.all([
       prisma.student.findMany({
         where,
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        include: {
-          parent: true,
-          standard: true,
-          batchEnrollments: { include: { batch: true } },
-          emergencyContacts: true,
-          medicalInfo: true,
-          documents: true,
-          siblings: { include: { sibling: true } },
-          siblingOf: { include: { student: true } },
+        select: {
+          id: true,
+          studentCode: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          profilePhoto: true,
+          status: true,
+          category: true,
+          joiningDate: true,
+          academicYear: true,
+          city: true,
+          standardId: true,
+          standard: { select: { id: true, name: true } },
+          batchEnrollments: {
+            where: { isActive: true },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: {
+              batch: {
+                select: {
+                  id: true,
+                  name: true,
+                  days: true,
+                  startTime: true,
+                  endTime: true,
+                  subject: { select: { name: true } },
+                  teacher: { select: { firstName: true, lastName: true } },
+                },
+              },
+            },
+          },
         },
       }),
       prisma.student.count({ where }),
@@ -184,7 +323,15 @@ export async function GET(request: NextRequest) {
       prisma.student.count({ where: { ...where, status: "ON_LEAVE" } }),
     ]);
 
-    const studentsWithExtras = await Promise.all(students.map((student) => buildStudentCard(student)));
+    const studentIds = students.map((student) => student.id);
+    const { attendanceByStudent, feeStatusByStudent } = await getStudentListExtras(studentIds);
+    const studentsWithExtras = students.map((student) =>
+      mapStudentListItem(
+        student,
+        attendanceByStudent.get(student.id) ?? 0,
+        feeStatusByStudent.get(student.id) ?? "UNPAID"
+      )
+    );
 
     return NextResponse.json(
       {
@@ -212,7 +359,6 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await requireSuperAdmin(request);
     const body = await request.json();
-    console.log("POST /api/admin/students - Raw Body:", body);
     const parsed = studentCreateSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -223,7 +369,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data;
-    console.log("POST /api/admin/students - Parsed Data:", data);
     const email = normalizeOptionalEmail(data.email);
 
     if (email) {

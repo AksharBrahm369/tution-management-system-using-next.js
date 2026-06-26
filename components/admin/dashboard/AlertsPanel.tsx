@@ -35,7 +35,8 @@ const AlertsPanel: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch alerts');
       return response.json();
     },
-    refetchInterval: 5000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const getTimelineColor = (severity: string) => {

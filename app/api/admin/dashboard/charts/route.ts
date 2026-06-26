@@ -23,60 +23,55 @@ export async function GET(request: NextRequest) {
     await requireSuperAdmin(request);
 
     try {
-      const feeRecords = await prisma.feeRecord.findMany({
-        where: {
-          createdAt: {
-            gte: subMonths(new Date(), 6),
-          },
-        },
-        select: {
-          month: true,
-          year: true,
-          paidAmount: true,
-          pendingAmount: true,
-        },
+      const chartMonths = Array.from({ length: 6 }).map((_, i) => {
+        const date = subMonths(new Date(), 5 - i);
+        return { date, month: date.getMonth() + 1, year: date.getFullYear() };
       });
 
-      const monthlyFeeData = Array.from({ length: 6 }).map((_, i) => {
-        const date = subMonths(new Date(), 5 - i);
-        const m = date.getMonth() + 1;
-        const y = date.getFullYear();
+      const [feeBuckets, attendanceBuckets] = await Promise.all([
+        prisma.feeRecord.groupBy({
+          by: ['month', 'year'],
+          where: {
+            OR: chartMonths.map((item) => ({ month: item.month, year: item.year })),
+          },
+          _sum: {
+            paidAmount: true,
+            pendingAmount: true,
+          },
+        }),
+        prisma.attendance.groupBy({
+          by: ['status'],
+          where: {
+            date: { gte: subMonths(new Date(), 1) },
+          },
+          _count: { _all: true },
+        }),
+      ]);
 
-        const matchingRecords = feeRecords.filter((r) => r.month === m && r.year === y);
-        const collected = matchingRecords.reduce((sum, r) => sum + Number(r.paidAmount ?? 0), 0);
-        const pending = matchingRecords.reduce((sum, r) => sum + Number(r.pendingAmount ?? 0), 0);
+      const feeByMonth = new Map(
+        feeBuckets.map((item) => [`${item.year}-${item.month}`, item])
+      );
 
+      const monthlyFeeData = chartMonths.map(({ date, month, year }) => {
+        const bucket = feeByMonth.get(`${year}-${month}`);
         return {
           month: format(date, 'MMM'),
-          collected: Math.round(collected),
-          pending: Math.round(pending),
+          collected: Math.round(bucket?._sum.paidAmount ?? 0),
+          pending: Math.round(bucket?._sum.pendingAmount ?? 0),
         };
       });
 
-      const presentCount = await prisma.attendance.count({
-        where: {
-          status: {
-            in: ['PRESENT', 'LATE'],
-          },
-        },
-      });
-
-      const absentCount = await prisma.attendance.count({
-        where: {
-          status: 'ABSENT',
-        },
-      });
-
-      const lateCount = await prisma.attendance.count({
-        where: {
-          status: 'ON_LEAVE',
-        },
-      });
+      const attendanceByStatus = new Map(
+        attendanceBuckets.map((item) => [item.status, item._count._all])
+      );
 
       const attendanceData = {
-        present: presentCount,
-        absent: absentCount,
-        late: lateCount,
+        present:
+          (attendanceByStatus.get('PRESENT') ?? 0) +
+          (attendanceByStatus.get('LATE') ?? 0) +
+          (attendanceByStatus.get('HALF_DAY') ?? 0),
+        absent: attendanceByStatus.get('ABSENT') ?? 0,
+        late: attendanceByStatus.get('LATE') ?? 0,
       };
 
       return NextResponse.json(

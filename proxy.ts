@@ -168,9 +168,11 @@ export async function proxy(request: NextRequest) {
     return withSecurityHeaders(request, response, pathname);
   }
 
-  const sessionUser = await getSessionUser(request);
+  const protectedRoute = isProtectedRoute(pathname);
+  const authRoute = isAuthRoute(pathname);
+  const sessionUser = protectedRoute || authRoute ? await getSessionUser(request) : null;
 
-  if (isProtectedRoute(pathname)) {
+  if (protectedRoute) {
     if (!sessionUser) {
       const loginUrl = new URL(loginPathFor(pathname), request.url);
       loginUrl.searchParams.set("redirect", pathname + request.nextUrl.search);
@@ -201,7 +203,7 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  if (isAuthRoute(pathname) && sessionUser) {
+  if (authRoute && sessionUser) {
     const matchesAuthRoute =
       pathname.startsWith("/student/login")
         ? sessionUser.role === "STUDENT"

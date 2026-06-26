@@ -66,7 +66,7 @@ export default function ActivityLogsPage() {
     if (filters.toDate) params.set("toDate", filters.toDate);
     if (filters.status) params.set("status", filters.status);
     params.set("page", String(page));
-    params.set("limit", "25");
+    params.set("limit", "50");
     return params.toString();
   }, [debouncedSearch, filters, page]);
 
@@ -74,10 +74,15 @@ export default function ActivityLogsPage() {
     queryKey: ["admin-activity-logs", queryString],
     queryFn: async () => {
       const res = await fetch(`/api/admin/logs?${queryString}`, { credentials: "same-origin" });
-      if (!res.ok) throw new Error("Failed to load logs");
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(payload.error || "Failed to load activity logs");
+      }
       return res.json();
     },
     refetchInterval: liveMode ? false : undefined,
+    retry: 1,
+    refetchOnWindowFocus: true,
   });
 
   const { data: security, isLoading: securityLoading } = useQuery<SecurityEventsResponse>({

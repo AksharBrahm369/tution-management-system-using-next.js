@@ -28,7 +28,8 @@ const RecentPayments: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch payments');
       return response.json();
     },
-    refetchInterval: 5000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   if (isLoading) {

@@ -9,47 +9,116 @@ import { getActiveStandards } from "@/lib/standards";
 
 async function getStandardStats() {
   const standards = await getActiveStandards();
+  const standardIds = standards.map((standard) => standard.id);
+  if (standardIds.length === 0) return [];
+
   const now = new Date();
 
-  return Promise.all(
-    standards.map(async (standard) => {
-      const [students, teachers, batches, exams, fees] = await Promise.all([
-        prisma.student.count({
-          where: {
-            OR: [
-              { standardId: standard.id },
-              { batchEnrollments: { some: { isActive: true, batch: { standardId: standard.id } } } },
-            ],
-          },
-        }),
-        prisma.teacher.count({
-          where: {
-            OR: [
-              { standardSubjects: { some: { standardId: standard.id } } },
-              { batches: { some: { standardId: standard.id } } },
-            ],
-          },
-        }),
-        prisma.batch.count({ where: { standardId: standard.id, status: { in: ["ACTIVE", "UPCOMING"] } } }),
-        prisma.exam.count({
-          where: {
-            OR: [{ standardId: standard.id }, { batch: { standardId: standard.id } }],
-            examDate: { gte: now },
-            status: { in: ["UPCOMING", "ONGOING"] },
-          },
-        }),
-        prisma.feeRecord.aggregate({
-          where: {
-            pendingAmount: { gt: 0 },
-            OR: [{ student: { standardId: standard.id } }, { batch: { standardId: standard.id } }],
-          },
-          _sum: { pendingAmount: true },
-        }),
-      ]);
+  const [
+    directStudents,
+    batchEnrollments,
+    teacherStandardSubjects,
+    teacherBatches,
+    batchCounts,
+    exams,
+    pendingFees,
+  ] = await Promise.all([
+    prisma.student.findMany({
+      where: { standardId: { in: standardIds } },
+      select: { id: true, standardId: true },
+    }),
+    prisma.batchEnrollment.findMany({
+      where: { isActive: true, batch: { standardId: { in: standardIds } } },
+      select: {
+        studentId: true,
+        batch: { select: { standardId: true } },
+      },
+    }),
+    prisma.teacherStandardSubject.findMany({
+      where: { standardId: { in: standardIds } },
+      select: { standardId: true, teacherId: true },
+    }),
+    prisma.batch.findMany({
+      where: { standardId: { in: standardIds } },
+      select: { standardId: true, teacherId: true },
+    }),
+    prisma.batch.groupBy({
+      by: ["standardId"],
+      where: { standardId: { in: standardIds }, status: { in: ["ACTIVE", "UPCOMING"] } },
+      _count: { _all: true },
+    }),
+    prisma.exam.findMany({
+      where: {
+        examDate: { gte: now },
+        status: { in: ["UPCOMING", "ONGOING"] },
+        OR: [{ standardId: { in: standardIds } }, { batch: { standardId: { in: standardIds } } }],
+      },
+      select: {
+        id: true,
+        standardId: true,
+        batch: { select: { standardId: true } },
+      },
+    }),
+    prisma.feeRecord.findMany({
+      where: {
+        pendingAmount: { gt: 0 },
+        OR: [{ student: { standardId: { in: standardIds } } }, { batch: { standardId: { in: standardIds } } }],
+      },
+      select: {
+        pendingAmount: true,
+        student: { select: { standardId: true } },
+        batch: { select: { standardId: true } },
+      },
+    }),
+  ]);
 
-      return { ...standard, students, teachers, batches, exams, pendingFees: fees._sum.pendingAmount ?? 0 };
-    })
+  const studentSets = new Map(standardIds.map((id) => [id, new Set<string>()]));
+  for (const student of directStudents) {
+    if (student.standardId) studentSets.get(student.standardId)?.add(student.id);
+  }
+  for (const enrollment of batchEnrollments) {
+    const standardId = enrollment.batch.standardId;
+    if (standardId) studentSets.get(standardId)?.add(enrollment.studentId);
+  }
+
+  const teacherSets = new Map(standardIds.map((id) => [id, new Set<string>()]));
+  for (const assignment of teacherStandardSubjects) {
+    teacherSets.get(assignment.standardId)?.add(assignment.teacherId);
+  }
+  for (const batch of teacherBatches) {
+    if (batch.standardId) teacherSets.get(batch.standardId)?.add(batch.teacherId);
+  }
+
+  const batchCountByStandard = new Map(
+    batchCounts
+      .filter((item) => item.standardId)
+      .map((item) => [item.standardId!, item._count._all])
   );
+
+  const examSets = new Map(standardIds.map((id) => [id, new Set<string>()]));
+  for (const exam of exams) {
+    const standardId = exam.standardId ?? exam.batch?.standardId;
+    if (standardId) examSets.get(standardId)?.add(exam.id);
+  }
+
+  const pendingFeesByStandard = new Map(standardIds.map((id) => [id, 0]));
+  for (const fee of pendingFees) {
+    const standardId = fee.student?.standardId ?? fee.batch.standardId;
+    if (!standardId) continue;
+    pendingFeesByStandard.set(
+      standardId,
+      (pendingFeesByStandard.get(standardId) ?? 0) + fee.pendingAmount
+    );
+  }
+
+  return standards.map((standard) => ({
+    ...standard,
+    students: studentSets.get(standard.id)?.size ?? 0,
+    teachers: teacherSets.get(standard.id)?.size ?? 0,
+    batches: batchCountByStandard.get(standard.id) ?? 0,
+    exams: examSets.get(standard.id)?.size ?? 0,
+    pendingFees: pendingFeesByStandard.get(standard.id) ?? 0,
+  }));
 }
 
 export default async function StandardsPage() {

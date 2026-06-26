@@ -44,7 +44,7 @@ export default function LogsTable({
     return (
       <div className="tp-card p-12 text-center text-slate-500">
         <span className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-        <p className="mt-3 text-sm font-medium">Loading activity logs…</p>
+        <p className="mt-3 text-sm font-medium">Loading activity logs...</p>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export default function LogsTable({
   if (!logs.length) {
     return (
       <div className="tp-card p-12 text-center text-slate-500">
-        No logs match your filters.
+        No activity logs yet.
       </div>
     );
   }

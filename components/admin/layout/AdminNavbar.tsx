@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Search, Bell, Moon, Sun, ChevronDown, ArrowLeft } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -13,8 +13,6 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 
 interface AdminNavbarProps {
   user: CurrentAdminUser;
-  isSidebarCollapsed: boolean;
-  onMobileMenuClick: () => void;
 }
 
 function isEntityIdSegment(segment: string): boolean {
@@ -49,25 +47,13 @@ function formatSegmentLabel(segment: string, index: number, allSegments: string[
   return toTitleCase(segment);
 }
 
-const AdminNavbar: React.FC<AdminNavbarProps> = ({ user: initialUser, onMobileMenuClick }) => {
+const AdminNavbar: React.FC<AdminNavbarProps> = ({ user }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string }>(initialUser);
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((resJson) => {
-        if (resJson.success && resJson.data?.user) {
-          setUser(resJson.data.user);
-        }
-      })
-      .catch((err) => console.error('Error fetching user profile:', err));
-  }, []);
 
   const isDarkMode = resolvedTheme === 'dark';
 
