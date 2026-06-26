@@ -48,3 +48,5 @@ scratch/*.log
 test-*
 truncate-users.js
 .vercel
+
+.vercel
