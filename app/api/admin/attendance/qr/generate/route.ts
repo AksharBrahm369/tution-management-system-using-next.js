@@ -40,23 +40,31 @@ export async function POST(req: NextRequest) {
 
     let baseUrl = getAppUrl(req);
 
-    // Auto-resolve local IP in development for testing with physical mobile devices on the same Wi-Fi
-    if (process.env.NODE_ENV === "development" && (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1"))) {
+    // Auto-resolve local IP when testing locally so mobile devices on the same Wi-Fi can connect
+    if (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) {
       try {
         const interfaces = os.networkInterfaces();
-        let localIp = "";
+        const candidates: string[] = [];
+
+        const isPreferredLanIp = (ip: string) =>
+          ip.startsWith('192.168.') ||
+          ip.startsWith('10.') ||
+          /^172\.(1[6-9]|2\d|3[0-1])\./.test(ip);
+
         for (const interfaceName in interfaces) {
           const addresses = interfaces[interfaceName];
           if (addresses) {
             for (const address of addresses) {
-              if (address.family === "IPv4" && !address.internal) {
-                localIp = address.address;
-                break;
+              const family = address.family;
+              const isIpv4 = family === "IPv4" || (family as any) === 4;
+              if (isIpv4 && !address.internal) {
+                candidates.push(address.address);
               }
             }
           }
-          if (localIp) break;
         }
+
+        const localIp = candidates.find(isPreferredLanIp) ?? candidates[0];
         if (localIp) {
           baseUrl = baseUrl.replace("localhost", localIp).replace("127.0.0.1", localIp);
           console.log(`[QR Generation] Replaced localhost with local IP: ${baseUrl}`);

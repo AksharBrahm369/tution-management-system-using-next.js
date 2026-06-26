@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CalendarDays, Save, Users, Clock3, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const DEFAULT_STATUSES = ['PRESENT', 'ABSENT', 'LATE', 'ON_LEAVE'];
 
@@ -26,6 +27,7 @@ export default function MarkAttendancePage({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const batchFromUrl = searchParams.get('batch') ?? searchParams.get('batchId') ?? '';
   const [selectedBatchId, setSelectedBatchId] = useState(batchFromUrl);
   const [selectedDate, setSelectedDate] = useState(formatDateInputValue(new Date()));
@@ -205,9 +207,11 @@ export default function MarkAttendancePage({
         throw new Error(data?.message || data?.error || 'Failed to mark attendance');
       }
 
-      setMessage(`Attendance saved successfully. ${data?.data?.attendanceRecordsCount ?? attendance.length} records updated.`);
+      toast.success(`Attendance saved successfully. ${data?.data?.attendanceRecordsCount ?? attendance.length} records updated.`);
       setAttendanceMap({});
+      await queryClient.invalidateQueries({ queryKey: ['attendance'] });
       router.refresh();
+      router.push(basePath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark attendance');
     } finally {

@@ -15,7 +15,9 @@ export async function GET() {
 
     for (const name of Object.keys(nets)) {
       for (const net of nets[name] || []) {
-        if (net.family === 'IPv4' && !net.internal) {
+        const family = net.family;
+        const isIpv4 = family === 'IPv4' || (family as any) === 4;
+        if (isIpv4 && !net.internal) {
           candidates.push(net.address);
         }
       }
